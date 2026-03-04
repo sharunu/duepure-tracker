@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 
 const navItems = [
   { href: "/battle", label: "記録", icon: "+" },
@@ -11,6 +12,13 @@ const navItems = [
 
 export function BottomNav() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/auth");
+  };
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border safe-bottom z-50">
@@ -33,6 +41,13 @@ export function BottomNav() {
             </Link>
           );
         })}
+        <button
+          onClick={handleLogout}
+          className="flex flex-col items-center justify-center min-w-[64px] min-h-[44px] text-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <span className="text-lg">⇥</span>
+          <span>ログアウト</span>
+        </button>
       </div>
     </nav>
   );
