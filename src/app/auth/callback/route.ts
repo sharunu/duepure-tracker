@@ -13,5 +13,12 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.redirect(`${origin}/auth?error=auth_failed`);
+  // OAuth 1.0a (Twitter Deprecated) はハッシュフラグメントでセッションが設定される
+  // code がなくてもエラーパラメータがなければ成功の可能性がある
+  const error = searchParams.get("error");
+  if (error) {
+    return NextResponse.redirect(`${origin}/auth?error=${error}`);
+  }
+
+  return NextResponse.redirect(`${origin}/battle`);
 }
