@@ -1,0 +1,98 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { createClient } from "@/lib/supabase/server";
+
+async function requireAdmin() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("is_admin")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile?.is_admin) throw new Error("Not authorized");
+  return supabase;
+}
+
+export async function checkIsAdmin(): Promise<boolean> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return false;
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("is_admin")
+    .eq("id", user.id)
+    .single();
+
+  return profile?.is_admin ?? false;
+}
+
+export async function getOpponentDeckMasterList() {
+  const supabase = await requireAdmin();
+  const { data, error } = await supabase
+    .from("opponent_deck_master")
+    .select("*")
+    .order("sort_order", { ascending: true })
+    .order("name", { ascending: true });
+
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+export async function addOpponentDeck(name: string) {
+  const supabase = await requireAdmin();
+
+  const { data: maxOrder } = await supabase
+    .from("opponent_deck_master")
+    .select("sort_order")
+    .order("sort_order", { ascending: false })
+    .limit(1)
+    .single();
+
+  const nextOrder = (maxOrder?.sort_order ?? 0) + 10;
+
+  const { error } = await supabase.from("opponent_deck_master").insert({
+    name: name.trim(),
+    sort_order: nextOrder,
+  });
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/opponent-decks");
+  revalidatePath("/battle");
+}
+
+export async function updateOpponentDeck(
+  id: string,
+  updates: { name?: string; is_active?: boolean }
+) {
+  const supabase = await requireAdmin();
+  const { error } = await supabase
+    .from("opponent_deck_master")
+    .update(updates)
+    .eq("id", id);
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/opponent-decks");
+  revalidatePath("/battle");
+}
+
+export async function deleteOpponentDeck(id: string) {
+  const supabase = await requireAdmin();
+  const { error } = await supabase
+    .from("opponent_deck_master")
+    .delete()
+    .eq("id", id);
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/opponent-decks");
+  revalidatePath("/battle");
+}
