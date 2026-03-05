@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-export default function AuthCallbackPage() {
+function AuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -13,7 +13,6 @@ export default function AuthCallbackPage() {
     const code = searchParams.get("code");
 
     if (code) {
-      // PKCE flow: exchange code for session
       supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
         if (error) {
           router.replace("/auth?error=" + encodeURIComponent(error.message));
@@ -22,14 +21,12 @@ export default function AuthCallbackPage() {
         }
       });
     } else {
-      // Implicit flow: supabase-js auto-detects hash fragment tokens
       supabase.auth.onAuthStateChange((event) => {
         if (event === "SIGNED_IN") {
           router.replace("/battle");
         }
       });
 
-      // If no code and no hash, redirect to auth
       if (!window.location.hash) {
         router.replace("/auth");
       }
@@ -40,5 +37,19 @@ export default function AuthCallbackPage() {
     <div className="min-h-screen flex items-center justify-center">
       <p className="text-muted-foreground">ログイン処理中...</p>
     </div>
+  );
+}
+
+export default function AuthCallbackPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <p className="text-muted-foreground">ログイン処理中...</p>
+        </div>
+      }
+    >
+      <AuthCallbackContent />
+    </Suspense>
   );
 }
