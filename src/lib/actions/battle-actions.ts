@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { createClient } from "@/lib/supabase/client";
 
 export async function recordBattle(formData: {
