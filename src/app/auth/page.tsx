@@ -2,7 +2,7 @@
 
 export const dynamic = "force-dynamic";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 export default function AuthPage() {
@@ -11,6 +11,18 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false);
 
   const supabase = createClient();
+
+  // ハッシュフラグメントからセッションを検出（implicit flowの場合）
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event) => {
+        if (event === "SIGNED_IN") {
+          window.location.href = "/battle";
+        }
+      }
+    );
+    return () => subscription.unsubscribe();
+  }, [supabase]);
 
   const signInWithOAuth = async (provider: "google" | "twitter") => {
     await supabase.auth.signInWithOAuth({

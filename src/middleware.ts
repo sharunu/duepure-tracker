@@ -41,8 +41,7 @@ export async function middleware(request: NextRequest) {
     !request.nextUrl.pathname.startsWith("/manifest.json") &&
     !request.nextUrl.pathname.match(/\.(ico|png|svg|jpg)$/)
   ) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/auth";
+    const url = new URL("/auth", request.url);
     return NextResponse.redirect(url);
   }
 
