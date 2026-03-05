@@ -1,9 +1,7 @@
-"use server";
-
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/client";
 
 export async function getPersonalStats() {
-  const supabase = await createClient();
+  const supabase = createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -41,7 +39,7 @@ export async function getPersonalStats() {
 }
 
 export async function getEnvironmentShares(days = 7) {
-  const supabase = await createClient();
+  const supabase = createClient();
   const { data, error } = await supabase.rpc("get_environment_deck_shares", {
     p_days: days,
   });

@@ -1,10 +1,7 @@
-"use server";
-
-import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/client";
 
 export async function getDecks() {
-  const supabase = await createClient();
+  const supabase = createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -22,7 +19,7 @@ export async function getDecks() {
 }
 
 export async function createDeck(name: string) {
-  const supabase = await createClient();
+  const supabase = createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -33,40 +30,32 @@ export async function createDeck(name: string) {
     .insert({ user_id: user.id, name });
 
   if (error) throw new Error(error.message);
-  revalidatePath("/decks");
-  revalidatePath("/battle");
 }
 
 export async function updateDeck(id: string, name: string) {
-  const supabase = await createClient();
+  const supabase = createClient();
   const { error } = await supabase
     .from("decks")
     .update({ name })
     .eq("id", id);
 
   if (error) throw new Error(error.message);
-  revalidatePath("/decks");
-  revalidatePath("/battle");
 }
 
 export async function archiveDeck(id: string) {
-  const supabase = await createClient();
+  const supabase = createClient();
   const { error } = await supabase
     .from("decks")
     .update({ is_archived: true })
     .eq("id", id);
 
   if (error) throw new Error(error.message);
-  revalidatePath("/decks");
-  revalidatePath("/battle");
 }
 
 export async function reorderDecks(deckIds: string[]) {
-  const supabase = await createClient();
+  const supabase = createClient();
   const updates = deckIds.map((id, index) =>
     supabase.from("decks").update({ sort_order: index }).eq("id", id)
   );
   await Promise.all(updates);
-  revalidatePath("/decks");
-  revalidatePath("/battle");
 }

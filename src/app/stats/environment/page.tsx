@@ -1,10 +1,18 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getEnvironmentShares } from "@/lib/actions/stats-actions";
 import { EnvironmentChart } from "@/components/stats/EnvironmentChart";
 import { BottomNav } from "@/components/layout/BottomNav";
 
-export default async function EnvironmentPage() {
-  const data = await getEnvironmentShares();
+export default function EnvironmentPage() {
+  const [data, setData] = useState<Awaited<ReturnType<typeof getEnvironmentShares>>>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getEnvironmentShares().then((d) => { setData(d); setLoading(false); });
+  }, []);
 
   return (
     <>
@@ -18,7 +26,11 @@ export default async function EnvironmentPage() {
             ← 個人統計
           </Link>
         </div>
-        <EnvironmentChart data={data} />
+        {loading ? (
+          <p className="text-muted-foreground text-sm">読み込み中...</p>
+        ) : (
+          <EnvironmentChart data={data} />
+        )}
       </div>
       <BottomNav />
     </>

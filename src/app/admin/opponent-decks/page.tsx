@@ -1,15 +1,38 @@
-import { redirect } from "next/navigation";
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   checkIsAdmin,
   getOpponentDeckMasterList,
 } from "@/lib/actions/admin-actions";
 import { OpponentDeckManager } from "@/components/admin/OpponentDeckManager";
 
-export default async function AdminOpponentDecksPage() {
-  const isAdmin = await checkIsAdmin();
-  if (!isAdmin) redirect("/battle");
+export default function AdminOpponentDecksPage() {
+  const router = useRouter();
+  const [decks, setDecks] = useState<Awaited<ReturnType<typeof getOpponentDeckMasterList>>>([]);
+  const [loading, setLoading] = useState(true);
 
-  const decks = await getOpponentDeckMasterList();
+  useEffect(() => {
+    checkIsAdmin().then((isAdmin) => {
+      if (!isAdmin) {
+        router.replace("/battle");
+        return;
+      }
+      getOpponentDeckMasterList().then((d) => {
+        setDecks(d);
+        setLoading(false);
+      });
+    });
+  }, [router]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen px-4 pt-6 pb-8 max-w-lg mx-auto">
+        <p className="text-muted-foreground text-sm">読み込み中...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen px-4 pt-6 pb-8 max-w-lg mx-auto">

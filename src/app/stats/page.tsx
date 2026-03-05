@@ -1,10 +1,18 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getPersonalStats } from "@/lib/actions/stats-actions";
 import { PersonalStatsTable } from "@/components/stats/PersonalStatsTable";
 import { BottomNav } from "@/components/layout/BottomNav";
 
-export default async function StatsPage() {
-  const stats = await getPersonalStats();
+export default function StatsPage() {
+  const [stats, setStats] = useState<Awaited<ReturnType<typeof getPersonalStats>>>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getPersonalStats().then((s) => { setStats(s); setLoading(false); });
+  }, []);
 
   return (
     <>
@@ -18,7 +26,11 @@ export default async function StatsPage() {
             環境統計 →
           </Link>
         </div>
-        <PersonalStatsTable stats={stats} />
+        {loading ? (
+          <p className="text-muted-foreground text-sm">読み込み中...</p>
+        ) : (
+          <PersonalStatsTable stats={stats} />
+        )}
       </div>
       <BottomNav />
     </>

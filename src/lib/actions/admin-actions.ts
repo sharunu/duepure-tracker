@@ -1,10 +1,7 @@
-"use server";
-
-import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/client";
 
 async function requireAdmin() {
-  const supabase = await createClient();
+  const supabase = createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -21,7 +18,7 @@ async function requireAdmin() {
 }
 
 export async function checkIsAdmin(): Promise<boolean> {
-  const supabase = await createClient();
+  const supabase = createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -66,8 +63,6 @@ export async function addOpponentDeck(name: string) {
   });
 
   if (error) throw new Error(error.message);
-  revalidatePath("/admin/opponent-decks");
-  revalidatePath("/battle");
 }
 
 export async function updateOpponentDeck(
@@ -81,8 +76,6 @@ export async function updateOpponentDeck(
     .eq("id", id);
 
   if (error) throw new Error(error.message);
-  revalidatePath("/admin/opponent-decks");
-  revalidatePath("/battle");
 }
 
 export async function deleteOpponentDeck(id: string) {
@@ -93,6 +86,4 @@ export async function deleteOpponentDeck(id: string) {
     .eq("id", id);
 
   if (error) throw new Error(error.message);
-  revalidatePath("/admin/opponent-decks");
-  revalidatePath("/battle");
 }

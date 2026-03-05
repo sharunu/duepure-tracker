@@ -1,7 +1,4 @@
-"use server";
-
-import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/client";
 
 export async function recordBattle(formData: {
   myDeckId: string;
@@ -9,7 +6,7 @@ export async function recordBattle(formData: {
   result: "win" | "loss";
   turnOrder: "first" | "second" | null;
 }) {
-  const supabase = await createClient();
+  const supabase = createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -35,12 +32,10 @@ export async function recordBattle(formData: {
 
   // Auto-create normalization candidate for new deck names
   await maybeCreateNormalizationCandidate(supabase, formData.opponentDeckName);
-
-  revalidatePath("/battle");
 }
 
 async function maybeCreateNormalizationCandidate(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: ReturnType<typeof createClient>,
   rawName: string
 ) {
   // Check if already normalized
@@ -114,7 +109,7 @@ function levenshteinDistance(a: string, b: string): number {
 }
 
 export async function getRecentBattles(limit = 50) {
-  const supabase = await createClient();
+  const supabase = createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -131,13 +126,13 @@ export async function getRecentBattles(limit = 50) {
 }
 
 export async function getOpponentDeckSuggestions() {
-  const supabase = await createClient();
+  const supabase = createClient();
   const { data } = await supabase.rpc("get_opponent_deck_suggestions");
   return (data as { deck_name: string }[] | null)?.map((d) => d.deck_name) ?? [];
 }
 
 export async function getMiniStats() {
-  const supabase = await createClient();
+  const supabase = createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
