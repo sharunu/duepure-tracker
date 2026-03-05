@@ -1,59 +1,39 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
-function AuthCallbackContent() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+export default function AuthCallbackPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const handleCallback = async () => {
-      const supabase = createClient();
-      const code = searchParams.get("code");
-      const errorParam = searchParams.get("error");
-      const errorDescription = searchParams.get("error_description");
+    const supabase = createClient();
 
-      if (errorParam) {
-        setError(errorDescription || errorParam);
-        return;
-      }
-
-      if (code) {
-        const { error } = await supabase.auth.exchangeCodeForSession(code);
-        if (error) {
-          setError(error.message);
-          return;
+    // supabase-js auto-detects hash fragment tokens
+    // Listen for auth state change
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (event === "SIGNED_IN" && session) {
+          window.location.href = "/battle";
         }
-        router.replace("/battle");
-        return;
       }
+    );
 
-      // Implicit flow: check for session from hash fragment
-      // supabase-js auto-processes hash on init
-      const checkSession = async () => {
-        for (let i = 0; i < 20; i++) {
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session) {
-            router.replace("/battle");
-            return;
-          }
-          await new Promise((r) => setTimeout(r, 250));
-        }
-        setError("セッションを取得できませんでした");
-      };
-
-      if (window.location.hash) {
-        await checkSession();
+    // Fallback: check session after a delay
+    const timeout = setTimeout(async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        window.location.href = "/battle";
       } else {
-        router.replace("/auth");
+        setError("ログインに失敗しました。もう一度お試しください。");
       }
-    };
+    }, 5000);
 
-    handleCallback();
-  }, [router, searchParams]);
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeout);
+    };
+  }, []);
 
   if (error) {
     return (
@@ -72,19 +52,5 @@ function AuthCallbackContent() {
     <div className="min-h-screen flex items-center justify-center">
       <p className="text-muted-foreground">ログイン処理中...</p>
     </div>
-  );
-}
-
-export default function AuthCallbackPage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen flex items-center justify-center">
-          <p className="text-muted-foreground">ログイン処理中...</p>
-        </div>
-      }
-    >
-      <AuthCallbackContent />
-    </Suspense>
   );
 }
