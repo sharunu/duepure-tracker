@@ -13,9 +13,15 @@ function AuthCallbackContent() {
     const handleCallback = async () => {
       const supabase = createClient();
       const code = searchParams.get("code");
+      const errorParam = searchParams.get("error");
+      const errorDescription = searchParams.get("error_description");
+
+      if (errorParam) {
+        setError(errorDescription || errorParam);
+        return;
+      }
 
       if (code) {
-        // PKCE flow
         const { error } = await supabase.auth.exchangeCodeForSession(code);
         if (error) {
           setError(error.message);
@@ -25,18 +31,25 @@ function AuthCallbackContent() {
         return;
       }
 
-      // Implicit flow or hash fragment: wait for supabase to process
-      // Check session repeatedly
-      for (let i = 0; i < 20; i++) {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-          router.replace("/battle");
-          return;
+      // Implicit flow: check for session from hash fragment
+      // supabase-js auto-processes hash on init
+      const checkSession = async () => {
+        for (let i = 0; i < 20; i++) {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            router.replace("/battle");
+            return;
+          }
+          await new Promise((r) => setTimeout(r, 250));
         }
-        await new Promise((r) => setTimeout(r, 250));
-      }
+        setError("セッションを取得できませんでした");
+      };
 
-      setError("セッションを取得できませんでした");
+      if (window.location.hash) {
+        await checkSession();
+      } else {
+        router.replace("/auth");
+      }
     };
 
     handleCallback();

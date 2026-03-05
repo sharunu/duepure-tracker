@@ -6,7 +6,7 @@ export async function middleware(request: NextRequest) {
     request,
   });
 
-  const supabase = createServerClient(
+  createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
@@ -28,22 +28,6 @@ export async function middleware(request: NextRequest) {
       },
     }
   );
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  // Redirect unauthenticated users to /auth (except /auth itself and static assets)
-  if (
-    !user &&
-    !request.nextUrl.pathname.startsWith("/auth") &&
-    !request.nextUrl.pathname.startsWith("/_next") &&
-    !request.nextUrl.pathname.startsWith("/manifest.json") &&
-    !request.nextUrl.pathname.match(/\.(ico|png|svg|jpg)$/)
-  ) {
-    const url = new URL("/auth", request.url);
-    return NextResponse.redirect(url);
-  }
 
   return supabaseResponse;
 }
