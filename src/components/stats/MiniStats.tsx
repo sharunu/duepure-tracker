@@ -18,7 +18,7 @@ type Props = {
 };
 
 export function MiniStats({ stats }: Props) {
-  const winRate = Math.round((stats.wins / stats.total) * 100);
+  const winRate = stats.total > 0 ? Math.round((stats.wins / stats.total) * 100) : 0;
 
   return (
     <div className="rounded-lg bg-card border border-border p-4 space-y-3">
@@ -26,7 +26,7 @@ export function MiniStats({ stats }: Props) {
         <div className="flex items-baseline gap-3">
           <span className="text-2xl font-bold">{winRate}%</span>
           <span className="text-sm text-muted-foreground">
-            {stats.wins}W {stats.losses}L
+            {stats.wins}Win {stats.losses}Lose
           </span>
         </div>
         {stats.streak > 0 && (

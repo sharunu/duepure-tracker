@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { recordBattle } from "@/lib/actions/battle-actions";
+import { recordBattle, getMiniStats } from "@/lib/actions/battle-actions";
 import { OpponentDeckSelector } from "./OpponentDeckSelector";
 import { NormalizationBanner } from "./NormalizationBanner";
 import { MiniStats } from "../stats/MiniStats";
@@ -41,7 +41,7 @@ type Props = {
 export function BattleRecordForm({
   decks,
   suggestions,
-  miniStats,
+  miniStats: initialMiniStats,
   pendingVote,
   format,
   setFormat,
@@ -51,6 +51,12 @@ export function BattleRecordForm({
   const [turnOrder, setTurnOrder] = useState<"first" | "second" | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [lastResult, setLastResult] = useState<"win" | "loss" | null>(null);
+  const [miniStats, setMiniStats] = useState<MiniStatsData | null>(initialMiniStats);
+
+  // Sync miniStats when props change (e.g. format switch)
+  useEffect(() => {
+    setMiniStats(initialMiniStats);
+  }, [initialMiniStats]);
 
   // Restore selected deck from localStorage (per format)
   useEffect(() => {
@@ -87,6 +93,9 @@ export function BattleRecordForm({
       setTurnOrder(null);
       // Flash feedback then reset
       setTimeout(() => setLastResult(null), 1500);
+      // Refresh mini stats immediately
+      const updatedStats = await getMiniStats(format);
+      setMiniStats(updatedStats);
     } catch {
       // handle error
     } finally {
