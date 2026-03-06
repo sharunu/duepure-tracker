@@ -16,8 +16,10 @@ type Deck = {
 
 export function OpponentDeckManager({
   initialDecks,
+  format,
 }: {
   initialDecks: Deck[];
+  format: string;
 }) {
   const [decks, setDecks] = useState(initialDecks);
   const [newName, setNewName] = useState("");
@@ -29,7 +31,7 @@ export function OpponentDeckManager({
     if (!newName.trim()) return;
     setLoading(true);
     try {
-      await addOpponentDeck(newName.trim());
+      await addOpponentDeck(newName.trim(), format);
       setNewName("");
       window.location.reload();
     } catch {

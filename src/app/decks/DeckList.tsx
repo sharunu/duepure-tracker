@@ -13,7 +13,7 @@ type Deck = {
   sort_order: number;
 };
 
-export function DeckList({ initialDecks }: { initialDecks: Deck[] }) {
+export function DeckList({ initialDecks, format }: { initialDecks: Deck[]; format: string }) {
   const [decks, setDecks] = useState(initialDecks);
   const [newName, setNewName] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -24,7 +24,7 @@ export function DeckList({ initialDecks }: { initialDecks: Deck[] }) {
     if (!newName.trim()) return;
     setLoading(true);
     try {
-      await createDeck(newName.trim());
+      await createDeck(newName.trim(), format);
       setNewName("");
       // Refresh will come from revalidatePath
       window.location.reload();

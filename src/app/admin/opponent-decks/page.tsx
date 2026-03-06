@@ -1,30 +1,38 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   checkIsAdmin,
   getOpponentDeckMasterList,
 } from "@/lib/actions/admin-actions";
+import { useFormat } from "@/hooks/use-format";
+import { FormatSelector } from "@/components/ui/FormatSelector";
 import { OpponentDeckManager } from "@/components/admin/OpponentDeckManager";
 
 export default function AdminOpponentDecksPage() {
   const router = useRouter();
+  const { format, setFormat } = useFormat();
   const [decks, setDecks] = useState<Awaited<ReturnType<typeof getOpponentDeckMasterList>>>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const loadDecks = useCallback(() => {
+    setLoading(true);
     checkIsAdmin().then((isAdmin) => {
       if (!isAdmin) {
         router.replace("/battle");
         return;
       }
-      getOpponentDeckMasterList().then((d) => {
+      getOpponentDeckMasterList(format).then((d) => {
         setDecks(d);
         setLoading(false);
       });
     });
-  }, [router]);
+  }, [format, router]);
+
+  useEffect(() => {
+    loadDecks();
+  }, [loadDecks]);
 
   if (loading) {
     return (
@@ -45,7 +53,10 @@ export default function AdminOpponentDecksPage() {
           ← 戻る
         </a>
       </div>
-      <OpponentDeckManager initialDecks={decks} />
+      <div className="mb-4">
+        <FormatSelector format={format} setFormat={setFormat} />
+      </div>
+      <OpponentDeckManager initialDecks={decks} format={format} />
     </div>
   );
 }

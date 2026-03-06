@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { createClient } from "@/lib/supabase/client";
 
-export async function getPersonalStats() {
+export async function getPersonalStats(format: string = "ND") {
   const supabase = createClient();
   const {
     data: { user },
@@ -11,7 +11,8 @@ export async function getPersonalStats() {
   const { data: battles } = await supabase
     .from("battles")
     .select("opponent_deck_name, opponent_deck_normalized, result")
-    .eq("user_id", user.id);
+    .eq("user_id", user.id)
+    .eq("format", format);
 
   if (!battles || battles.length === 0) return [];
 
@@ -39,10 +40,11 @@ export async function getPersonalStats() {
     .sort((a, b) => b.total - a.total);
 }
 
-export async function getEnvironmentShares(days = 7) {
+export async function getEnvironmentShares(days = 7, format: string = "ND") {
   const supabase = createClient();
   const { data, error } = await supabase.rpc("get_environment_deck_shares", {
     p_days: days,
+    p_format: format,
   });
 
   if (error) return [];

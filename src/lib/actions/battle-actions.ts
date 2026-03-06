@@ -6,6 +6,7 @@ export async function recordBattle(formData: {
   opponentDeckName: string;
   result: "win" | "loss";
   turnOrder: "first" | "second" | null;
+  format: string;
 }) {
   const supabase = createClient();
   const {
@@ -27,6 +28,7 @@ export async function recordBattle(formData: {
     opponent_deck_normalized: normResult?.canonical_name ?? null,
     result: formData.result,
     turn_order: formData.turnOrder,
+    format: formData.format,
   });
 
   if (error) throw new Error(error.message);
@@ -109,7 +111,7 @@ function levenshteinDistance(a: string, b: string): number {
   return matrix[b.length][a.length];
 }
 
-export async function getRecentBattles(limit = 50) {
+export async function getRecentBattles(limit = 50, format: string = "ND") {
   const supabase = createClient();
   const {
     data: { user },
@@ -120,19 +122,22 @@ export async function getRecentBattles(limit = 50) {
     .from("battles")
     .select("*, decks(name)")
     .eq("user_id", user.id)
+    .eq("format", format)
     .order("fought_at", { ascending: false })
     .limit(limit);
 
   return data ?? [];
 }
 
-export async function getOpponentDeckSuggestions() {
+export async function getOpponentDeckSuggestions(format: string = "ND") {
   const supabase = createClient();
-  const { data } = await supabase.rpc("get_opponent_deck_suggestions");
+  const { data } = await supabase.rpc("get_opponent_deck_suggestions", {
+    p_format: format,
+  });
   return (data as { deck_name: string }[] | null)?.map((d) => d.deck_name) ?? [];
 }
 
-export async function getMiniStats() {
+export async function getMiniStats(format: string = "ND") {
   const supabase = createClient();
   const {
     data: { user },
@@ -143,6 +148,7 @@ export async function getMiniStats() {
     .from("battles")
     .select("result, fought_at")
     .eq("user_id", user.id)
+    .eq("format", format)
     .order("fought_at", { ascending: false })
     .limit(50);
 

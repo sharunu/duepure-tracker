@@ -34,11 +34,17 @@ export async function checkIsAdmin(): Promise<boolean> {
   return profile?.is_admin ?? false;
 }
 
-export async function getOpponentDeckMasterList() {
+export async function getOpponentDeckMasterList(format?: string) {
   const supabase = await requireAdmin();
-  const { data, error } = await supabase
+  let query = supabase
     .from("opponent_deck_master")
-    .select("*")
+    .select("*");
+
+  if (format) {
+    query = query.eq("format", format);
+  }
+
+  const { data, error } = await query
     .order("sort_order", { ascending: true })
     .order("name", { ascending: true });
 
@@ -46,7 +52,7 @@ export async function getOpponentDeckMasterList() {
   return data ?? [];
 }
 
-export async function addOpponentDeck(name: string) {
+export async function addOpponentDeck(name: string, format: string = "ND") {
   const supabase = await requireAdmin();
 
   const { data: maxOrder } = await supabase
@@ -61,6 +67,7 @@ export async function addOpponentDeck(name: string) {
   const { error } = await supabase.from("opponent_deck_master").insert({
     name: name.trim(),
     sort_order: nextOrder,
+    format,
   });
 
   if (error) throw new Error(error.message);

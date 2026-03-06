@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { createClient } from "@/lib/supabase/client";
 
-export async function getDecks() {
+export async function getDecks(format: string = "ND") {
   const supabase = createClient();
   const {
     data: { user },
@@ -13,13 +13,14 @@ export async function getDecks() {
     .select("*")
     .eq("user_id", user.id)
     .eq("is_archived", false)
+    .eq("format", format)
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: true });
 
   return data ?? [];
 }
 
-export async function createDeck(name: string) {
+export async function createDeck(name: string, format: string = "ND") {
   const supabase = createClient();
   const {
     data: { user },
@@ -28,7 +29,7 @@ export async function createDeck(name: string) {
 
   const { error } = await supabase
     .from("decks")
-    .insert({ user_id: user.id, name });
+    .insert({ user_id: user.id, name, format });
 
   if (error) throw new Error(error.message);
 }

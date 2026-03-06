@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { getDecks } from "@/lib/actions/deck-actions";
 import {
   getOpponentDeckSuggestions,
@@ -8,10 +8,12 @@ import {
 } from "@/lib/actions/battle-actions";
 import { getPendingVoteForUser } from "@/lib/actions/vote-actions";
 import { checkIsAdmin } from "@/lib/actions/admin-actions";
+import { useFormat } from "@/hooks/use-format";
 import { BattleRecordForm } from "@/components/battle/BattleRecordForm";
 import { BottomNav } from "@/components/layout/BottomNav";
 
 export default function BattlePage() {
+  const { format, setFormat } = useFormat();
   const [data, setData] = useState<{
     decks: Awaited<ReturnType<typeof getDecks>>;
     suggestions: string[];
@@ -20,17 +22,22 @@ export default function BattlePage() {
     isAdmin: boolean;
   } | null>(null);
 
-  useEffect(() => {
+  const loadData = useCallback(() => {
+    setData(null);
     Promise.all([
-      getDecks(),
-      getOpponentDeckSuggestions(),
-      getMiniStats(),
+      getDecks(format),
+      getOpponentDeckSuggestions(format),
+      getMiniStats(format),
       getPendingVoteForUser(),
       checkIsAdmin(),
     ]).then(([decks, suggestions, miniStats, pendingVote, isAdmin]) => {
       setData({ decks, suggestions, miniStats, pendingVote, isAdmin });
     });
-  }, []);
+  }, [format]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   if (!data) {
     return (
@@ -61,6 +68,8 @@ export default function BattlePage() {
           suggestions={data.suggestions}
           miniStats={data.miniStats}
           pendingVote={data.pendingVote}
+          format={format}
+          setFormat={setFormat}
         />
       </div>
       <BottomNav />

@@ -3,16 +3,20 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getEnvironmentShares } from "@/lib/actions/stats-actions";
+import { useFormat } from "@/hooks/use-format";
+import { FormatSelector } from "@/components/ui/FormatSelector";
 import { EnvironmentChart } from "@/components/stats/EnvironmentChart";
 import { BottomNav } from "@/components/layout/BottomNav";
 
 export default function EnvironmentPage() {
+  const { format, setFormat } = useFormat();
   const [data, setData] = useState<Awaited<ReturnType<typeof getEnvironmentShares>>>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getEnvironmentShares().then((d) => { setData(d); setLoading(false); });
-  }, []);
+    setLoading(true);
+    getEnvironmentShares(7, format).then((d) => { setData(d); setLoading(false); });
+  }, [format]);
 
   return (
     <>
@@ -25,6 +29,9 @@ export default function EnvironmentPage() {
           >
             ← 個人統計
           </Link>
+        </div>
+        <div className="mb-4">
+          <FormatSelector format={format} setFormat={setFormat} />
         </div>
         {loading ? (
           <p className="text-muted-foreground text-sm">読み込み中...</p>
