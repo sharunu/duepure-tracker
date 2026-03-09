@@ -22,11 +22,11 @@ type Battle = {
 };
 
 export default function BattlesPage() {
-  const { format, setFormat } = useFormat();
+  const { format, setFormat, ready } = useFormat();
   const [pageLoading, setPageLoading] = useState(true);
   const [battles, setBattles] = useState<Battle[]>([]);
   const [decks, setDecks] = useState<Deck[]>([]);
-  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [suggestions, setSuggestions] = useState<{ major: string[]; other: string[] }>({ major: [], other: [] });
   const [selectedDeck, setSelectedDeck] = useState<string | null>(null);
   const [battleCounts, setBattleCounts] = useState<Record<string, number>>({});
 
@@ -38,6 +38,7 @@ export default function BattlesPage() {
   const [endDate, setEndDate] = useState(() => new Date().toLocaleDateString("sv-SE"));
 
   const loadBattles = useCallback(() => {
+    if (!ready) return;
     Promise.all([
       getBattlesByDateRange(format, startDate, endDate),
       getDecks(format),
@@ -45,14 +46,15 @@ export default function BattlesPage() {
     ]).then(([battlesData, decksData, suggestionsData]) => {
       setBattles(battlesData as Battle[]);
       setDecks(decksData as Deck[]);
-      setSuggestions([...suggestionsData.major, ...suggestionsData.other]);
+      setSuggestions(suggestionsData);
       setPageLoading(false);
     });
-  }, [format, startDate, endDate]);
+  }, [format, startDate, endDate, ready]);
 
   const loadCounts = useCallback((year: number, month: number) => {
+    if (!ready) return;
     getDailyBattleCounts(format, year, month).then(setBattleCounts);
-  }, [format]);
+  }, [format, ready]);
 
   useEffect(() => {
     loadBattles();

@@ -19,7 +19,7 @@ type Battle = {
 type Props = {
   battles: Battle[];
   decks: Deck[];
-  suggestions: string[];
+  suggestions: { major: string[]; other: string[] };
   onRefresh: () => void;
 };
 

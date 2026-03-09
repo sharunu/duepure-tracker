@@ -10,6 +10,7 @@ export default function AccountPage() {
   const router = useRouter();
   const supabase = createClient();
 
+  const [pageLoading, setPageLoading] = useState(true);
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [nameMessage, setNameMessage] = useState("");
@@ -35,6 +36,7 @@ export default function AccountPage() {
       setDisplayName(name);
       setProvider(prov);
       setEmail(mail);
+      setPageLoading(false);
     };
     load();
   }, []);
@@ -124,6 +126,17 @@ export default function AccountPage() {
   const isSnsLogin = provider === "google" || provider === "twitter";
   const isGuest = provider === "anonymous" || provider === "unknown";
   const isEmailLogin = !isSnsLogin && !isGuest;
+
+  if (pageLoading) {
+    return (
+      <>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" />
+        </div>
+        <BottomNav />
+      </>
+    );
+  }
 
   return (
     <>

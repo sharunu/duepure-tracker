@@ -13,7 +13,7 @@ import { BattleRecordForm } from "@/components/battle/BattleRecordForm";
 import { BottomNav } from "@/components/layout/BottomNav";
 
 export default function BattlePage() {
-  const { format, setFormat } = useFormat();
+  const { format, setFormat, ready } = useFormat();
   const [data, setData] = useState<{
     decks: Awaited<ReturnType<typeof getDecks>>;
     suggestions: { major: string[]; other: string[] };
@@ -24,6 +24,7 @@ export default function BattlePage() {
   const [pageLoading, setPageLoading] = useState(true);
 
   const loadData = useCallback(() => {
+    if (!ready) return;
     Promise.all([
       getDecks(format),
       getOpponentDeckSuggestions(format),
@@ -34,13 +35,13 @@ export default function BattlePage() {
       setData({ decks, suggestions, miniStats, pendingVote, isAdmin });
       setPageLoading(false);
     });
-  }, [format]);
+  }, [format, ready]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
 
-  if (!data) {
+  if (!data || !ready) {
     return (
       <>
         <div className="min-h-screen pb-20 px-4 pt-6 max-w-lg mx-auto">
