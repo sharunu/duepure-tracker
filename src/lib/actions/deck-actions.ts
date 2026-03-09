@@ -27,11 +27,14 @@ export async function createDeck(name: string, format: string = "ND") {
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("decks")
-    .insert({ user_id: user.id, name, format });
+    .insert({ user_id: user.id, name, format })
+    .select()
+    .single();
 
   if (error) throw new Error(error.message);
+  return data;
 }
 
 export async function updateDeck(id: string, name: string) {

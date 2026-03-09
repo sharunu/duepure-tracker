@@ -111,6 +111,61 @@ function levenshteinDistance(a: string, b: string): number {
   return matrix[b.length][a.length];
 }
 
+export async function updateBattle(
+  id: string,
+  fields: {
+    opponentDeckName?: string;
+    result?: "win" | "loss";
+    turnOrder?: "first" | "second" | null;
+    myDeckId?: string;
+  }
+) {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  const updateData: Record<string, unknown> = {};
+  if (fields.result !== undefined) updateData.result = fields.result;
+  if (fields.turnOrder !== undefined) updateData.turn_order = fields.turnOrder;
+  if (fields.opponentDeckName !== undefined) {
+    updateData.opponent_deck_name = fields.opponentDeckName;
+    const { data: normResult } = await supabase
+      .from("normalization_results")
+      .select("canonical_name")
+      .eq("raw_name", fields.opponentDeckName)
+      .single();
+    updateData.opponent_deck_normalized = normResult?.canonical_name ?? null;
+  }
+
+  if (fields.myDeckId !== undefined) updateData.my_deck_id = fields.myDeckId;
+
+  const { error } = await supabase
+    .from("battles")
+    .update(updateData)
+    .eq("id", id)
+    .eq("user_id", user.id);
+
+  if (error) throw new Error(error.message);
+}
+
+export async function deleteBattle(id: string) {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  const { error } = await supabase
+    .from("battles")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", user.id);
+
+  if (error) throw new Error(error.message);
+}
+
 export async function getRecentBattles(limit = 50, format: string = "ND") {
   const supabase = createClient();
   const {

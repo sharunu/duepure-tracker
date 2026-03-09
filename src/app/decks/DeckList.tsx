@@ -5,6 +5,7 @@ import {
   createDeck,
   updateDeck,
   archiveDeck,
+  getDecks,
 } from "@/lib/actions/deck-actions";
 
 type Deck = {
@@ -24,10 +25,14 @@ export function DeckList({ initialDecks, format }: { initialDecks: Deck[]; forma
     if (!newName.trim()) return;
     setLoading(true);
     try {
-      await createDeck(newName.trim(), format);
+      const newDeck = await createDeck(newName.trim(), format);
       setNewName("");
-      // Refresh will come from revalidatePath
-      window.location.reload();
+      if (newDeck) {
+        setDecks((prev) => [...prev, newDeck]);
+      } else {
+        const updated = await getDecks(format);
+        setDecks(updated);
+      }
     } catch {
       // handle error
     } finally {
@@ -72,7 +77,9 @@ export function DeckList({ initialDecks, format }: { initialDecks: Deck[]; forma
           placeholder="デッキ名を入力"
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.nativeEvent.isComposing) handleCreate();
+          }}
           className="flex-1 rounded-lg bg-card border border-border px-4 py-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
         />
         <button
@@ -102,9 +109,9 @@ export function DeckList({ initialDecks, format }: { initialDecks: Deck[]; forma
                     type="text"
                     value={editName}
                     onChange={(e) => setEditName(e.target.value)}
-                    onKeyDown={(e) =>
-                      e.key === "Enter" && handleUpdate(deck.id)
-                    }
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.nativeEvent.isComposing) handleUpdate(deck.id);
+                    }}
                     className="flex-1 bg-transparent border-b border-primary text-sm focus:outline-none"
                     autoFocus
                   />

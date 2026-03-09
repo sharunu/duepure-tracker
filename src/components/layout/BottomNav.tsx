@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 const navItems = [
   { href: "/battle", label: "記録", icon: "+" },
   { href: "/decks", label: "デッキ", icon: "☰" },
+  { href: "/battles", label: "履歴", icon: "📋" },
   { href: "/stats", label: "統計", icon: "◉" },
 ];
 
