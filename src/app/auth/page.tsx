@@ -7,12 +7,14 @@ import { createClient } from "@/lib/supabase/client";
 
 export default function AuthPage() {
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [userName, setUserName] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [mode, setMode] = useState<"login" | "signup">("login");
 
   const supabase = createClient();
 
-  // ハッシュフラグメントからセッションを検出（implicit flowの場合）
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event) => {
@@ -33,20 +35,41 @@ export default function AuthPage() {
     });
   };
 
-  const signInWithEmail = async () => {
-    if (!email) return;
+  const signInWithPassword = async () => {
+    if (!email || !password) return;
     setLoading(true);
-    const { error } = await supabase.auth.signInWithOtp({
+    setMessage("");
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    setLoading(false);
+    if (error) {
+      setMessage(error.message);
+    } else {
+      window.location.href = "/battle";
+    }
+  };
+
+  const signUp = async () => {
+    if (!email || !password) return;
+    if (password.length < 8) {
+      setMessage("パスワードは8文字以上にしてください");
+      return;
+    }
+    setLoading(true);
+    setMessage("");
+    const { data, error } = await supabase.auth.signUp({
       email,
+      password,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        data: { name: userName || undefined },
       },
     });
     setLoading(false);
     if (error) {
       setMessage(error.message);
+    } else if (data.user?.identities?.length === 0) {
+      setMessage("このメールアドレスは既に登録されています");
     } else {
-      setMessage("メールを確認してください。ログインリンクを送信しました。");
+      window.location.href = "/battle";
     }
   };
 
@@ -58,6 +81,14 @@ export default function AuthPage() {
       setMessage(error.message);
     } else {
       window.location.href = "/battle";
+    }
+  };
+
+  const handleSubmit = () => {
+    if (mode === "login") {
+      signInWithPassword();
+    } else {
+      signUp();
     }
   };
 
@@ -100,15 +131,42 @@ export default function AuthPage() {
             placeholder="メールアドレス"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && signInWithEmail()}
+            className="w-full rounded-lg bg-card border border-border px-4 py-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+          />
+          {mode === "signup" && (
+            <input
+              type="text"
+              placeholder="ユーザー名（任意）"
+              value={userName}
+              onChange={(e) => setUserName(e.target.value)}
+              className="w-full rounded-lg bg-card border border-border px-4 py-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+          )}
+          <input
+            type="password"
+            placeholder="パスワード（8文字以上）"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.nativeEvent.isComposing) handleSubmit();
+            }}
             className="w-full rounded-lg bg-card border border-border px-4 py-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
           />
           <button
-            onClick={signInWithEmail}
-            disabled={loading || !email}
+            onClick={handleSubmit}
+            disabled={loading || !email || !password}
             className="w-full rounded-lg bg-primary text-primary-foreground px-4 py-3 text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
           >
-            メールでログイン
+            {mode === "login" ? "ログイン" : "アカウント作成"}
+          </button>
+          <button
+            onClick={() => {
+              setMode(mode === "login" ? "signup" : "login");
+              setMessage("");
+            }}
+            className="w-full text-center text-xs text-primary hover:underline"
+          >
+            {mode === "login" ? "アカウント新規作成はこちら" : "ログインに戻る"}
           </button>
         </div>
 
