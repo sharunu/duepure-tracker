@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getDecks } from "@/lib/actions/deck-actions";
+import { getOpponentDeckSuggestions } from "@/lib/actions/battle-actions";
 import { useFormat } from "@/hooks/use-format";
 import { FormatSelector } from "@/components/ui/FormatSelector";
 import { DeckList } from "./DeckList";
@@ -10,11 +11,18 @@ import { BottomNav } from "@/components/layout/BottomNav";
 export default function DecksPage() {
   const { format, setFormat } = useFormat();
   const [decks, setDecks] = useState<Awaited<ReturnType<typeof getDecks>>>([]);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setLoading(true);
-    getDecks(format).then((d) => { setDecks(d); setLoading(false); });
+    Promise.all([getDecks(format), getOpponentDeckSuggestions(format)]).then(
+      ([d, s]) => {
+        setDecks(d);
+        setSuggestions([...s.major, ...s.other]);
+        setLoading(false);
+      }
+    );
   }, [format]);
 
   return (
@@ -27,7 +35,7 @@ export default function DecksPage() {
         {loading ? (
           <p className="text-muted-foreground text-sm">読み込み中...</p>
         ) : (
-          <DeckList initialDecks={decks} format={format} />
+          <DeckList initialDecks={decks} format={format} suggestions={suggestions} />
         )}
       </div>
       <BottomNav />
