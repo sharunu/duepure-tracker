@@ -13,11 +13,12 @@ type Props = {
     losses: number;
     total: number;
     streak: number;
-    trend: { index: number; winRate: number }[];
+    trend?: { index: number; winRate: number }[];
   };
+  onEditInterval?: () => void;
 };
 
-export function MiniStats({ stats }: Props) {
+export function MiniStats({ stats, onEditInterval }: Props) {
   const winRate = stats.total > 0 ? Math.round((stats.wins / stats.total) * 100) : 0;
 
   return (
@@ -28,15 +29,24 @@ export function MiniStats({ stats }: Props) {
           <span className="text-sm text-muted-foreground">
             {stats.wins}Win {stats.losses}Lose
           </span>
+          {stats.streak > 0 && (
+            <span className="text-sm font-medium text-success">
+              {stats.streak}連勝中
+            </span>
+          )}
         </div>
-        {stats.streak > 0 && (
-          <span className="text-sm font-medium text-success">
-            {stats.streak}連勝中
-          </span>
+        {onEditInterval && (
+          <button
+            type="button"
+            onClick={onEditInterval}
+            className="text-xs text-muted-foreground hover:text-foreground border border-border rounded px-2 py-1 transition-colors"
+          >
+            計測区間編集
+          </button>
         )}
       </div>
 
-      {stats.trend.length > 1 && (
+      {stats.trend && stats.trend.length > 1 && (
         <div className="h-12">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={stats.trend}>

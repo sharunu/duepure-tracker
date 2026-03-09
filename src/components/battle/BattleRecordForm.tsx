@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { recordBattle, getMiniStats } from "@/lib/actions/battle-actions";
+import { recordBattle, getMiniStats, getAllBattles } from "@/lib/actions/battle-actions";
 import { OpponentDeckSelector } from "./OpponentDeckSelector";
 import { NormalizationBanner } from "./NormalizationBanner";
+import { BattleIntervalModal } from "./BattleIntervalModal";
 import { MiniStats } from "../stats/MiniStats";
 import { FormatSelector } from "../ui/FormatSelector";
 import type { Format } from "@/hooks/use-format";
@@ -18,7 +19,6 @@ type MiniStatsData = {
   losses: number;
   total: number;
   streak: number;
-  trend: { index: number; winRate: number }[];
 };
 
 type PendingVote = {
@@ -28,6 +28,14 @@ type PendingVote = {
   same_count: number;
   diff_count: number;
 } | null;
+
+type BattleForModal = {
+  id: string;
+  opponent_deck_name: string;
+  result: string;
+  fought_at: string;
+  decks: { name: string } | null;
+};
 
 type Props = {
   decks: Deck[];
@@ -53,10 +61,31 @@ export function BattleRecordForm({
   const [lastResult, setLastResult] = useState<"win" | "loss" | null>(null);
   const [miniStats, setMiniStats] = useState<MiniStatsData | null>(initialMiniStats);
 
-  // Sync miniStats when props change (e.g. format switch)
+  // Measure interval state
+  const [measureSince, setMeasureSince] = useState<string | null>(null);
+  const [showIntervalModal, setShowIntervalModal] = useState(false);
+  const [modalBattles, setModalBattles] = useState<BattleForModal[]>([]);
+
+  // Load measureSince from localStorage on mount and format change
   useEffect(() => {
-    setMiniStats(initialMiniStats);
-  }, [initialMiniStats]);
+    const saved = localStorage.getItem(`measureSince_${format}`);
+    setMeasureSince(saved);
+  }, [format]);
+
+  // When measureSince changes, refresh stats
+  useEffect(() => {
+    if (measureSince !== null) {
+      getMiniStats(format, measureSince).then(setMiniStats);
+    }
+  }, [measureSince, format]);
+
+  // Sync miniStats when props change (e.g. format switch) - only if no custom interval
+  useEffect(() => {
+    const saved = localStorage.getItem(`measureSince_${format}`);
+    if (!saved) {
+      setMiniStats(initialMiniStats);
+    }
+  }, [initialMiniStats, format]);
 
   // Restore selected deck from localStorage (per format)
   useEffect(() => {
@@ -94,12 +123,30 @@ export function BattleRecordForm({
       // Flash feedback then reset
       setTimeout(() => setLastResult(null), 1500);
       // Refresh mini stats immediately
-      const updatedStats = await getMiniStats(format);
+      const updatedStats = await getMiniStats(format, measureSince ?? undefined);
       setMiniStats(updatedStats);
     } catch {
       // handle error
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleOpenIntervalModal = async () => {
+    const battles = await getAllBattles(format);
+    setModalBattles(battles);
+    setShowIntervalModal(true);
+  };
+
+  const handleSelectInterval = (timestamp: string | null) => {
+    if (timestamp === null) {
+      localStorage.removeItem(`measureSince_${format}`);
+      setMeasureSince(null);
+      // Reset to all battles
+      getMiniStats(format).then(setMiniStats);
+    } else {
+      localStorage.setItem(`measureSince_${format}`, timestamp);
+      setMeasureSince(timestamp);
     }
   };
 
@@ -122,8 +169,16 @@ export function BattleRecordForm({
         </div>
       ) : (
         <>
+          {/* Mini stats */}
+          {/* Always show MiniStats - use default 0 values when null */}
+          <MiniStats
+            stats={miniStats ?? { wins: 0, losses: 0, total: 0, streak: 0 }}
+            onEditInterval={handleOpenIntervalModal}
+          />
+
           {/* Deck selector */}
           <div>
+            <p className="text-sm text-muted-foreground mb-1">使用デッキ</p>
             <select
               value={selectedDeckId}
               onChange={(e) => setSelectedDeckId(e.target.value)}
@@ -136,9 +191,6 @@ export function BattleRecordForm({
               ))}
             </select>
           </div>
-
-          {/* Mini stats */}
-          {miniStats && <MiniStats stats={miniStats} />}
 
           {/* Normalization vote */}
           {pendingVote && <NormalizationBanner vote={pendingVote} />}
@@ -198,6 +250,15 @@ export function BattleRecordForm({
               LOSS
             </button>
           </div>
+
+          {/* Interval modal */}
+          <BattleIntervalModal
+            open={showIntervalModal}
+            onClose={() => setShowIntervalModal(false)}
+            battles={modalBattles}
+            onSelect={handleSelectInterval}
+            currentTimestamp={measureSince}
+          />
         </>
       )}
     </div>

@@ -192,20 +192,25 @@ export async function getOpponentDeckSuggestions(format: string = "ND") {
   return (data as { deck_name: string }[] | null)?.map((d) => d.deck_name) ?? [];
 }
 
-export async function getMiniStats(format: string = "ND") {
+export async function getMiniStats(format: string = "ND", sinceTimestamp?: string) {
   const supabase = createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const { data: battles } = await supabase
+  let query = supabase
     .from("battles")
     .select("result, fought_at")
     .eq("user_id", user.id)
     .eq("format", format)
-    .order("fought_at", { ascending: false })
-    .limit(50);
+    .order("fought_at", { ascending: false });
+
+  if (sinceTimestamp) {
+    query = query.gte("fought_at", sinceTimestamp);
+  }
+
+  const { data: battles } = await query;
 
   if (!battles || battles.length === 0) return null;
 
@@ -219,16 +224,22 @@ export async function getMiniStats(format: string = "ND") {
     else break;
   }
 
-  // Win rate trend (groups of 5)
-  const trend: { index: number; winRate: number }[] = [];
-  for (let i = 0; i < Math.min(battles.length, 50); i += 5) {
-    const chunk = battles.slice(i, i + 5);
-    const chunkWins = chunk.filter((b) => b.result === "win").length;
-    trend.unshift({
-      index: trend.length,
-      winRate: Math.round((chunkWins / chunk.length) * 100),
-    });
-  }
+  return { wins, losses: total - wins, total, streak };
+}
 
-  return { wins, losses: total - wins, total, streak, trend };
+export async function getAllBattles(format: string = "ND") {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data } = await supabase
+    .from("battles")
+    .select("id, opponent_deck_name, result, fought_at, decks(name)")
+    .eq("user_id", user.id)
+    .eq("format", format)
+    .order("fought_at", { ascending: false });
+
+  return data ?? [];
 }

@@ -20,7 +20,7 @@ export default function DecksPage() {
   return (
     <>
       <div className="min-h-screen pb-20 px-4 pt-6 max-w-lg mx-auto">
-        <h1 className="text-xl font-bold mb-4">デッキ管理</h1>
+        <h1 className="text-xl font-bold mb-4">使用デッキ管理</h1>
         <div className="mb-4">
           <FormatSelector format={format} setFormat={setFormat} />
         </div>
