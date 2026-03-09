@@ -21,9 +21,9 @@ export default function BattlePage() {
     pendingVote: Awaited<ReturnType<typeof getPendingVoteForUser>>;
     isAdmin: boolean;
   } | null>(null);
+  const [pageLoading, setPageLoading] = useState(true);
 
   const loadData = useCallback(() => {
-    setData(null);
     Promise.all([
       getDecks(format),
       getOpponentDeckSuggestions(format),
@@ -32,6 +32,7 @@ export default function BattlePage() {
       checkIsAdmin(),
     ]).then(([decks, suggestions, miniStats, pendingVote, isAdmin]) => {
       setData({ decks, suggestions, miniStats, pendingVote, isAdmin });
+      setPageLoading(false);
     });
   }, [format]);
 
@@ -43,7 +44,7 @@ export default function BattlePage() {
     return (
       <>
         <div className="min-h-screen pb-20 px-4 pt-6 max-w-lg mx-auto">
-          <p className="text-muted-foreground text-sm">読み込み中...</p>
+          <div className="flex justify-center py-12"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>
         </div>
         <BottomNav />
       </>

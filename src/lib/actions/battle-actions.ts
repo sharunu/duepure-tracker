@@ -247,3 +247,42 @@ export async function getAllBattles(format: string = "ND") {
 
   return data ?? [];
 }
+
+export async function getBattlesByDateRange(format: string, startDate: string, endDate: string) {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+  const endPlusOne = new Date(endDate);
+  endPlusOne.setDate(endPlusOne.getDate() + 1);
+  const { data } = await supabase
+    .from("battles")
+    .select("*, decks(name)")
+    .eq("user_id", user.id)
+    .eq("format", format)
+    .gte("fought_at", startDate)
+    .lt("fought_at", endPlusOne.toISOString().split("T")[0])
+    .order("fought_at", { ascending: false });
+  return data ?? [];
+}
+
+export async function getDailyBattleCounts(format: string, year: number, month: number) {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return {};
+  const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
+  const nextMonth = month === 12 ? new Date(year + 1, 0, 1) : new Date(year, month, 1);
+  const endDate = nextMonth.toISOString().split("T")[0];
+  const { data } = await supabase
+    .from("battles")
+    .select("fought_at")
+    .eq("user_id", user.id)
+    .eq("format", format)
+    .gte("fought_at", startDate)
+    .lt("fought_at", endDate);
+  const counts: Record<string, number> = {};
+  for (const b of (data ?? [])) {
+    const day = new Date(b.fought_at).toLocaleDateString("sv-SE");
+    counts[day] = (counts[day] || 0) + 1;
+  }
+  return counts;
+}
