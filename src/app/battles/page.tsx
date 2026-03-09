@@ -25,7 +25,7 @@ export default function BattlesPage() {
     ]).then(([battlesData, decksData, suggestionsData]) => {
       setBattles(battlesData);
       setDecks(decksData as Deck[]);
-      setSuggestions(suggestionsData);
+      setSuggestions([...suggestionsData.major, ...suggestionsData.other]);
     });
   }, [format]);
 

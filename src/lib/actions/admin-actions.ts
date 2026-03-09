@@ -52,7 +52,7 @@ export async function getOpponentDeckMasterList(format?: string) {
   return data ?? [];
 }
 
-export async function addOpponentDeck(name: string, format: string = "ND") {
+export async function addOpponentDeck(name: string, format: string = "ND", category: string = "major") {
   const supabase = await requireAdmin();
 
   const { data: maxOrder } = await supabase
@@ -68,6 +68,7 @@ export async function addOpponentDeck(name: string, format: string = "ND") {
     name: name.trim(),
     sort_order: nextOrder,
     format,
+    category,
   });
 
   if (error) throw new Error(error.message);
@@ -75,7 +76,7 @@ export async function addOpponentDeck(name: string, format: string = "ND") {
 
 export async function updateOpponentDeck(
   id: string,
-  updates: { name?: string; is_active?: boolean }
+  updates: { name?: string; is_active?: boolean; category?: string }
 ) {
   const supabase = await requireAdmin();
   const { error } = await supabase

@@ -66,7 +66,8 @@ export function EditBattleModal({ battle, decks, suggestions, onSave, onClose }:
         {/* Opponent deck selector */}
         <div className="space-y-1">
           <OpponentDeckSelector
-            suggestions={suggestions}
+            majorSuggestions={suggestions}
+            otherSuggestions={[]}
             value={opponentDeckName}
             onChange={setOpponentDeckName}
           />

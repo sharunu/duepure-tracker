@@ -189,7 +189,11 @@ export async function getOpponentDeckSuggestions(format: string = "ND") {
   const { data } = await supabase.rpc("get_opponent_deck_suggestions", {
     p_format: format,
   });
-  return (data as { deck_name: string }[] | null)?.map((d) => d.deck_name) ?? [];
+  const rows = (data as { deck_name: string; deck_category: string }[] | null) ?? [];
+  return {
+    major: rows.filter(r => r.deck_category === "major").map(r => r.deck_name),
+    other: rows.filter(r => r.deck_category === "other").map(r => r.deck_name),
+  };
 }
 
 export async function getMiniStats(format: string = "ND", sinceTimestamp?: string) {

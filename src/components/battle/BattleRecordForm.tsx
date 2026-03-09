@@ -39,7 +39,7 @@ type BattleForModal = {
 
 type Props = {
   decks: Deck[];
-  suggestions: string[];
+  suggestions: { major: string[]; other: string[] };
   miniStats: MiniStatsData | null;
   pendingVote: PendingVote;
   format: Format;
@@ -197,7 +197,8 @@ export function BattleRecordForm({
 
           {/* Opponent deck */}
           <OpponentDeckSelector
-            suggestions={suggestions}
+            majorSuggestions={suggestions.major}
+            otherSuggestions={suggestions.other}
             value={opponentDeck}
             onChange={setOpponentDeck}
           />
