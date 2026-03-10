@@ -65,30 +65,38 @@ export default function StatsPage() {
             環境統計 →
           </Link>
         </div>
-        <FormatSelector format={format} setFormat={setFormat} />
-        {loading ? (
+        {!ready ? (
           <div className="flex justify-center py-12">
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
           </div>
         ) : (
           <>
-            <DateRangeCalendar
-              startDate={startDate}
-              endDate={endDate}
-              onRangeChange={handleRangeChange}
-              battleCounts={battleCounts}
-              onMonthChange={loadCounts}
-            />
+            <FormatSelector format={format} setFormat={setFormat} />
+            {loading ? (
+              <div className="flex justify-center py-12">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+              </div>
+            ) : (
+              <>
+                <DateRangeCalendar
+                  startDate={startDate}
+                  endDate={endDate}
+                  onRangeChange={handleRangeChange}
+                  battleCounts={battleCounts}
+                  onMonthChange={loadCounts}
+                />
 
-            <div>
-              <h2 className="text-base font-bold mb-2">使用デッキ別</h2>
-              <MyDeckStatsSection stats={stats.myDeckStats} />
-            </div>
+                <div>
+                  <h2 className="text-base font-bold mb-2">使用デッキ別</h2>
+                  <MyDeckStatsSection stats={stats.myDeckStats} />
+                </div>
 
-            <div>
-              <h2 className="text-base font-bold mb-2">対面デッキ別</h2>
-              <OpponentDeckStatsSection stats={stats.opponentDeckStats} />
-            </div>
+                <div>
+                  <h2 className="text-base font-bold mb-2">対面デッキ別</h2>
+                  <OpponentDeckStatsSection stats={stats.opponentDeckStats} />
+                </div>
+              </>
+            )}
           </>
         )}
       </div>

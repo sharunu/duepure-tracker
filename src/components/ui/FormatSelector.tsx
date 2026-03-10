@@ -10,7 +10,7 @@ type Props = {
 export function FormatSelector({ format, setFormat }: Props) {
   return (
     <div className="flex gap-2">
-      {(["AD", "ND"] as const).map((f) => (
+      {(["ND", "AD"] as const).map((f) => (
         <button
           key={f}
           type="button"

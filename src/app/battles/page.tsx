@@ -93,33 +93,41 @@ export default function BattlesPage() {
     <>
       <div className="min-h-screen pb-20 px-4 pt-6 max-w-lg mx-auto space-y-4">
         <h1 className="text-lg font-bold">対戦履歴</h1>
-        <FormatSelector format={format} setFormat={setFormat} />
-        {pageLoading ? (
+        {!ready ? (
           <div className="flex justify-center py-12">
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
           </div>
         ) : (
           <>
-            <DateRangeCalendar
-              startDate={startDate}
-              endDate={endDate}
-              onRangeChange={handleRangeChange}
-              battleCounts={battleCounts}
-              onMonthChange={loadCounts}
-            />
-            {deckNames.length > 0 && (
-              <DeckFilter
-                deckNames={deckNames}
-                selectedDeck={selectedDeck}
-                onSelect={setSelectedDeck}
-              />
+            <FormatSelector format={format} setFormat={setFormat} />
+            {pageLoading ? (
+              <div className="flex justify-center py-12">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+              </div>
+            ) : (
+              <>
+                <DateRangeCalendar
+                  startDate={startDate}
+                  endDate={endDate}
+                  onRangeChange={handleRangeChange}
+                  battleCounts={battleCounts}
+                  onMonthChange={loadCounts}
+                />
+                {deckNames.length > 0 && (
+                  <DeckFilter
+                    deckNames={deckNames}
+                    selectedDeck={selectedDeck}
+                    onSelect={setSelectedDeck}
+                  />
+                )}
+                <BattleHistoryList
+                  battles={filteredBattles}
+                  decks={decks}
+                  suggestions={suggestions}
+                  onRefresh={loadBattles}
+                />
+              </>
             )}
-            <BattleHistoryList
-              battles={filteredBattles}
-              decks={decks}
-              suggestions={suggestions}
-              onRefresh={loadBattles}
-            />
           </>
         )}
       </div>

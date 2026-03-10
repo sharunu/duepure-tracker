@@ -68,7 +68,6 @@ export function BattleRecordForm({
 
   // Load measureSince from localStorage on mount and format change
   useEffect(() => {
-    setMiniStats(null);
     const saved = localStorage.getItem(`measureSince_${format}`);
     setMeasureSince(saved);
   }, [format]);
@@ -82,7 +81,6 @@ export function BattleRecordForm({
 
   // Sync miniStats when props change (e.g. format switch) - only if no custom interval
   useEffect(() => {
-    setMiniStats(null);
     const saved = localStorage.getItem(`measureSince_${format}`);
     if (!saved) {
       setMiniStats(initialMiniStats);
@@ -91,7 +89,6 @@ export function BattleRecordForm({
 
   // Restore selected deck from localStorage (per format)
   useEffect(() => {
-    setMiniStats(null);
     const saved = localStorage.getItem(`selectedDeckId_${format}`);
     if (saved && decks.some((d) => d.id === saved)) {
       setSelectedDeckId(saved);

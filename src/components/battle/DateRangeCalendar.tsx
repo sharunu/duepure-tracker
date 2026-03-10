@@ -139,9 +139,16 @@ export function DateRangeCalendar({ startDate, endDate, onRangeChange, battleCou
         </div>
       </div>
 
-      {/* Collapsible calendar */}
+      {/* Calendar modal */}
       {calendarOpen && (
-        <div className="rounded-lg border border-border bg-card p-3">
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50"
+          onClick={() => setCalendarOpen(false)}
+        >
+          <div
+            className="bg-card rounded-xl border border-border p-4 w-[90%] max-w-md"
+            onClick={(e) => e.stopPropagation()}
+          >
           <p className="text-xs text-center text-muted-foreground mb-2">
             {editingField === "start" ? "開始日を選択" : "終了日を選択"}
           </p>
@@ -198,6 +205,7 @@ export function DateRangeCalendar({ startDate, endDate, onRangeChange, battleCou
                 </button>
               );
             })}
+          </div>
           </div>
         </div>
       )}

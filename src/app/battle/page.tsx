@@ -28,7 +28,7 @@ export default function BattlePage() {
     Promise.all([
       getDecks(format),
       getOpponentDeckSuggestions(format),
-      getMiniStats(format),
+      getMiniStats(format, localStorage.getItem(`measureSince_${format}`) ?? undefined),
       getPendingVoteForUser(),
       checkIsAdmin(),
     ]).then(([decks, suggestions, miniStats, pendingVote, isAdmin]) => {
