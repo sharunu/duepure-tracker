@@ -9,12 +9,13 @@ import { DeckList } from "./DeckList";
 import { BottomNav } from "@/components/layout/BottomNav";
 
 export default function DecksPage() {
-  const { format, setFormat } = useFormat();
+  const { format, setFormat, ready } = useFormat();
   const [decks, setDecks] = useState<Awaited<ReturnType<typeof getDecks>>>([]);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!ready) return;
     setLoading(true);
     Promise.all([getDecks(format), getOpponentDeckSuggestions(format)]).then(
       ([d, s]) => {
@@ -23,17 +24,19 @@ export default function DecksPage() {
         setLoading(false);
       }
     );
-  }, [format]);
+  }, [format, ready]);
 
   return (
     <>
       <div className="min-h-screen pb-20 px-4 pt-6 max-w-lg mx-auto">
         <h1 className="text-xl font-bold mb-4">使用デッキ管理</h1>
-        <div className="mb-4">
+        <div className={`mb-4${!ready ? " invisible" : ""}`}>
           <FormatSelector format={format} setFormat={setFormat} />
         </div>
-        {loading ? (
-          <p className="text-muted-foreground text-sm">読み込み中...</p>
+        {(!ready || loading) ? (
+          <div className="flex justify-center py-12">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          </div>
         ) : (
           <DeckList initialDecks={decks} format={format} suggestions={suggestions} />
         )}
