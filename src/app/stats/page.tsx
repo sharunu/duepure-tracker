@@ -84,7 +84,7 @@ export default function StatsPage() {
 
             <div>
               <h2 className="text-base font-bold mb-2">使用デッキ別</h2>
-              <MyDeckStatsSection stats={stats.myDeckStats} />
+              <MyDeckStatsSection stats={stats.myDeckStats} startDate={startDate} endDate={endDate} />
             </div>
 
             <div>

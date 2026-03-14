@@ -9,9 +9,11 @@ import { MiniStats } from "../stats/MiniStats";
 import { FormatSelector } from "../ui/FormatSelector";
 import type { Format } from "@/hooks/use-format";
 
+type Tuning = { id: string; name: string; sort_order: number };
 type Deck = {
   id: string;
   name: string;
+  deck_tunings?: Tuning[];
 };
 
 type MiniStatsData = {
@@ -46,6 +48,11 @@ type Props = {
   setFormat: (f: Format) => void;
 };
 
+function parseDeckSelection(value: string): { deckId: string; tuningId: string | null } {
+  const parts = value.split(":");
+  return { deckId: parts[0], tuningId: parts[1] ?? null };
+}
+
 export function BattleRecordForm({
   decks,
   suggestions,
@@ -54,7 +61,7 @@ export function BattleRecordForm({
   format,
   setFormat,
 }: Props) {
-  const [selectedDeckId, setSelectedDeckId] = useState<string>("");
+  const [selectedValue, setSelectedValue] = useState<string>("");
   const [opponentDeck, setOpponentDeck] = useState("");
   const [turnOrder, setTurnOrder] = useState<"first" | "second" | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -89,33 +96,48 @@ export function BattleRecordForm({
 
   // Restore selected deck from localStorage (per format)
   useEffect(() => {
-    const saved = localStorage.getItem(`selectedDeckId_${format}`);
-    if (saved && decks.some((d) => d.id === saved)) {
-      setSelectedDeckId(saved);
-    } else if (decks.length > 0) {
-      setSelectedDeckId(decks[0].id);
+    const saved = localStorage.getItem(`selectedDeckSelection_${format}`);
+    if (saved) {
+      // Validate that this selection still exists
+      const { deckId, tuningId } = parseDeckSelection(saved);
+      const deck = decks.find(d => d.id === deckId);
+      if (deck) {
+        if (!tuningId || deck.deck_tunings?.some(t => t.id === tuningId)) {
+          setSelectedValue(saved);
+          return;
+        }
+        // Tuning no longer exists, fall back to deck only
+        setSelectedValue(deckId);
+        return;
+      }
+    }
+    // Fallback: pick first deck
+    if (decks.length > 0) {
+      setSelectedValue(decks[0].id);
     } else {
-      setSelectedDeckId("");
+      setSelectedValue("");
     }
   }, [decks, format]);
 
-  // Save selected deck to localStorage (per format)
+  // Save selected value to localStorage (per format)
   useEffect(() => {
-    if (selectedDeckId) {
-      localStorage.setItem(`selectedDeckId_${format}`, selectedDeckId);
+    if (selectedValue) {
+      localStorage.setItem(`selectedDeckSelection_${format}`, selectedValue);
     }
-  }, [selectedDeckId, format]);
+  }, [selectedValue, format]);
 
   const handleSubmit = async (result: "win" | "loss") => {
-    if (!selectedDeckId || !opponentDeck.trim()) return;
+    const { deckId, tuningId } = parseDeckSelection(selectedValue);
+    if (!deckId || !opponentDeck.trim()) return;
     setSubmitting(true);
     try {
       await recordBattle({
-        myDeckId: selectedDeckId,
+        myDeckId: deckId,
         opponentDeckName: opponentDeck.trim(),
         result,
         turnOrder,
         format,
+        tuningId,
       });
       setLastResult(result);
       setOpponentDeck("");
@@ -150,6 +172,20 @@ export function BattleRecordForm({
     }
   };
 
+  // Build options for the composite deck+tuning select
+  const deckOptions: { value: string; label: string }[] = [];
+  for (const deck of decks) {
+    const tunings = deck.deck_tunings ?? [];
+    if (tunings.length === 0) {
+      deckOptions.push({ value: deck.id, label: deck.name });
+    } else {
+      deckOptions.push({ value: deck.id, label: `${deck.name}（指定なし）` });
+      for (const t of tunings) {
+        deckOptions.push({ value: `${deck.id}:${t.id}`, label: `${deck.name} / ${t.name}` });
+      }
+    }
+  }
+
   return (
     <div className="space-y-4">
       {/* Format selector */}
@@ -170,7 +206,6 @@ export function BattleRecordForm({
       ) : (
         <>
           {/* Mini stats */}
-          {/* Always show MiniStats - use default 0 values when null */}
           <MiniStats
             stats={miniStats ?? { wins: 0, losses: 0, total: 0, streak: 0 }}
             onEditInterval={handleOpenIntervalModal}
@@ -180,13 +215,13 @@ export function BattleRecordForm({
           <div>
             <p className="text-sm text-muted-foreground mb-1">使用デッキ</p>
             <select
-              value={selectedDeckId}
-              onChange={(e) => setSelectedDeckId(e.target.value)}
+              value={selectedValue}
+              onChange={(e) => setSelectedValue(e.target.value)}
               className="w-full rounded-lg bg-card border border-border px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary appearance-none"
             >
-              {decks.map((deck) => (
-                <option key={deck.id} value={deck.id}>
-                  {deck.name}
+              {deckOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
                 </option>
               ))}
             </select>

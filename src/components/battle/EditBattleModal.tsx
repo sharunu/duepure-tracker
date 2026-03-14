@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { OpponentDeckSelector } from "./OpponentDeckSelector";
 
-type Deck = { id: string; name: string };
+type Tuning = { id: string; name: string; sort_order: number };
+type Deck = { id: string; name: string; deck_tunings?: Tuning[] };
 
 type Battle = {
   id: string;
@@ -11,6 +12,7 @@ type Battle = {
   opponent_deck_name: string;
   result: "win" | "loss";
   turn_order: "first" | "second" | null;
+  tuning_id?: string | null;
 };
 
 type Props = {
@@ -22,21 +24,46 @@ type Props = {
     result: "win" | "loss";
     turnOrder: "first" | "second" | null;
     myDeckId: string;
+    tuningId?: string | null;
   }) => Promise<void>;
   onClose: () => void;
 };
 
+function parseDeckSelection(value: string): { deckId: string; tuningId: string | null } {
+  const parts = value.split(":");
+  return { deckId: parts[0], tuningId: parts[1] ?? null };
+}
+
 export function EditBattleModal({ battle, decks, suggestions, onSave, onClose }: Props) {
-  const [myDeckId, setMyDeckId] = useState(battle.my_deck_id);
+  // Build initial composite value
+  const initialValue = battle.tuning_id
+    ? `${battle.my_deck_id}:${battle.tuning_id}`
+    : battle.my_deck_id;
+  const [selectedValue, setSelectedValue] = useState(initialValue);
   const [opponentDeckName, setOpponentDeckName] = useState(battle.opponent_deck_name);
   const [result, setResult] = useState<"win" | "loss">(battle.result);
   const [turnOrder, setTurnOrder] = useState<"first" | "second" | null>(battle.turn_order);
   const [saving, setSaving] = useState(false);
 
+  // Build options
+  const deckOptions: { value: string; label: string }[] = [];
+  for (const deck of decks) {
+    const tunings = deck.deck_tunings ?? [];
+    if (tunings.length === 0) {
+      deckOptions.push({ value: deck.id, label: deck.name });
+    } else {
+      deckOptions.push({ value: deck.id, label: `${deck.name}（指定なし）` });
+      for (const t of tunings) {
+        deckOptions.push({ value: `${deck.id}:${t.id}`, label: `${deck.name} / ${t.name}` });
+      }
+    }
+  }
+
   const handleSave = async () => {
     setSaving(true);
     try {
-      await onSave({ opponentDeckName: opponentDeckName.trim(), result, turnOrder, myDeckId });
+      const { deckId, tuningId } = parseDeckSelection(selectedValue);
+      await onSave({ opponentDeckName: opponentDeckName.trim(), result, turnOrder, myDeckId: deckId, tuningId });
     } finally {
       setSaving(false);
     }
@@ -51,13 +78,13 @@ export function EditBattleModal({ battle, decks, suggestions, onSave, onClose }:
         <div className="space-y-1">
           <label className="text-sm text-muted-foreground">自デッキ</label>
           <select
-            value={myDeckId}
-            onChange={(e) => setMyDeckId(e.target.value)}
+            value={selectedValue}
+            onChange={(e) => setSelectedValue(e.target.value)}
             className="w-full rounded-lg bg-background border border-border px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary appearance-none"
           >
-            {decks.map((deck) => (
-              <option key={deck.id} value={deck.id}>
-                {deck.name}
+            {deckOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
               </option>
             ))}
           </select>

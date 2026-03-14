@@ -4,7 +4,8 @@ import { useState } from "react";
 import { updateBattle, deleteBattle } from "@/lib/actions/battle-actions";
 import { EditBattleModal } from "./EditBattleModal";
 
-type Deck = { id: string; name: string };
+type Tuning = { id: string; name: string; sort_order: number };
+type Deck = { id: string; name: string; deck_tunings?: Tuning[] };
 
 type Battle = {
   id: string;
@@ -13,7 +14,9 @@ type Battle = {
   result: "win" | "loss";
   turn_order: "first" | "second" | null;
   fought_at: string;
+  tuning_id: string | null;
   decks: { name: string } | null;
+  deck_tunings: { name: string } | null;
 };
 
 type Props = {
@@ -54,6 +57,7 @@ export function BattleHistoryList({ battles, decks, suggestions, onRefresh }: Pr
     result: "win" | "loss";
     turnOrder: "first" | "second" | null;
     myDeckId: string;
+    tuningId?: string | null;
   }) => {
     if (!editingBattle) return;
     await updateBattle(editingBattle.id, fields);
@@ -64,53 +68,59 @@ export function BattleHistoryList({ battles, decks, suggestions, onRefresh }: Pr
   return (
     <>
       <div className="space-y-2">
-        {battles.map((b) => (
-          <div
-            key={b.id}
-            className="relative rounded-lg border border-border bg-card p-3"
-          >
-            {/* Edit/Delete buttons */}
-            <div className="absolute top-2 right-2 flex gap-1">
-              <button
-                onClick={() => setEditingBattle(b)}
-                className="text-xs text-muted-foreground hover:text-primary px-1.5 py-0.5"
-              >
-                編集
-              </button>
-              <button
-                onClick={() => handleDelete(b.id)}
-                className="text-xs text-muted-foreground hover:text-destructive px-1.5 py-0.5"
-              >
-                削除
-              </button>
-            </div>
+        {battles.map((b) => {
+          const deckDisplay = b.decks?.name ?? "?";
+          const tuningDisplay = b.deck_tunings?.name;
+          const fullDeckName = tuningDisplay ? `${deckDisplay} / ${tuningDisplay}` : deckDisplay;
 
-            <div className="flex items-center gap-2 pr-16">
-              {/* Result badge */}
-              <span
-                className={`inline-block rounded px-2 py-0.5 text-xs font-bold text-white ${
-                  b.result === "win" ? "bg-success" : "bg-destructive"
-                }`}
-              >
-                {b.result === "win" ? "Win" : "Lose"}
-              </span>
+          return (
+            <div
+              key={b.id}
+              className="relative rounded-lg border border-border bg-card p-3"
+            >
+              {/* Edit/Delete buttons */}
+              <div className="absolute top-2 right-2 flex gap-1">
+                <button
+                  onClick={() => setEditingBattle(b)}
+                  className="text-xs text-muted-foreground hover:text-primary px-1.5 py-0.5"
+                >
+                  編集
+                </button>
+                <button
+                  onClick={() => handleDelete(b.id)}
+                  className="text-xs text-muted-foreground hover:text-destructive px-1.5 py-0.5"
+                >
+                  削除
+                </button>
+              </div>
 
-              {/* Deck names */}
-              <span className="text-sm font-medium truncate">
-                {b.decks?.name ?? "?"}
-              </span>
-              <span className="text-xs text-muted-foreground">vs</span>
-              <span className="text-sm truncate">{b.opponent_deck_name}</span>
-            </div>
+              <div className="flex items-center gap-2 pr-16">
+                {/* Result badge */}
+                <span
+                  className={`inline-block rounded px-2 py-0.5 text-xs font-bold text-white ${
+                    b.result === "win" ? "bg-success" : "bg-destructive"
+                  }`}
+                >
+                  {b.result === "win" ? "Win" : "Lose"}
+                </span>
 
-            <div className="flex gap-3 mt-1 text-xs text-muted-foreground">
-              {b.turn_order && (
-                <span>{b.turn_order === "first" ? "先攻" : "後攻"}</span>
-              )}
-              <span>{formatDate(b.fought_at)}</span>
+                {/* Deck names */}
+                <span className="text-sm font-medium truncate">
+                  {fullDeckName}
+                </span>
+                <span className="text-xs text-muted-foreground">vs</span>
+                <span className="text-sm truncate">{b.opponent_deck_name}</span>
+              </div>
+
+              <div className="flex gap-3 mt-1 text-xs text-muted-foreground">
+                {b.turn_order && (
+                  <span>{b.turn_order === "first" ? "先攻" : "後攻"}</span>
+                )}
+                <span>{formatDate(b.fought_at)}</span>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {editingBattle && (

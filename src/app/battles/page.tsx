@@ -10,7 +10,8 @@ import { DeckFilter } from "@/components/battle/DeckFilter";
 import { BattleHistoryList } from "@/components/battle/BattleHistoryList";
 import { BottomNav } from "@/components/layout/BottomNav";
 
-type Deck = { id: string; name: string };
+type Tuning = { id: string; name: string; sort_order: number };
+type Deck = { id: string; name: string; deck_tunings?: Tuning[] };
 type Battle = {
   id: string;
   my_deck_id: string;
@@ -18,7 +19,9 @@ type Battle = {
   result: "win" | "loss";
   turn_order: "first" | "second" | null;
   fought_at: string;
+  tuning_id: string | null;
   decks: { name: string } | null;
+  deck_tunings: { name: string } | null;
 };
 
 export default function BattlesPage() {

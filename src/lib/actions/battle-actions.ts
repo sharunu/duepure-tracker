@@ -7,6 +7,7 @@ export async function recordBattle(formData: {
   result: "win" | "loss";
   turnOrder: "first" | "second" | null;
   format: string;
+  tuningId?: string | null;
 }) {
   const supabase = createClient();
   const {
@@ -29,6 +30,7 @@ export async function recordBattle(formData: {
     result: formData.result,
     turn_order: formData.turnOrder,
     format: formData.format,
+    tuning_id: formData.tuningId ?? null,
   });
 
   if (error) throw new Error(error.message);
@@ -118,6 +120,7 @@ export async function updateBattle(
     result?: "win" | "loss";
     turnOrder?: "first" | "second" | null;
     myDeckId?: string;
+    tuningId?: string | null;
   }
 ) {
   const supabase = createClient();
@@ -140,6 +143,7 @@ export async function updateBattle(
   }
 
   if (fields.myDeckId !== undefined) updateData.my_deck_id = fields.myDeckId;
+  if (fields.tuningId !== undefined) updateData.tuning_id = fields.tuningId;
 
   const { error } = await supabase
     .from("battles")
@@ -175,7 +179,7 @@ export async function getRecentBattles(limit = 50, format: string = "ND") {
 
   const { data } = await supabase
     .from("battles")
-    .select("*, decks(name)")
+    .select("*, decks(name), deck_tunings(name)")
     .eq("user_id", user.id)
     .eq("format", format)
     .order("fought_at", { ascending: false })
@@ -256,7 +260,7 @@ export async function getBattlesByDateRange(format: string, startDate: string, e
   endPlusOne.setDate(endPlusOne.getDate() + 1);
   const { data } = await supabase
     .from("battles")
-    .select("*, decks(name)")
+    .select("*, decks(name), deck_tunings(name)")
     .eq("user_id", user.id)
     .eq("format", format)
     .gte("fought_at", startDate)
