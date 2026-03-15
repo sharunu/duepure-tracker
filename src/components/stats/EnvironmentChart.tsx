@@ -28,6 +28,16 @@ const COLORS = [
   "#64748b",
 ];
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function renderLabel(props: any) {
+  const { name, value, x, y } = props;
+  return (
+    <text x={x} y={y} fontSize={10} fill="#94a3b8" textAnchor="middle">
+      {`${name} ${value}%`}
+    </text>
+  );
+}
+
 export function EnvironmentChart({ data }: { data: DeckShare[] }) {
   if (data.length === 0) {
     return (
@@ -56,7 +66,7 @@ export function EnvironmentChart({ data }: { data: DeckShare[] }) {
             paddingAngle={2}
             dataKey="value"
             nameKey="name"
-            label={({ name, value }) => `${name} ${value}%`}
+            label={renderLabel}
             labelLine={false}
           >
             {chartData.map((_entry, index) => (
@@ -68,10 +78,10 @@ export function EnvironmentChart({ data }: { data: DeckShare[] }) {
           </Pie>
           <Tooltip
             contentStyle={{
-              backgroundColor: "#1e293b",
+              backgroundColor: "#1e1e2e",
               border: "1px solid #334155",
               borderRadius: "8px",
-              color: "#e2e8f0",
+              color: "#ffffff",
             }}
             formatter={(value?: number, name?: string) => [
               `${value}%`,

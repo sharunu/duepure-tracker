@@ -8,7 +8,7 @@ type MyDeckRow = DetailedPersonalStats["myDeckStats"][number];
 function WinRateText({ rate }: { rate: number }) {
   return (
     <span className={rate >= 50 ? "text-success" : "text-destructive"}>
-      {rate}%
+      勝率 {rate}%
     </span>
   );
 }
@@ -43,7 +43,7 @@ export function MyDeckStatsSection({ stats, startDate, endDate }: { stats: MyDec
             <span className="font-medium">{deck.deckName}</span>
             <span className="flex items-center gap-2">
               <WinRateText rate={deck.winRate} />
-              <span className="text-muted-foreground text-xs">{deck.wins}W {deck.losses}L ({deck.total})</span>
+              <span className="text-muted-foreground text-xs">{deck.wins}Win {deck.losses}Lose ({deck.total}件)</span>
               <svg
                 width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
               >

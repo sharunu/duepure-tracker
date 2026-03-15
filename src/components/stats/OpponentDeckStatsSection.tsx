@@ -23,10 +23,10 @@ export function OpponentDeckStatsSection({ stats }: { stats: OpponentRow[] }) {
           <span className="text-sm">{row.deckName}</span>
           <span className="flex items-center gap-2">
             <span className={row.winRate >= 50 ? "text-success text-sm" : "text-destructive text-sm"}>
-              {row.winRate}%
+              勝率 {row.winRate}%
             </span>
             <span className="text-muted-foreground text-xs">
-              {row.wins}W {row.losses}L ({row.total})
+              {row.wins}Win {row.losses}Lose ({row.total}件)
             </span>
           </span>
         </div>

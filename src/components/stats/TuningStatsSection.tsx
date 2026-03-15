@@ -6,7 +6,7 @@ import type { TuningStats, OpponentDetail } from "@/lib/actions/stats-actions";
 function WinRateText({ rate }: { rate: number }) {
   return (
     <span className={rate >= 50 ? "text-success" : "text-destructive"}>
-      {rate}%
+      勝率 {rate}%
     </span>
   );
 }
@@ -18,7 +18,7 @@ function TurnOrderRow({ label, wins, losses, total, winRate }: { label: string; 
       <span className="text-muted-foreground w-14">{label}</span>
       <span className="flex-1 text-right">
         <WinRateText rate={winRate} />
-        <span className="text-muted-foreground ml-2">{wins}W {losses}L ({total})</span>
+        <span className="text-muted-foreground ml-2">{wins}Win {losses}Lose ({total}件)</span>
       </span>
     </div>
   );
@@ -31,7 +31,7 @@ function OpponentRow({ opp }: { opp: { opponentName: string } & OpponentDetail }
         <span>vs {opp.opponentName}</span>
         <span className="flex items-center gap-2">
           <WinRateText rate={opp.winRate} />
-          <span className="text-muted-foreground text-xs">{opp.wins}W {opp.losses}L ({opp.total})</span>
+          <span className="text-muted-foreground text-xs">{opp.wins}Win {opp.losses}Lose ({opp.total}件)</span>
         </span>
       </div>
       <div className="pl-2">
@@ -67,7 +67,7 @@ export function TuningStatsSection({ tuningStats }: { tuningStats: TuningStats[]
               <span className="font-medium">{t.tuningName}</span>
               <span className="flex items-center gap-2">
                 <WinRateText rate={t.winRate} />
-                <span className="text-muted-foreground text-xs">{t.wins}W {t.losses}L ({t.total})</span>
+                <span className="text-muted-foreground text-xs">{t.wins}Win {t.losses}Lose ({t.total}件)</span>
                 <svg
                   width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
                   className={`transition-transform ${expandedTuning === key ? "rotate-180" : ""}`}
