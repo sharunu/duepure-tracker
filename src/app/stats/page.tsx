@@ -105,16 +105,15 @@ export default function StatsPage() {
 
     if (view === "stats") {
       const stats = scope === "personal" ? personalStats : globalStats;
-      const isGlobal = scope === "global";
       return (
         <>
           <div>
             <h2 className="text-base font-bold mb-2">使用デッキ別</h2>
-            <MyDeckStatsSection stats={stats.myDeckStats} startDate={startDate} endDate={endDate} disableNavigation={isGlobal} />
+            <MyDeckStatsSection stats={stats.myDeckStats} startDate={startDate} endDate={endDate} scope={scope} />
           </div>
           <div>
             <h2 className="text-base font-bold mb-2">対面デッキ別</h2>
-            <OpponentDeckStatsSection stats={stats.opponentDeckStats} startDate={startDate} endDate={endDate} disableNavigation={isGlobal} />
+            <OpponentDeckStatsSection stats={stats.opponentDeckStats} startDate={startDate} endDate={endDate} scope={scope} />
           </div>
         </>
       );

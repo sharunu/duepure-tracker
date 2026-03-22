@@ -538,3 +538,93 @@ export async function getDeckTrendByRange(
     sharePct: Number(r.share_pct),
   }));
 }
+
+export async function getGlobalDeckDetailStats(
+  deckName: string,
+  format: string,
+  startDate?: string,
+  endDate?: string
+): Promise<DeckDetailStats> {
+  const supabase = createClient();
+  const { data, error } = await supabase.rpc("get_global_deck_detail_stats", {
+    p_deck_name: deckName,
+    p_format: format,
+    p_start_date: startDate ?? null,
+    p_end_date: endDate ?? null,
+  });
+
+  if (error || !data || data.length === 0) {
+    return { overall: [], overallWins: 0, overallLosses: 0, overallTotal: 0, overallWinRate: 0, tuningStats: [] };
+  }
+
+  const safeRate = (w: number, t: number) => t === 0 ? 0 : Math.round((w / t) * 100);
+
+  let totalWins = 0;
+  let totalLosses = 0;
+
+  const overall = (data as { opponent_name: string; wins: number; losses: number; total: number; first_wins: number; first_losses: number; first_total: number; second_wins: number; second_losses: number; second_total: number; unknown_wins: number; unknown_losses: number; unknown_total: number }[]).map((r) => {
+    const w = Number(r.wins);
+    const l = Number(r.losses);
+    const t = Number(r.total);
+    const fw = Number(r.first_wins); const fl = Number(r.first_losses); const ft = Number(r.first_total);
+    const sw = Number(r.second_wins); const sl = Number(r.second_losses); const st = Number(r.second_total);
+    const uw = Number(r.unknown_wins); const ul = Number(r.unknown_losses); const ut = Number(r.unknown_total);
+    totalWins += w;
+    totalLosses += l;
+    return {
+      opponentName: r.opponent_name,
+      wins: w, losses: l, total: t, winRate: safeRate(w, t),
+      firstWins: fw, firstLosses: fl, firstTotal: ft, firstWinRate: safeRate(fw, ft),
+      secondWins: sw, secondLosses: sl, secondTotal: st, secondWinRate: safeRate(sw, st),
+      unknownWins: uw, unknownLosses: ul, unknownTotal: ut, unknownWinRate: safeRate(uw, ut),
+    };
+  });
+
+  const overallTotal = totalWins + totalLosses;
+  return { overall, overallWins: totalWins, overallLosses: totalLosses, overallTotal, overallWinRate: safeRate(totalWins, overallTotal), tuningStats: [] };
+}
+
+export async function getGlobalOpponentDeckDetailStats(
+  opponentDeckName: string,
+  format: string,
+  startDate?: string,
+  endDate?: string
+): Promise<OpponentDeckDetailStats> {
+  const supabase = createClient();
+  const { data, error } = await supabase.rpc("get_global_opponent_deck_detail_stats", {
+    p_opponent_deck_name: opponentDeckName,
+    p_format: format,
+    p_start_date: startDate ?? null,
+    p_end_date: endDate ?? null,
+  });
+
+  if (error || !data || data.length === 0) {
+    return { overall: [], overallWins: 0, overallLosses: 0, overallTotal: 0, overallWinRate: 0 };
+  }
+
+  const safeRate = (w: number, t: number) => t === 0 ? 0 : Math.round((w / t) * 100);
+
+  let totalWins = 0;
+  let totalLosses = 0;
+
+  const overall = (data as { my_deck_name: string; wins: number; losses: number; total: number; first_wins: number; first_losses: number; first_total: number; second_wins: number; second_losses: number; second_total: number; unknown_wins: number; unknown_losses: number; unknown_total: number }[]).map((r) => {
+    const w = Number(r.wins);
+    const l = Number(r.losses);
+    const t = Number(r.total);
+    const fw = Number(r.first_wins); const fl = Number(r.first_losses); const ft = Number(r.first_total);
+    const sw = Number(r.second_wins); const sl = Number(r.second_losses); const st = Number(r.second_total);
+    const uw = Number(r.unknown_wins); const ul = Number(r.unknown_losses); const ut = Number(r.unknown_total);
+    totalWins += w;
+    totalLosses += l;
+    return {
+      myDeckName: r.my_deck_name,
+      wins: w, losses: l, total: t, winRate: safeRate(w, t),
+      firstWins: fw, firstLosses: fl, firstTotal: ft, firstWinRate: safeRate(fw, ft),
+      secondWins: sw, secondLosses: sl, secondTotal: st, secondWinRate: safeRate(sw, st),
+      unknownWins: uw, unknownLosses: ul, unknownTotal: ut, unknownWinRate: safeRate(uw, ut),
+    };
+  });
+
+  const overallTotal = totalWins + totalLosses;
+  return { overall, overallWins: totalWins, overallLosses: totalLosses, overallTotal, overallWinRate: safeRate(totalWins, overallTotal) };
+}

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
-import { getDeckDetailStats } from "@/lib/actions/stats-actions";
+import { getDeckDetailStats, getGlobalDeckDetailStats } from "@/lib/actions/stats-actions";
 import type { DeckDetailStats, OpponentDetail } from "@/lib/actions/stats-actions";
 import { getDailyBattleCounts } from "@/lib/actions/battle-actions";
 import { useFormat } from "@/hooks/use-format";
@@ -58,6 +58,7 @@ export default function DeckDetailPage() {
   const { format, setFormat, ready } = useFormat();
 
   const deckName = decodeURIComponent(params.deckName as string);
+  const isGlobal = searchParams.get("scope") === "global";
 
   const [stats, setStats] = useState<DeckDetailStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -77,11 +78,12 @@ export default function DeckDetailPage() {
   const loadStats = useCallback(() => {
     if (!ready) return;
     setLoading(true);
-    getDeckDetailStats(deckName, format, startDate, endDate).then((s) => {
+    const fetchFn = isGlobal ? getGlobalDeckDetailStats : getDeckDetailStats;
+    fetchFn(deckName, format, startDate, endDate).then((s) => {
       setStats(s);
       setLoading(false);
     });
-  }, [deckName, format, startDate, endDate, ready]);
+  }, [deckName, format, startDate, endDate, ready, isGlobal]);
 
   const loadCounts = useCallback((year: number, month: number) => {
     if (!ready) return;
@@ -116,7 +118,7 @@ export default function DeckDetailPage() {
           統計に戻る
         </button>
 
-        <h1 className="text-xl font-bold">{deckName}</h1>
+        <h1 className="text-xl font-bold">{isGlobal ? `${deckName}（全体）` : deckName}</h1>
 
         <div className={!ready ? "invisible" : ""}>
           <FormatSelector format={format} setFormat={setFormat} />
@@ -156,8 +158,8 @@ export default function DeckDetailPage() {
               )}
             </div>
 
-            {/* Tuning stats section */}
-            {stats.tuningStats.length > 0 && (
+            {/* Tuning stats section - only for personal scope */}
+            {!isGlobal && stats.tuningStats.length > 0 && (
               <div>
                 <h2 className="text-base font-bold mb-2">チューニング別</h2>
                 <TuningStatsSection tuningStats={stats.tuningStats} />

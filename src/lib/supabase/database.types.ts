@@ -376,6 +376,42 @@ export type Database = {
           win_rate: number
         }[]
       }
+      get_global_deck_detail_stats: {
+        Args: { p_deck_name: string; p_format?: string; p_start_date?: string | null; p_end_date?: string | null }
+        Returns: {
+          opponent_name: string
+          wins: number
+          losses: number
+          total: number
+          first_wins: number
+          first_losses: number
+          first_total: number
+          second_wins: number
+          second_losses: number
+          second_total: number
+          unknown_wins: number
+          unknown_losses: number
+          unknown_total: number
+        }[]
+      }
+      get_global_opponent_deck_detail_stats: {
+        Args: { p_opponent_deck_name: string; p_format?: string; p_start_date?: string | null; p_end_date?: string | null }
+        Returns: {
+          my_deck_name: string
+          wins: number
+          losses: number
+          total: number
+          first_wins: number
+          first_losses: number
+          first_total: number
+          second_wins: number
+          second_losses: number
+          second_total: number
+          unknown_wins: number
+          unknown_losses: number
+          unknown_total: number
+        }[]
+      }
       get_deck_trend_range: {
         Args: { p_start_date: string; p_end_date: string; p_format?: string; p_user_id?: string | null }
         Returns: {

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
-import { getOpponentDeckDetailStats } from "@/lib/actions/stats-actions";
+import { getOpponentDeckDetailStats, getGlobalOpponentDeckDetailStats } from "@/lib/actions/stats-actions";
 import type { OpponentDeckDetailStats, OpponentDetail } from "@/lib/actions/stats-actions";
 import { getDailyBattleCounts } from "@/lib/actions/battle-actions";
 import { useFormat } from "@/hooks/use-format";
@@ -57,6 +57,7 @@ export default function OpponentDeckDetailPage() {
   const { format, setFormat, ready } = useFormat();
 
   const deckName = decodeURIComponent(params.deckName as string);
+  const isGlobal = searchParams.get("scope") === "global";
 
   const [stats, setStats] = useState<OpponentDeckDetailStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -76,11 +77,12 @@ export default function OpponentDeckDetailPage() {
   const loadStats = useCallback(() => {
     if (!ready) return;
     setLoading(true);
-    getOpponentDeckDetailStats(deckName, format, startDate, endDate).then((s) => {
+    const fetchFn = isGlobal ? getGlobalOpponentDeckDetailStats : getOpponentDeckDetailStats;
+    fetchFn(deckName, format, startDate, endDate).then((s) => {
       setStats(s);
       setLoading(false);
     });
-  }, [deckName, format, startDate, endDate, ready]);
+  }, [deckName, format, startDate, endDate, ready, isGlobal]);
 
   const loadCounts = useCallback((year: number, month: number) => {
     if (!ready) return;
@@ -114,7 +116,7 @@ export default function OpponentDeckDetailPage() {
           統計に戻る
         </button>
 
-        <h1 className="text-xl font-bold">vs {deckName}</h1>
+        <h1 className="text-xl font-bold">{isGlobal ? `vs ${deckName}（全体）` : `vs ${deckName}`}</h1>
 
         <div className={!ready ? "invisible" : ""}>
           <FormatSelector format={format} setFormat={setFormat} />
