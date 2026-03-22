@@ -13,7 +13,7 @@ function WinRateText({ rate }: { rate: number }) {
   );
 }
 
-export function MyDeckStatsSection({ stats, startDate, endDate }: { stats: MyDeckRow[]; startDate?: string; endDate?: string }) {
+export function MyDeckStatsSection({ stats, startDate, endDate, disableNavigation }: { stats: MyDeckRow[]; startDate?: string; endDate?: string; disableNavigation?: boolean }) {
   const router = useRouter();
 
   if (stats.length === 0) {
@@ -25,6 +25,7 @@ export function MyDeckStatsSection({ stats, startDate, endDate }: { stats: MyDec
   }
 
   const handleClick = (deckName: string) => {
+    if (disableNavigation) return;
     const params = new URLSearchParams();
     if (startDate) params.set("start", startDate);
     if (endDate) params.set("end", endDate);
@@ -38,17 +39,19 @@ export function MyDeckStatsSection({ stats, startDate, endDate }: { stats: MyDec
         <div key={deck.deckName} className="rounded-lg border border-border bg-card overflow-hidden">
           <button
             onClick={() => handleClick(deck.deckName)}
-            className="w-full flex items-center justify-between px-4 py-3 text-sm hover:bg-muted/50 transition-colors"
+            className={`w-full flex items-center justify-between px-4 py-3 text-sm transition-colors ${disableNavigation ? "cursor-default" : "hover:bg-muted/50"}`}
           >
             <span className="font-medium">{deck.deckName}</span>
             <span className="flex items-center gap-2">
               <WinRateText rate={deck.winRate} />
               <span className="text-muted-foreground text-xs">{deck.wins}Win {deck.losses}Lose ({deck.total}件)</span>
-              <svg
-                width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-              >
-                <path d="M9 18l6-6-6-6" />
-              </svg>
+              {!disableNavigation && (
+                <svg
+                  width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                >
+                  <path d="M9 18l6-6-6-6" />
+                </svg>
+              )}
             </span>
           </button>
         </div>

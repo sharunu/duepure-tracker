@@ -1,20 +1,26 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import Link from "next/link";
-import { getDetailedPersonalStats } from "@/lib/actions/stats-actions";
-import type { DetailedPersonalStats } from "@/lib/actions/stats-actions";
+import { getDetailedPersonalStats, getEnvironmentSharesByRange, getPersonalEnvironmentSharesByRange, getGlobalStatsByRange, getDeckTrendByRange } from "@/lib/actions/stats-actions";
+import type { DetailedPersonalStats, TrendRow } from "@/lib/actions/stats-actions";
 import { getDailyBattleCounts } from "@/lib/actions/battle-actions";
 import { useFormat } from "@/hooks/use-format";
 import { FormatSelector } from "@/components/ui/FormatSelector";
+import { ScopeSelector } from "@/components/ui/ScopeSelector";
+import type { Scope } from "@/components/ui/ScopeSelector";
+import { ViewSelector } from "@/components/ui/ViewSelector";
+import type { View } from "@/components/ui/ViewSelector";
 import { DateRangeCalendar } from "@/components/battle/DateRangeCalendar";
 import { MyDeckStatsSection } from "@/components/stats/MyDeckStatsSection";
 import { OpponentDeckStatsSection } from "@/components/stats/OpponentDeckStatsSection";
+import { EnvironmentChart } from "@/components/stats/EnvironmentChart";
+import { TrendChart } from "@/components/stats/TrendChart";
 import { BottomNav } from "@/components/layout/BottomNav";
 
 export default function StatsPage() {
   const { format, setFormat, ready } = useFormat();
-  const [stats, setStats] = useState<DetailedPersonalStats>({ myDeckStats: [], opponentDeckStats: [] });
+  const [scope, setScope] = useState<Scope>("personal");
+  const [view, setView] = useState<View>("stats");
   const [loading, setLoading] = useState(true);
   const [battleCounts, setBattleCounts] = useState<Record<string, number>>({});
 
@@ -25,14 +31,41 @@ export default function StatsPage() {
   });
   const [endDate, setEndDate] = useState(() => new Date().toLocaleDateString("sv-SE"));
 
-  const loadStats = useCallback(() => {
-    if (!ready) return;
-    setLoading(true);
-    getDetailedPersonalStats(format, startDate, endDate).then((s) => {
-      setStats(s);
+  // Data states
+  const [personalStats, setPersonalStats] = useState<DetailedPersonalStats>({ myDeckStats: [], opponentDeckStats: [] });
+  const [globalStats, setGlobalStats] = useState<DetailedPersonalStats>({ myDeckStats: [], opponentDeckStats: [] });
+  const [distributionData, setDistributionData] = useState<{ deck_name: string; battle_count: number; share_pct: number }[]>([]);
+  const [trendData, setTrendData] = useState<TrendRow[]>([]);
+
+  const loadData = useCallback(async () => {
+    if (!ready || scope === "team") {
       setLoading(false);
-    });
-  }, [format, startDate, endDate, ready]);
+      return;
+    }
+    setLoading(true);
+
+    if (scope === "personal" && view === "stats") {
+      const s = await getDetailedPersonalStats(format, startDate, endDate);
+      setPersonalStats(s);
+    } else if (scope === "personal" && view === "distribution") {
+      const d = await getPersonalEnvironmentSharesByRange(startDate, endDate, format);
+      setDistributionData(d);
+    } else if (scope === "personal" && view === "trend") {
+      const t = await getDeckTrendByRange(startDate, endDate, format, true);
+      setTrendData(t);
+    } else if (scope === "global" && view === "stats") {
+      const s = await getGlobalStatsByRange(startDate, endDate, format);
+      setGlobalStats(s);
+    } else if (scope === "global" && view === "distribution") {
+      const d = await getEnvironmentSharesByRange(startDate, endDate, format);
+      setDistributionData(d);
+    } else if (scope === "global" && view === "trend") {
+      const t = await getDeckTrendByRange(startDate, endDate, format, false);
+      setTrendData(t);
+    }
+
+    setLoading(false);
+  }, [format, startDate, endDate, ready, scope, view]);
 
   const loadCounts = useCallback((year: number, month: number) => {
     if (!ready) return;
@@ -40,8 +73,8 @@ export default function StatsPage() {
   }, [format, ready]);
 
   useEffect(() => {
-    loadStats();
-  }, [loadStats]);
+    loadData();
+  }, [loadData]);
 
   useEffect(() => {
     const now = new Date();
@@ -53,22 +86,59 @@ export default function StatsPage() {
     setEndDate(end);
   };
 
+  const renderContent = () => {
+    if (scope === "team") {
+      return (
+        <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+          <p className="text-sm">チーム機能は近日公開予定です</p>
+        </div>
+      );
+    }
+
+    if (loading) {
+      return (
+        <div className="flex justify-center py-12">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        </div>
+      );
+    }
+
+    if (view === "stats") {
+      const stats = scope === "personal" ? personalStats : globalStats;
+      const isGlobal = scope === "global";
+      return (
+        <>
+          <div>
+            <h2 className="text-base font-bold mb-2">使用デッキ別</h2>
+            <MyDeckStatsSection stats={stats.myDeckStats} startDate={startDate} endDate={endDate} disableNavigation={isGlobal} />
+          </div>
+          <div>
+            <h2 className="text-base font-bold mb-2">対面デッキ別</h2>
+            <OpponentDeckStatsSection stats={stats.opponentDeckStats} startDate={startDate} endDate={endDate} disableNavigation={isGlobal} />
+          </div>
+        </>
+      );
+    }
+
+    if (view === "distribution") {
+      return <EnvironmentChart data={distributionData} />;
+    }
+
+    if (view === "trend") {
+      return <TrendChart data={trendData} />;
+    }
+
+    return null;
+  };
+
   return (
     <>
       <div className="min-h-screen pb-20 px-4 pt-6 max-w-lg mx-auto space-y-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold">個人統計</h1>
-          <Link
-            href="/stats/environment"
-            className="text-sm text-primary hover:underline"
-          >
-            環境統計 →
-          </Link>
-        </div>
+        <h1 className="text-xl font-bold">統計</h1>
         <div className={!ready ? "invisible" : ""}>
           <FormatSelector format={format} setFormat={setFormat} />
         </div>
-        {(!ready || loading) ? (
+        {(!ready) ? (
           <div className="flex justify-center py-12">
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
           </div>
@@ -81,16 +151,9 @@ export default function StatsPage() {
               battleCounts={battleCounts}
               onMonthChange={loadCounts}
             />
-
-            <div>
-              <h2 className="text-base font-bold mb-2">使用デッキ別</h2>
-              <MyDeckStatsSection stats={stats.myDeckStats} startDate={startDate} endDate={endDate} />
-            </div>
-
-            <div>
-              <h2 className="text-base font-bold mb-2">対面デッキ別</h2>
-              <OpponentDeckStatsSection stats={stats.opponentDeckStats} startDate={startDate} endDate={endDate} />
-            </div>
+            <ScopeSelector scope={scope} setScope={setScope} />
+            <ViewSelector view={view} setView={setView} />
+            {renderContent()}
           </>
         )}
       </div>

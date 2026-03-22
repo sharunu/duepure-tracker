@@ -348,6 +348,44 @@ export type Database = {
         Args: { p_candidate_id: string; p_vote: string }
         Returns: Json
       }
+      get_personal_environment_shares_range: {
+        Args: { p_start_date: string; p_end_date: string; p_format?: string }
+        Returns: {
+          battle_count: number
+          deck_name: string
+          share_pct: number
+        }[]
+      }
+      get_global_my_deck_stats_range: {
+        Args: { p_start_date: string; p_end_date: string; p_format?: string }
+        Returns: {
+          deck_name: string
+          wins: number
+          losses: number
+          total: number
+          win_rate: number
+        }[]
+      }
+      get_global_opponent_deck_stats_range: {
+        Args: { p_start_date: string; p_end_date: string; p_format?: string }
+        Returns: {
+          deck_name: string
+          wins: number
+          losses: number
+          total: number
+          win_rate: number
+        }[]
+      }
+      get_deck_trend_range: {
+        Args: { p_start_date: string; p_end_date: string; p_format?: string; p_user_id?: string | null }
+        Returns: {
+          period_start: string
+          deck_name: string
+          battle_count: number
+          share_pct: number
+        }[]
+      }
+
     }
     Enums: {
       [_ in never]: never
