@@ -102,10 +102,11 @@ export default function DeckDetailPage() {
           統計に戻る
         </button>
 
-        <h1 className="text-xl font-bold">{isGlobal ? `${deckName}（全体）` : deckName}</h1>
-
-        <div className={!ready ? "invisible" : ""}>
-          <FormatSelector format={format} setFormat={setFormat} />
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-bold">{isGlobal ? `${deckName}（全体）` : deckName}</h1>
+          <div className={!ready ? "invisible" : ""}>
+            <FormatSelector format={format} setFormat={setFormat} />
+          </div>
         </div>
 
         {(!ready || loading) ? (

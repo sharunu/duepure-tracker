@@ -101,10 +101,11 @@ export default function OpponentDeckDetailPage() {
           統計に戻る
         </button>
 
-        <h1 className="text-xl font-bold">{isGlobal ? `vs ${deckName}（全体）` : `vs ${deckName}`}</h1>
-
-        <div className={!ready ? "invisible" : ""}>
-          <FormatSelector format={format} setFormat={setFormat} />
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-bold">{isGlobal ? `vs ${deckName}（全体）` : `vs ${deckName}`}</h1>
+          <div className={!ready ? "invisible" : ""}>
+            <FormatSelector format={format} setFormat={setFormat} />
+          </div>
         </div>
 
         {(!ready || loading) ? (

@@ -9,6 +9,7 @@ import {
 import { getPendingVoteForUser } from "@/lib/actions/vote-actions";
 import { checkIsAdmin } from "@/lib/actions/admin-actions";
 import { useFormat } from "@/hooks/use-format";
+import { FormatSelector } from "@/components/ui/FormatSelector";
 import { BattleRecordForm } from "@/components/battle/BattleRecordForm";
 import { BottomNav } from "@/components/layout/BottomNav";
 
@@ -55,6 +56,12 @@ export default function BattlePage() {
   return (
     <>
       <div className="min-h-screen pb-20 px-4 pt-6 max-w-lg mx-auto">
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-xl font-bold">対戦記録</h1>
+          <div className={!ready ? "invisible" : ""}>
+            <FormatSelector format={format} setFormat={setFormat} />
+          </div>
+        </div>
         {data.isAdmin && (
           <div className="flex justify-end mb-2">
             <a

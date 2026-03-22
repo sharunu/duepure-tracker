@@ -6,7 +6,7 @@ import { OpponentDeckSelector } from "./OpponentDeckSelector";
 import { NormalizationBanner } from "./NormalizationBanner";
 import { BattleIntervalModal } from "./BattleIntervalModal";
 import { MiniStats } from "../stats/MiniStats";
-import { FormatSelector } from "../ui/FormatSelector";
+
 import type { Format } from "@/hooks/use-format";
 
 type Tuning = { id: string; name: string; sort_order: number };
@@ -188,8 +188,6 @@ export function BattleRecordForm({
 
   return (
     <div className="space-y-4">
-      {/* Format selector */}
-      <FormatSelector format={format} setFormat={setFormat} />
 
       {decks.length === 0 ? (
         <div className="text-center py-12">

@@ -29,9 +29,11 @@ export default function DecksPage() {
   return (
     <>
       <div className="min-h-screen pb-20 px-4 pt-6 max-w-lg mx-auto">
-        <h1 className="text-xl font-bold mb-4">使用デッキ管理</h1>
-        <div className={`mb-4${!ready ? " invisible" : ""}`}>
-          <FormatSelector format={format} setFormat={setFormat} />
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-xl font-bold">使用デッキ管理</h1>
+          <div className={!ready ? "invisible" : ""}>
+            <FormatSelector format={format} setFormat={setFormat} />
+          </div>
         </div>
         {(!ready || loading) ? (
           <div className="flex justify-center py-12">

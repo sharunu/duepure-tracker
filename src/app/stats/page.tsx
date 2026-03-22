@@ -142,9 +142,11 @@ function StatsPageInner() {
   return (
     <>
       <div className="min-h-screen pb-20 px-4 pt-6 max-w-lg mx-auto space-y-4">
-        <h1 className="text-xl font-bold">統計</h1>
-        <div className={!ready ? "invisible" : ""}>
-          <FormatSelector format={format} setFormat={setFormat} />
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-bold">統計</h1>
+          <div className={!ready ? "invisible" : ""}>
+            <FormatSelector format={format} setFormat={setFormat} />
+          </div>
         </div>
         {(!ready) ? (
           <div className="flex justify-center py-12">
