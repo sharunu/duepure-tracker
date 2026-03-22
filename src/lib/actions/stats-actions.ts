@@ -50,6 +50,18 @@ export async function getEnvironmentShares(days = 7, format: string = "ND") {
   return (data as { deck_name: string; battle_count: number; share_pct: number }[]) ?? [];
 }
 
+export async function getEnvironmentSharesByRange(startDate: string, endDate: string, format: string = "ND") {
+  const supabase = createClient();
+  const { data, error } = await supabase.rpc("get_environment_deck_shares_range", {
+    p_start_date: startDate,
+    p_end_date: endDate,
+    p_format: format,
+  });
+
+  if (error) return [];
+  return (data as { deck_name: string; battle_count: number; share_pct: number }[]) ?? [];
+}
+
 export type OpponentDetail = {
   wins: number;
   losses: number;
@@ -336,4 +348,99 @@ export async function getDeckDetailStats(
     .sort((a, b) => b.total - a.total);
 
   return { overall, overallWins, overallLosses, overallTotal, overallWinRate: safeRate(overallWins, overallTotal), tuningStats };
+}
+
+export type OpponentDeckDetailStats = {
+  overall: Array<{ myDeckName: string } & OpponentDetail>;
+  overallWins: number;
+  overallLosses: number;
+  overallTotal: number;
+  overallWinRate: number;
+};
+
+export async function getOpponentDeckDetailStats(
+  opponentDeckName: string,
+  format: string,
+  startDate?: string,
+  endDate?: string
+): Promise<OpponentDeckDetailStats> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { overall: [], overallWins: 0, overallLosses: 0, overallTotal: 0, overallWinRate: 0 };
+
+  let query = supabase
+    .from("battles")
+    .select("opponent_deck_name, opponent_deck_normalized, result, turn_order, decks(name)")
+    .eq("user_id", user.id)
+    .eq("format", format);
+
+  if (startDate) {
+    query = query.gte("fought_at", startDate);
+  }
+  if (endDate) {
+    const endPlusOne = new Date(endDate);
+    endPlusOne.setDate(endPlusOne.getDate() + 1);
+    query = query.lt("fought_at", endPlusOne.toISOString().split("T")[0]);
+  }
+
+  const { data: battles } = await query;
+  if (!battles || battles.length === 0) return { overall: [], overallWins: 0, overallLosses: 0, overallTotal: 0, overallWinRate: 0 };
+
+  // Filter to only battles against this opponent deck
+  const filtered = battles.filter(b => (b.opponent_deck_normalized ?? b.opponent_deck_name) === opponentDeckName);
+  if (filtered.length === 0) return { overall: [], overallWins: 0, overallLosses: 0, overallTotal: 0, overallWinRate: 0 };
+
+  const safeRate = (w: number, t: number) => t === 0 ? 0 : Math.round((w / t) * 100);
+
+  const newOppDetail = (): OpponentDetail => ({
+    wins: 0, losses: 0, total: 0, winRate: 0,
+    firstWins: 0, firstLosses: 0, firstTotal: 0, firstWinRate: 0,
+    secondWins: 0, secondLosses: 0, secondTotal: 0, secondWinRate: 0,
+    unknownWins: 0, unknownLosses: 0, unknownTotal: 0, unknownWinRate: 0,
+  });
+
+  function addToDetail(detail: OpponentDetail, isWin: boolean, turnOrder: string | null) {
+    detail.total++;
+    if (isWin) detail.wins++; else detail.losses++;
+    if (turnOrder === "first") {
+      detail.firstTotal++;
+      if (isWin) detail.firstWins++; else detail.firstLosses++;
+    } else if (turnOrder === "second") {
+      detail.secondTotal++;
+      if (isWin) detail.secondWins++; else detail.secondLosses++;
+    } else {
+      detail.unknownTotal++;
+      if (isWin) detail.unknownWins++; else detail.unknownLosses++;
+    }
+  }
+
+  // Group by my deck name
+  const myDeckMap = new Map<string, OpponentDetail>();
+  let overallWins = 0;
+  let overallLosses = 0;
+
+  for (const b of filtered) {
+    const myDeckName = b.decks?.name ?? "不明";
+    const isWin = b.result === "win";
+
+    if (!myDeckMap.has(myDeckName)) myDeckMap.set(myDeckName, newOppDetail());
+    addToDetail(myDeckMap.get(myDeckName)!, isWin, b.turn_order);
+    if (isWin) overallWins++; else overallLosses++;
+  }
+
+  const finalizeDetail = (d: OpponentDetail): OpponentDetail => ({
+    ...d,
+    winRate: safeRate(d.wins, d.total),
+    firstWinRate: safeRate(d.firstWins, d.firstTotal),
+    secondWinRate: safeRate(d.secondWins, d.secondTotal),
+    unknownWinRate: safeRate(d.unknownWins, d.unknownTotal),
+  });
+
+  const overall = Array.from(myDeckMap.entries())
+    .map(([myDeckName, d]) => ({ myDeckName, ...finalizeDetail(d) }))
+    .sort((a, b) => b.total - a.total);
+
+  const overallTotal = overallWins + overallLosses;
+
+  return { overall, overallWins, overallLosses, overallTotal, overallWinRate: safeRate(overallWins, overallTotal) };
 }

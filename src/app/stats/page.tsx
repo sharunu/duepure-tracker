@@ -89,7 +89,7 @@ export default function StatsPage() {
 
             <div>
               <h2 className="text-base font-bold mb-2">対面デッキ別</h2>
-              <OpponentDeckStatsSection stats={stats.opponentDeckStats} />
+              <OpponentDeckStatsSection stats={stats.opponentDeckStats} startDate={startDate} endDate={endDate} />
             </div>
           </>
         )}

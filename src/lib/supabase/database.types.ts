@@ -336,6 +336,14 @@ export type Database = {
           same_count: number
         }[]
       }
+      get_environment_deck_shares_range: {
+        Args: { p_start_date: string; p_end_date: string; p_format?: string }
+        Returns: {
+          battle_count: number
+          deck_name: string
+          share_pct: number
+        }[]
+      }
       submit_normalization_vote: {
         Args: { p_candidate_id: string; p_vote: string }
         Returns: Json

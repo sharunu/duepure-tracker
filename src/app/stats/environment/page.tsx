@@ -1,22 +1,55 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { getEnvironmentShares } from "@/lib/actions/stats-actions";
+import { getEnvironmentSharesByRange } from "@/lib/actions/stats-actions";
+import { getDailyBattleCounts } from "@/lib/actions/battle-actions";
 import { useFormat } from "@/hooks/use-format";
 import { FormatSelector } from "@/components/ui/FormatSelector";
+import { DateRangeCalendar } from "@/components/battle/DateRangeCalendar";
 import { EnvironmentChart } from "@/components/stats/EnvironmentChart";
 import { BottomNav } from "@/components/layout/BottomNav";
 
 export default function EnvironmentPage() {
-  const { format, setFormat } = useFormat();
-  const [data, setData] = useState<Awaited<ReturnType<typeof getEnvironmentShares>>>([]);
+  const { format, setFormat, ready } = useFormat();
+  const [data, setData] = useState<{ deck_name: string; battle_count: number; share_pct: number }[]>([]);
   const [loading, setLoading] = useState(true);
+  const [battleCounts, setBattleCounts] = useState<Record<string, number>>({});
+
+  const [startDate, setStartDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 6);
+    return d.toLocaleDateString("sv-SE");
+  });
+  const [endDate, setEndDate] = useState(() => new Date().toLocaleDateString("sv-SE"));
+
+  const loadData = useCallback(() => {
+    if (!ready) return;
+    setLoading(true);
+    getEnvironmentSharesByRange(startDate, endDate, format).then((d) => {
+      setData(d);
+      setLoading(false);
+    });
+  }, [format, startDate, endDate, ready]);
+
+  const loadCounts = useCallback((year: number, month: number) => {
+    if (!ready) return;
+    getDailyBattleCounts(format, year, month).then(setBattleCounts);
+  }, [format, ready]);
 
   useEffect(() => {
-    setLoading(true);
-    getEnvironmentShares(7, format).then((d) => { setData(d); setLoading(false); });
-  }, [format]);
+    loadData();
+  }, [loadData]);
+
+  useEffect(() => {
+    const now = new Date();
+    loadCounts(now.getFullYear(), now.getMonth() + 1);
+  }, [loadCounts]);
+
+  const handleRangeChange = (start: string, end: string) => {
+    setStartDate(start);
+    setEndDate(end);
+  };
 
   return (
     <>
@@ -33,10 +66,21 @@ export default function EnvironmentPage() {
         <div className="mb-4">
           <FormatSelector format={format} setFormat={setFormat} />
         </div>
-        {loading ? (
-          <p className="text-muted-foreground text-sm">読み込み中...</p>
+        {(!ready || loading) ? (
+          <div className="flex justify-center py-12">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          </div>
         ) : (
-          <EnvironmentChart data={data} />
+          <div className="space-y-4">
+            <DateRangeCalendar
+              startDate={startDate}
+              endDate={endDate}
+              onRangeChange={handleRangeChange}
+              battleCounts={battleCounts}
+              onMonthChange={loadCounts}
+            />
+            <EnvironmentChart data={data} />
+          </div>
         )}
       </div>
       <BottomNav />
