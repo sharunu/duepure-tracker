@@ -138,7 +138,7 @@ export function EditBattleModal({ battle, decks, suggestions, onSave, onClose }:
                     : "border-border bg-card hover:bg-muted text-muted-foreground"
                 }`}
               >
-                {r === "win" ? "Win" : "Lose"}
+                {r === "win" ? "WIN" : "LOSE"}
               </button>
             ))}
           </div>

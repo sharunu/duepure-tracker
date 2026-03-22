@@ -44,7 +44,7 @@ export function OpponentDeckStatsSection({ stats, startDate, endDate, scope }: {
             <span className="font-medium">{row.deckName}</span>
             <span className="flex items-center gap-2">
               <WinRateText rate={row.winRate} />
-              <span className="text-muted-foreground text-xs">{row.wins}Win {row.losses}Lose ({row.total}件)</span>
+              <span className="text-muted-foreground text-xs">{row.wins}勝 {row.losses}敗 ({row.total}件)</span>
               <svg
                 width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
               >

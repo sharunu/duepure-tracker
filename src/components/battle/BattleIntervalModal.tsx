@@ -66,7 +66,7 @@ export function BattleIntervalModal({ open, onClose, battles, onSelect, currentT
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 min-w-0">
                     <span className={`text-xs font-bold ${b.result === "win" ? "text-success" : "text-destructive"}`}>
-                      {b.result === "win" ? "Win" : "Lose"}
+                      {b.result === "win" ? "勝" : "敗"}
                     </span>
                     <span className="truncate">
                       {b.decks?.name ?? "?"} vs {b.opponent_deck_name}

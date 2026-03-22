@@ -26,7 +26,7 @@ function TurnOrderRow({ label, wins, losses, total, winRate }: { label: string; 
       <span className="text-muted-foreground w-14">{label}</span>
       <span className="flex-1 text-right">
         <WinRateText rate={winRate} />
-        <span className="text-muted-foreground ml-2">{wins}Win {losses}Lose ({total}件)</span>
+        <span className="text-muted-foreground ml-2">{wins}勝 {losses}敗 ({total}件)</span>
       </span>
     </div>
   );
@@ -39,7 +39,7 @@ function OpponentRow({ opp }: { opp: { opponentName: string } & OpponentDetail }
         <span>vs {opp.opponentName}</span>
         <span className="flex items-center gap-2">
           <WinRateText rate={opp.winRate} />
-          <span className="text-muted-foreground text-xs">{opp.wins}Win {opp.losses}Lose ({opp.total}件)</span>
+          <span className="text-muted-foreground text-xs">{opp.wins}勝 {opp.losses}敗 ({opp.total}件)</span>
         </span>
       </div>
       <div className="pl-2">
@@ -150,7 +150,7 @@ export default function DeckDetailPage() {
                 <h2 className="text-base font-bold">全体</h2>
                 <span className="text-sm">
                   <WinRateText rate={stats.overallWinRate} />
-                  <span className="text-muted-foreground text-xs ml-2">{stats.overallWins}Win {stats.overallLosses}Lose ({stats.overallTotal}件)</span>
+                  <span className="text-muted-foreground text-xs ml-2">{stats.overallWins}勝 {stats.overallLosses}敗 ({stats.overallTotal}件)</span>
                 </span>
               </div>
               {stats.overall.length === 0 ? (

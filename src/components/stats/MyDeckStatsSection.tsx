@@ -44,7 +44,7 @@ export function MyDeckStatsSection({ stats, startDate, endDate, scope }: { stats
             <span className="font-medium">{deck.deckName}</span>
             <span className="flex items-center gap-2">
               <WinRateText rate={deck.winRate} />
-              <span className="text-muted-foreground text-xs">{deck.wins}Win {deck.losses}Lose ({deck.total}件)</span>
+              <span className="text-muted-foreground text-xs">{deck.wins}勝 {deck.losses}敗 ({deck.total}件)</span>
               <svg
                 width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
               >

@@ -25,9 +25,9 @@ export function MiniStats({ stats, onEditInterval }: Props) {
     <div className="rounded-lg bg-card border border-border p-4 space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-baseline gap-3">
-          <span className="text-2xl font-bold">{winRate}%</span>
+          <span className="text-2xl font-bold">勝率 {winRate}%</span>
           <span className="text-sm text-muted-foreground">
-            {stats.wins}Win {stats.losses}Lose
+            {stats.wins}勝 {stats.losses}敗
           </span>
           {stats.streak > 0 && (
             <span className="text-sm font-medium text-success">

@@ -101,7 +101,7 @@ export function BattleHistoryList({ battles, decks, suggestions, onRefresh }: Pr
                     b.result === "win" ? "bg-success" : "bg-destructive"
                   }`}
                 >
-                  {b.result === "win" ? "Win" : "Lose"}
+                  {b.result === "win" ? "WIN" : "LOSE"}
                 </span>
 
                 {/* Deck names */}

@@ -283,7 +283,7 @@ export function BattleRecordForm({
                   : "bg-destructive/80 text-white hover:bg-destructive disabled:opacity-40"
               }`}
             >
-              LOSS
+              LOSE
             </button>
           </div>
 
