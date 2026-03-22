@@ -109,7 +109,13 @@ export default function DeckDetailPage() {
       <div className="min-h-screen pb-20 px-4 pt-6 max-w-lg mx-auto space-y-4">
         {/* Back button */}
         <button
-          onClick={() => router.push("/stats")}
+          onClick={() => {
+            const params = new URLSearchParams();
+            params.set("scope", isGlobal ? "global" : "personal");
+            params.set("start", startDate);
+            params.set("end", endDate);
+            router.push("/stats?" + params.toString());
+          }}
           className="text-sm text-primary hover:underline flex items-center gap-1"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

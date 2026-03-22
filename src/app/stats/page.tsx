@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { Suspense, useEffect, useState, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import { getDetailedPersonalStats, getEnvironmentSharesByRange, getPersonalEnvironmentSharesByRange, getGlobalStatsByRange, getDeckTrendByRange } from "@/lib/actions/stats-actions";
 import type { DetailedPersonalStats, TrendRow } from "@/lib/actions/stats-actions";
 import { getDailyBattleCounts } from "@/lib/actions/battle-actions";
@@ -17,19 +18,27 @@ import { EnvironmentChart } from "@/components/stats/EnvironmentChart";
 import { TrendChart } from "@/components/stats/TrendChart";
 import { BottomNav } from "@/components/layout/BottomNav";
 
-export default function StatsPage() {
+function StatsPageInner() {
+  const searchParams = useSearchParams();
   const { format, setFormat, ready } = useFormat();
-  const [scope, setScope] = useState<Scope>("personal");
+  const [scope, setScope] = useState<Scope>(() => {
+    const sp = searchParams.get("scope");
+    return (sp === "personal" || sp === "global" || sp === "team") ? sp : "personal";
+  });
   const [view, setView] = useState<View>("stats");
   const [loading, setLoading] = useState(true);
   const [battleCounts, setBattleCounts] = useState<Record<string, number>>({});
 
   const [startDate, setStartDate] = useState(() => {
-    const d = new Date();
-    d.setDate(d.getDate() - 6);
-    return d.toLocaleDateString("sv-SE");
+    return searchParams.get("start") || (() => {
+      const d = new Date();
+      d.setDate(d.getDate() - 6);
+      return d.toLocaleDateString("sv-SE");
+    })();
   });
-  const [endDate, setEndDate] = useState(() => new Date().toLocaleDateString("sv-SE"));
+  const [endDate, setEndDate] = useState(() => {
+    return searchParams.get("end") || new Date().toLocaleDateString("sv-SE");
+  });
 
   // Data states
   const [personalStats, setPersonalStats] = useState<DetailedPersonalStats>({ myDeckStats: [], opponentDeckStats: [] });
@@ -158,5 +167,17 @@ export default function StatsPage() {
       </div>
       <BottomNav />
     </>
+  );
+}
+
+export default function StatsPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex justify-center py-12">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    }>
+      <StatsPageInner />
+    </Suspense>
   );
 }
