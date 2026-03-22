@@ -1,54 +1,16 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { getOpponentDeckDetailStats, getGlobalOpponentDeckDetailStats } from "@/lib/actions/stats-actions";
-import type { OpponentDeckDetailStats, OpponentDetail } from "@/lib/actions/stats-actions";
+import type { OpponentDeckDetailStats } from "@/lib/actions/stats-actions";
 import { getDailyBattleCounts } from "@/lib/actions/battle-actions";
 import { useFormat } from "@/hooks/use-format";
 import { FormatSelector } from "@/components/ui/FormatSelector";
 import { DateRangeCalendar } from "@/components/battle/DateRangeCalendar";
+import { MatchupCard } from "@/components/stats/MatchupCard";
+import { EncounterDonutChart } from "@/components/stats/EncounterDonutChart";
 import { BottomNav } from "@/components/layout/BottomNav";
-
-function WinRateText({ rate }: { rate: number }) {
-  return (
-    <span className={rate >= 50 ? "text-success" : "text-destructive"}>
-      勝率 {rate}%
-    </span>
-  );
-}
-
-function TurnOrderRow({ label, wins, losses, total, winRate }: { label: string; wins: number; losses: number; total: number; winRate: number }) {
-  if (total === 0) return null;
-  return (
-    <div className="flex items-center justify-between text-xs py-0.5">
-      <span className="text-muted-foreground w-14">{label}</span>
-      <span className="flex-1 text-right">
-        <WinRateText rate={winRate} />
-        <span className="text-muted-foreground ml-2">{wins}勝 {losses}敗 ({total}件)</span>
-      </span>
-    </div>
-  );
-}
-
-function MyDeckRow({ row }: { row: { myDeckName: string } & OpponentDetail }) {
-  return (
-    <div className="space-y-0.5">
-      <div className="flex items-center justify-between text-sm">
-        <span>{row.myDeckName}</span>
-        <span className="flex items-center gap-2">
-          <WinRateText rate={row.winRate} />
-          <span className="text-muted-foreground text-xs">{row.wins}勝 {row.losses}敗 ({row.total}件)</span>
-        </span>
-      </div>
-      <div className="pl-2">
-        <TurnOrderRow label="先攻" wins={row.firstWins} losses={row.firstLosses} total={row.firstTotal} winRate={row.firstWinRate} />
-        <TurnOrderRow label="後攻" wins={row.secondWins} losses={row.secondLosses} total={row.secondTotal} winRate={row.secondWinRate} />
-        <TurnOrderRow label="不明" wins={row.unknownWins} losses={row.unknownLosses} total={row.unknownTotal} winRate={row.unknownWinRate} />
-      </div>
-    </div>
-  );
-}
 
 export default function OpponentDeckDetailPage() {
   const params = useParams();
@@ -62,6 +24,7 @@ export default function OpponentDeckDetailPage() {
   const [stats, setStats] = useState<OpponentDeckDetailStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [battleCounts, setBattleCounts] = useState<Record<string, number>>({});
+  const [sortBy, setSortBy] = useState<"count" | "winRate">("count");
 
   const [startDate, setStartDate] = useState(() => {
     return searchParams.get("start") || (() => {
@@ -97,6 +60,22 @@ export default function OpponentDeckDetailPage() {
     const now = new Date();
     loadCounts(now.getFullYear(), now.getMonth() + 1);
   }, [loadCounts]);
+
+  const sortedOverall = useMemo(() => {
+    if (!stats) return [];
+    const arr = [...stats.overall];
+    if (sortBy === "winRate") {
+      arr.sort((a, b) => b.winRate - a.winRate || b.total - a.total);
+    } else {
+      arr.sort((a, b) => b.total - a.total);
+    }
+    return arr;
+  }, [stats, sortBy]);
+
+  const donutItems = useMemo(() => {
+    if (!stats) return [];
+    return stats.overall.map((o) => ({ name: o.myDeckName, total: o.total, winRate: o.winRate }));
+  }, [stats]);
 
   const handleRangeChange = (start: string, end: string) => {
     setStartDate(start);
@@ -142,22 +121,43 @@ export default function OpponentDeckDetailPage() {
               onMonthChange={loadCounts}
             />
 
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <h2 className="text-base font-bold">全体</h2>
-                <span className="text-sm">
-                  <WinRateText rate={stats.overallWinRate} />
-                  <span className="text-muted-foreground text-xs ml-2">{stats.overallWins}勝 {stats.overallLosses}敗 ({stats.overallTotal}件)</span>
-                </span>
-              </div>
+            <div className="space-y-3">
+              <h2 className="text-base font-bold">全体</h2>
+
               {stats.overall.length === 0 ? (
                 <p className="text-center text-muted-foreground py-4 text-sm">データがありません</p>
               ) : (
-                <div className="rounded-lg border border-border bg-card px-4 py-2 space-y-3">
-                  {stats.overall.map((row) => (
-                    <MyDeckRow key={row.myDeckName} row={row} />
-                  ))}
-                </div>
+                <>
+                  <EncounterDonutChart
+                    items={donutItems}
+                    overallWinRate={stats.overallWinRate}
+                    overallWins={stats.overallWins}
+                    overallLosses={stats.overallLosses}
+                    overallTotal={stats.overallTotal}
+                  />
+
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="text-muted-foreground">並び替え:</span>
+                    <button
+                      onClick={() => setSortBy("count")}
+                      className={`px-2 py-0.5 rounded ${sortBy === "count" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
+                    >
+                      対戦数
+                    </button>
+                    <button
+                      onClick={() => setSortBy("winRate")}
+                      className={`px-2 py-0.5 rounded ${sortBy === "winRate" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
+                    >
+                      勝率
+                    </button>
+                  </div>
+
+                  <div className="space-y-2">
+                    {sortedOverall.map((row) => (
+                      <MatchupCard key={row.myDeckName} name={row.myDeckName} detail={row} />
+                    ))}
+                  </div>
+                </>
               )}
             </div>
           </>
