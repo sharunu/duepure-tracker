@@ -76,7 +76,7 @@ export function EditBattleModal({ battle, decks, suggestions, onSave, onClose }:
 
         {/* My deck selector */}
         <div className="space-y-1">
-          <label className="text-sm text-muted-foreground">自デッキ</label>
+          <label className="text-sm text-muted-foreground">使用デッキ</label>
           <select
             value={selectedValue}
             onChange={(e) => setSelectedValue(e.target.value)}
@@ -100,6 +100,27 @@ export function EditBattleModal({ battle, decks, suggestions, onSave, onClose }:
           />
         </div>
 
+        {/* Turn order */}
+        <div className="space-y-1">
+          <label className="text-sm text-muted-foreground">先攻/後攻（任意）</label>
+          <div className="flex gap-2">
+            {(["first", "second"] as const).map((order) => (
+              <button
+                key={order}
+                type="button"
+                onClick={() => setTurnOrder(turnOrder === order ? null : order)}
+                className={`flex-1 rounded-lg border px-3 py-2 text-sm transition-colors min-h-[44px] ${
+                  turnOrder === order
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border bg-card hover:bg-muted text-muted-foreground"
+                }`}
+              >
+                {order === "first" ? "先攻" : "後攻"}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Result */}
         <div className="space-y-1">
           <label className="text-sm text-muted-foreground">勝敗</label>
@@ -118,27 +139,6 @@ export function EditBattleModal({ battle, decks, suggestions, onSave, onClose }:
                 }`}
               >
                 {r === "win" ? "Win" : "Lose"}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Turn order */}
-        <div className="space-y-1">
-          <label className="text-sm text-muted-foreground">先攻/後攻</label>
-          <div className="flex gap-2">
-            {(["first", "second"] as const).map((order) => (
-              <button
-                key={order}
-                type="button"
-                onClick={() => setTurnOrder(turnOrder === order ? null : order)}
-                className={`flex-1 rounded-lg border px-3 py-2 text-sm transition-colors min-h-[44px] ${
-                  turnOrder === order
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-border bg-card hover:bg-muted text-muted-foreground"
-                }`}
-              >
-                {order === "first" ? "先攻" : "後攻"}
               </button>
             ))}
           </div>
