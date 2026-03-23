@@ -41,6 +41,9 @@ export function DeckList({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const blurTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const [deckError, setDeckError] = useState<string | null>(null);
+  const [tuningError, setTuningError] = useState<string | null>(null);
+
   // Tuning state
   const [expandedTuningDeck, setExpandedTuningDeck] = useState<string | null>(null);
   const [newTuningName, setNewTuningName] = useState("");
@@ -58,6 +61,7 @@ export function DeckList({
     if (!newName.trim()) return;
     setLoading(true);
     setShowSuggestions(false);
+    setDeckError(null);
     try {
       const newDeck = await createDeck(newName.trim(), format);
       setNewName("");
@@ -67,8 +71,8 @@ export function DeckList({
         const updated = await getDecks(format);
         setDecks(updated);
       }
-    } catch {
-      // handle error
+    } catch (e) {
+      setDeckError(e instanceof Error ? e.message : "エラーが発生しました");
     } finally {
       setLoading(false);
     }
@@ -77,14 +81,15 @@ export function DeckList({
   const handleUpdate = async (id: string) => {
     if (!editName.trim()) return;
     setLoading(true);
+    setDeckError(null);
     try {
       await updateDeck(id, editName.trim());
       setDecks(
         decks.map((d) => (d.id === id ? { ...d, name: editName.trim() } : d))
       );
       setEditingId(null);
-    } catch {
-      // handle error
+    } catch (e) {
+      setDeckError(e instanceof Error ? e.message : "エラーが発生しました");
     } finally {
       setLoading(false);
     }
@@ -126,6 +131,7 @@ export function DeckList({
   // Tuning handlers
   const handleCreateTuning = async (deckId: string) => {
     if (!newTuningName.trim()) return;
+    setTuningError(null);
     try {
       const tuning = await createTuning(deckId, newTuningName.trim());
       setDecks(decks.map(d => d.id === deckId ? {
@@ -133,13 +139,14 @@ export function DeckList({
         deck_tunings: [...d.deck_tunings, tuning],
       } : d));
       setNewTuningName("");
-    } catch {
-      // handle error
+    } catch (e) {
+      setTuningError(e instanceof Error ? e.message : "エラーが発生しました");
     }
   };
 
   const handleUpdateTuning = async (deckId: string, tuningId: string) => {
     if (!editTuningName.trim()) return;
+    setTuningError(null);
     try {
       await updateTuning(tuningId, editTuningName.trim());
       setDecks(decks.map(d => d.id === deckId ? {
@@ -147,8 +154,8 @@ export function DeckList({
         deck_tunings: d.deck_tunings.map(t => t.id === tuningId ? { ...t, name: editTuningName.trim() } : t),
       } : d));
       setEditingTuningId(null);
-    } catch {
-      // handle error
+    } catch (e) {
+      setTuningError(e instanceof Error ? e.message : "エラーが発生しました");
     }
   };
 
@@ -207,6 +214,9 @@ export function DeckList({
               </li>
             ))}
           </ul>
+        )}
+        {deckError && (
+          <p className="text-sm text-destructive mt-1">{deckError}</p>
         )}
       </div>
 
@@ -332,6 +342,9 @@ export function DeckList({
                       追加
                     </button>
                   </div>
+                  {tuningError && expandedTuningDeck === deck.id && (
+                    <p className="text-xs text-destructive mt-1">{tuningError}</p>
+                  )}
                 </div>
               )}
             </li>

@@ -30,6 +30,19 @@ export async function createDeck(name: string, format: string = "ND") {
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
 
+  const { data: existing } = await supabase
+    .from("decks")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("name", name)
+    .eq("format", format)
+    .eq("is_archived", false)
+    .limit(1);
+
+  if (existing && existing.length > 0) {
+    throw new Error("同じ名前のデッキが既に登録されています");
+  }
+
   const { data, error } = await supabase
     .from("decks")
     .insert({ user_id: user.id, name, format })
@@ -42,11 +55,27 @@ export async function createDeck(name: string, format: string = "ND") {
 
 export async function updateDeck(id: string, name: string) {
   const supabase = createClient();
-  const { error } = await supabase
-    .from("decks")
-    .update({ name })
-    .eq("id", id);
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
 
+  const { data: deck } = await supabase.from("decks").select("format").eq("id", id).single();
+  if (!deck) throw new Error("Deck not found");
+
+  const { data: dup } = await supabase
+    .from("decks")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("name", name)
+    .eq("format", deck.format)
+    .eq("is_archived", false)
+    .neq("id", id)
+    .limit(1);
+
+  if (dup && dup.length > 0) {
+    throw new Error("同じ名前のデッキが既に登録されています");
+  }
+
+  const { error } = await supabase.from("decks").update({ name }).eq("id", id);
   if (error) throw new Error(error.message);
 }
 
@@ -70,6 +99,18 @@ export async function reorderDecks(deckIds: string[]) {
 
 export async function createTuning(deckId: string, name: string) {
   const supabase = createClient();
+
+  const { data: dup } = await supabase
+    .from("deck_tunings")
+    .select("id")
+    .eq("deck_id", deckId)
+    .eq("name", name)
+    .limit(1);
+
+  if (dup && dup.length > 0) {
+    throw new Error("同じ名前のチューニングが既に登録されています");
+  }
+
   // Get max sort_order for this deck
   const { data: existing } = await supabase
     .from("deck_tunings")
@@ -91,11 +132,23 @@ export async function createTuning(deckId: string, name: string) {
 
 export async function updateTuning(id: string, name: string) {
   const supabase = createClient();
-  const { error } = await supabase
-    .from("deck_tunings")
-    .update({ name })
-    .eq("id", id);
 
+  const { data: current } = await supabase.from("deck_tunings").select("deck_id").eq("id", id).single();
+  if (!current) throw new Error("Tuning not found");
+
+  const { data: dup } = await supabase
+    .from("deck_tunings")
+    .select("id")
+    .eq("deck_id", current.deck_id)
+    .eq("name", name)
+    .neq("id", id)
+    .limit(1);
+
+  if (dup && dup.length > 0) {
+    throw new Error("同じ名前のチューニングが既に登録されています");
+  }
+
+  const { error } = await supabase.from("deck_tunings").update({ name }).eq("id", id);
   if (error) throw new Error(error.message);
 }
 

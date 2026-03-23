@@ -215,7 +215,6 @@ export type TuningOpponentDetail = OpponentDetail;
 
 export type TuningStats = {
   tuningName: string;
-  tuningId: string | null;
   wins: number;
   losses: number;
   total: number;
@@ -291,7 +290,7 @@ export async function getDeckDetailStats(
   // Overall opponent map
   const overallMap = new Map<string, OpponentDetail>();
   // Tuning map: tuningKey -> { tuningName, opponents }
-  const tuningMap = new Map<string, { tuningName: string; tuningId: string | null; opponents: Map<string, OpponentDetail>; wins: number; losses: number; total: number }>();
+  const tuningMap = new Map<string, { tuningName: string; opponents: Map<string, OpponentDetail>; wins: number; losses: number; total: number }>();
 
   let overallWins = 0;
   let overallLosses = 0;
@@ -306,11 +305,10 @@ export async function getDeckDetailStats(
     if (isWin) overallWins++; else overallLosses++;
 
     // Tuning
-    const tuningId = b.tuning_id ?? null;
     const tuningName = b.deck_tunings?.name ?? "指定なし";
-    const tuningKey = tuningId ?? "__none__";
+    const tuningKey = tuningName;
     if (!tuningMap.has(tuningKey)) {
-      tuningMap.set(tuningKey, { tuningName, tuningId, opponents: new Map(), wins: 0, losses: 0, total: 0 });
+      tuningMap.set(tuningKey, { tuningName, opponents: new Map(), wins: 0, losses: 0, total: 0 });
     }
     const tEntry = tuningMap.get(tuningKey)!;
     tEntry.total++;
@@ -336,7 +334,6 @@ export async function getDeckDetailStats(
   const tuningStats: TuningStats[] = Array.from(tuningMap.entries())
     .map(([, t]) => ({
       tuningName: t.tuningName,
-      tuningId: t.tuningId,
       wins: t.wins,
       losses: t.losses,
       total: t.total,

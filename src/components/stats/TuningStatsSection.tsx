@@ -19,7 +19,7 @@ export function TuningStatsSection({ tuningStats }: { tuningStats: TuningStats[]
   return (
     <div className="space-y-2">
       {tuningStats.map((t) => {
-        const key = t.tuningId ?? "__none__";
+        const key = t.tuningName;
         const color = getWinRateColor(t.winRate);
         return (
           <div key={key} className="rounded-lg border border-border bg-card overflow-hidden">
