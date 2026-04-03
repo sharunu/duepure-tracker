@@ -17,6 +17,7 @@ import { OpponentDeckStatsSection } from "@/components/stats/OpponentDeckStatsSe
 import { EnvironmentChart } from "@/components/stats/EnvironmentChart";
 import { TrendChart } from "@/components/stats/TrendChart";
 import { BottomNav } from "@/components/layout/BottomNav";
+import { getWinRateColor } from "@/lib/stats-utils";
 
 function StatsPageInner() {
   const searchParams = useSearchParams();
@@ -114,8 +115,27 @@ function StatsPageInner() {
 
     if (view === "stats") {
       const stats = scope === "personal" ? personalStats : globalStats;
+      const totalWins = stats.myDeckStats.reduce((sum, d) => sum + d.wins, 0);
+      const totalLosses = stats.myDeckStats.reduce((sum, d) => sum + d.losses, 0);
+      const totalBattles = totalWins + totalLosses;
+      const overallWinRate = totalBattles > 0 ? Math.round((totalWins / totalBattles) * 100) : 0;
+
       return (
         <>
+          <div className="flex gap-3">
+            <div className="flex-1 rounded-[10px] p-4" style={{ backgroundColor: "#232640" }}>
+              <p className="text-xs text-muted-foreground">全体勝率</p>
+              <p className="text-2xl font-bold mt-1" style={{ color: getWinRateColor(overallWinRate) }}>
+                {overallWinRate}%
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">{totalWins}勝 {totalLosses}敗</p>
+            </div>
+            <div className="flex-1 rounded-[10px] p-4" style={{ backgroundColor: "#232640" }}>
+              <p className="text-xs text-muted-foreground">総対戦数</p>
+              <p className="text-2xl font-bold mt-1">{totalBattles}</p>
+              <p className="text-xs text-muted-foreground mt-1">件</p>
+            </div>
+          </div>
           <div>
             <h2 className="text-base font-bold mb-2">使用デッキ別</h2>
             <MyDeckStatsSection stats={stats.myDeckStats} startDate={startDate} endDate={endDate} scope={scope} />

@@ -2,16 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import type { DetailedPersonalStats } from "@/lib/actions/stats-actions";
+import { getWinRateColor } from "@/lib/stats-utils";
 
 type OpponentRow = DetailedPersonalStats["opponentDeckStats"][number];
-
-function WinRateText({ rate }: { rate: number }) {
-  return (
-    <span className={rate >= 50 ? "text-success" : "text-destructive"}>
-      勝率 {rate}%
-    </span>
-  );
-}
 
 export function OpponentDeckStatsSection({ stats, startDate, endDate, scope }: { stats: OpponentRow[]; startDate?: string; endDate?: string; scope?: "personal" | "global" }) {
   const router = useRouter();
@@ -35,25 +28,37 @@ export function OpponentDeckStatsSection({ stats, startDate, endDate, scope }: {
 
   return (
     <div className="space-y-2">
-      {stats.map((row) => (
-        <div key={row.deckName} className="rounded-lg border border-border bg-card overflow-hidden">
-          <button
-            onClick={() => handleClick(row.deckName)}
-            className="w-full flex items-center justify-between px-4 py-3 text-sm transition-colors hover:bg-muted/50"
-          >
-            <span className="font-medium">{row.deckName}</span>
-            <span className="flex items-center gap-2">
-              <WinRateText rate={row.winRate} />
-              <span className="text-muted-foreground text-xs">{row.wins}勝 {row.losses}敗 ({row.total}件)</span>
-              <svg
-                width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-              >
-                <path d="M9 18l6-6-6-6" />
-              </svg>
-            </span>
-          </button>
-        </div>
-      ))}
+      {stats.map((row) => {
+        const color = getWinRateColor(row.winRate);
+        return (
+          <div key={row.deckName} className="relative rounded-lg border border-border bg-card overflow-hidden">
+            <div className="absolute left-0 top-0 bottom-0 w-[3px]" style={{ backgroundColor: color }} />
+            <button
+              onClick={() => handleClick(row.deckName)}
+              className="w-full pl-4 pr-4 py-3 text-sm transition-colors hover:bg-muted/50"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-medium">{row.deckName}</span>
+                <span className="flex items-center gap-2">
+                  <span className="text-base font-bold" style={{ color }}>
+                    {row.winRate}%
+                  </span>
+                  <span className="text-muted-foreground text-xs">
+                    {row.wins}勝 {row.losses}敗 ({row.total}件)
+                  </span>
+                  <span className="text-muted-foreground">›</span>
+                </span>
+              </div>
+              <div className="h-1 rounded-full bg-muted/30">
+                <div
+                  className="h-1 rounded-full transition-all"
+                  style={{ width: `${row.winRate}%`, backgroundColor: color }}
+                />
+              </div>
+            </button>
+          </div>
+        );
+      })}
     </div>
   );
 }
