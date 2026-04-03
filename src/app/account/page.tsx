@@ -138,201 +138,264 @@ export default function AccountPage() {
     );
   }
 
+  const initials = (displayName || email || "?").slice(0, 2).toUpperCase();
+
   return (
     <>
       <div className="min-h-screen pb-20 px-4 pt-6 max-w-lg mx-auto">
-        <h1 className="text-xl font-bold mb-6">アカウント設定</h1>
+        <h1 className="text-[20px] font-medium mb-5">アカウント設定</h1>
 
-        {/* メールアドレス */}
-        <section className={"bg-card border border-border rounded-lg p-4 mb-4" + (isGuest ? " opacity-50" : "")}>
-          <h2 className="text-sm font-medium mb-3">メールアドレス</h2>
-          <div className="w-full rounded-lg bg-background border border-border px-3 py-2 text-sm text-muted-foreground">
-            {isGuest ? "ゲストアカウント" : (email || "未設定")}
+        {/* プロフィールカード */}
+        <div className="bg-[#232640] rounded-[10px] px-4 py-[14px] flex items-center gap-3">
+          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#5b8def] to-[#7c5bf0] flex items-center justify-center flex-shrink-0">
+            <span className="text-white text-[15px] font-medium">{initials}</span>
           </div>
-        </section>
+          <div className="min-w-0 flex-1">
+            <p className="text-[15px] font-medium truncate">{displayName || "未設定"}</p>
+            <p className="text-[12px] text-gray-500 truncate">{isGuest ? "ゲストアカウント" : (email || "未設定")}</p>
+            <span className={"inline-block mt-1 text-[10px] px-2 py-0.5 rounded-full font-medium " + (
+              isSnsLogin
+                ? "bg-[#1a2744] text-[#5b8def]"
+                : "bg-[#2a1f44] text-[#9b7bef]"
+            )}>
+              {provider === "google" ? "Google" : provider === "twitter" ? "X" : isGuest ? "ゲスト" : "メール"}
+            </span>
+          </div>
+        </div>
 
-        {/* ユーザー名変更 */}
-        <section className={"bg-card border border-border rounded-lg p-4 mb-4" + (isGuest ? " opacity-50" : "")}>
-          <h2 className="text-sm font-medium mb-3">ユーザー名</h2>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              disabled={isGuest}
-              className="flex-1 rounded-lg bg-background border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
-              placeholder="ユーザー名"
-            />
-            <button
-              onClick={handleUpdateName}
-              disabled={nameLoading || isGuest}
-              className="rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:opacity-90 disabled:opacity-50"
+        {/* プロフィールセクション */}
+        <div className="mt-5">
+          <p className="text-[12px] text-gray-500 mb-2">プロフィール</p>
+          <div className={"bg-[#232640] rounded-[10px]" + (isGuest ? " opacity-50" : "")}>
+            {/* メールアドレス行 */}
+            <div className="px-4 py-[14px] flex items-center justify-between">
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] text-gray-500">メールアドレス</p>
+                <p className="text-[14px] truncate">{isGuest ? "ゲストアカウント" : (email || "未設定")}</p>
+              </div>
+              {isSnsLogin && (
+                <span className="text-[10px] bg-[#1e2138] text-[#555577] px-2 py-0.5 rounded-full flex-shrink-0 ml-2">変更不可</span>
+              )}
+            </div>
+            {/* 区切り線 */}
+            <div className="mx-4 border-t" style={{ borderColor: "rgba(100,100,150,0.2)", borderWidth: "0.5px" }} />
+            {/* ユーザー名行 */}
+            <div className="px-4 py-[14px]">
+              <p className="text-[11px] text-gray-500 mb-2">ユーザー名</p>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  disabled={isGuest}
+                  className="flex-1 bg-[#1a1d2e] rounded-[6px] px-3 py-2 text-[14px] focus:outline-none disabled:opacity-50"
+                  style={{ border: "0.5px solid #333355" }}
+                  placeholder="ユーザー名"
+                />
+                <button
+                  onClick={handleUpdateName}
+                  disabled={nameLoading || isGuest}
+                  className="bg-[#3d4070] text-white rounded-[6px] px-4 py-2 text-[13px] font-medium hover:opacity-90 disabled:opacity-50"
+                >
+                  保存
+                </button>
+              </div>
+              {nameMessage && (
+                <p className="text-xs text-accent mt-2">{nameMessage}</p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* セキュリティセクション */}
+        <div className="mt-5">
+          <p className="text-[12px] text-gray-500 mb-2">セキュリティ</p>
+          <div className={"bg-[#232640] rounded-[10px]" + (isGuest ? " opacity-50" : "")}>
+            {/* パスワード変更行 */}
+            <div className="px-4 py-[14px]">
+              {isSnsLogin || isGuest ? (
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[14px]">パスワード変更</p>
+                    <p className="text-[11px] text-gray-500 mt-0.5">
+                      {isSnsLogin ? "SNSログイン中のため変更できません" : "ゲストアカウントではパスワードを設定できません"}
+                    </p>
+                  </div>
+                  <span className="text-[10px] bg-[#1e2138] text-[#555577] px-2 py-0.5 rounded-full flex-shrink-0 ml-2">無効</span>
+                </div>
+              ) : (
+                <div>
+                  <p className="text-[14px] mb-3">パスワード変更</p>
+                  <div className="space-y-2">
+                    <input
+                      type="password"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      className="w-full bg-[#1a1d2e] rounded-[6px] px-3 py-2 text-[14px] focus:outline-none"
+                      style={{ border: "0.5px solid #333355" }}
+                      placeholder="現在のパスワード"
+                    />
+                    <input
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="w-full bg-[#1a1d2e] rounded-[6px] px-3 py-2 text-[14px] focus:outline-none"
+                      style={{ border: "0.5px solid #333355" }}
+                      placeholder="新しいパスワード（8文字以上）"
+                    />
+                    <button
+                      onClick={handleChangePassword}
+                      disabled={passwordLoading || !currentPassword || !newPassword}
+                      className="w-full bg-[#3d4070] text-white rounded-[6px] px-3 py-2 text-[13px] font-medium hover:opacity-90 disabled:opacity-50"
+                    >
+                      パスワードを変更
+                    </button>
+                  </div>
+                  {passwordMessage && (
+                    <p className="text-xs text-accent mt-2">{passwordMessage}</p>
+                  )}
+                </div>
+              )}
+            </div>
+            {/* 区切り線 */}
+            <div className="mx-4 border-t" style={{ borderColor: "rgba(100,100,150,0.2)", borderWidth: "0.5px" }} />
+            {/* アカウント切替行 */}
+            <div
+              className={"px-4 py-[14px] flex items-center justify-between" + (isSnsLogin ? " cursor-pointer" : "")}
+              onClick={isSnsLogin ? handleSwitchAccount : undefined}
             >
-              保存
-            </button>
+              <div>
+                <p className="text-[14px]">アカウント切替</p>
+                <p className="text-[11px] text-gray-500 mt-0.5">
+                  {isSnsLogin
+                    ? (provider === "google" ? "別のGoogleアカウントに切り替え" : "別のXアカウントに切り替え")
+                    : isGuest
+                      ? "ゲストアカウントでは切替できません"
+                      : "ログアウトして別のアカウントでログインしてください"}
+                </p>
+              </div>
+              <span className="text-gray-500 text-[18px] ml-2 flex-shrink-0">&rsaquo;</span>
+            </div>
+            {switchMessage && (
+              <p className="text-xs text-accent px-4 pb-3">{switchMessage}</p>
+            )}
           </div>
-          {nameMessage && (
-            <p className="text-xs text-accent mt-2">{nameMessage}</p>
-          )}
-        </section>
+        </div>
 
-        {/* パスワード変更 */}
-        <section className={"bg-card border border-border rounded-lg p-4 mb-4" + (isGuest ? " opacity-50" : "")}>
-          <h2 className="text-sm font-medium mb-3">パスワード変更</h2>
-          {isSnsLogin || isGuest ? (
-            <p className="text-xs text-muted-foreground">
-              {isSnsLogin ? "SNSログイン中のため変更できません" : "ゲストアカウントではパスワードを設定できません"}
-            </p>
-          ) : (
-            <div className="space-y-2">
-              <input
-                type="password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                className="w-full rounded-lg bg-background border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                placeholder="現在のパスワード"
-              />
-              <input
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                className="w-full rounded-lg bg-background border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                placeholder="新しいパスワード（8文字以上）"
-              />
-              <button
-                onClick={handleChangePassword}
-                disabled={passwordLoading || !currentPassword || !newPassword}
-                className="w-full rounded-lg bg-primary text-primary-foreground px-3 py-2 text-sm font-medium hover:opacity-90 disabled:opacity-50"
+        {/* その他セクション */}
+        <div className="mt-5">
+          <p className="text-[12px] text-gray-500 mb-2">その他</p>
+          <div className="space-y-3">
+            {/* ログアウト */}
+            <div
+              className="bg-[#232640] rounded-[10px] px-4 py-[14px] flex items-center justify-between cursor-pointer"
+              onClick={handleLogout}
+            >
+              <p className="text-[14px]">ログアウト</p>
+              <span className="text-gray-500 text-[18px]">&rsaquo;</span>
+            </div>
+
+            {/* アカウント削除 */}
+            {deleteStep === 0 && (
+              <div
+                className={"rounded-[10px] px-4 py-[14px] flex items-center justify-between" + (isGuest ? " opacity-50" : " cursor-pointer")}
+                style={{
+                  backgroundColor: "rgba(232,93,117,0.06)",
+                  border: "0.5px solid rgba(232,93,117,0.2)",
+                }}
+                onClick={() => { if (!isGuest) setDeleteStep(1); }}
               >
-                パスワードを変更
-              </button>
-            </div>
-          )}
-          {passwordMessage && (
-            <p className="text-xs text-accent mt-2">{passwordMessage}</p>
-          )}
-        </section>
-
-        {/* アカウント切替 */}
-        <section className={"bg-card border border-border rounded-lg p-4 mb-4" + (isGuest ? " opacity-50" : "")}>
-          <h2 className="text-sm font-medium mb-3">アカウント切替</h2>
-          {isSnsLogin ? (
-            <button
-              onClick={handleSwitchAccount}
-              className="w-full rounded-lg border border-border px-3 py-2 text-sm hover:bg-muted transition-colors"
-            >
-              {provider === "google" ? "別のGoogleアカウントに切替" : "別のXアカウントに切替"}
-            </button>
-          ) : (
-            <p className="text-xs text-muted-foreground">
-              {isGuest ? "ゲストアカウントでは切替できません" : "ログアウトして別のアカウントでログインしてください"}
-            </p>
-          )}
-          {switchMessage && (
-            <p className="text-xs text-accent mt-2">{switchMessage}</p>
-          )}
-        </section>
-
-        {/* ログアウト */}
-        <section className="mt-8">
-          <button
-            onClick={handleLogout}
-            className="w-full rounded-lg border border-red-500 text-red-500 px-4 py-3 text-sm font-medium hover:bg-red-500/10 transition-colors"
-          >
-            ログアウト
-          </button>
-        </section>
-
-        {/* アカウント削除 */}
-        <section className={"mt-4 mb-8" + (isGuest ? " opacity-50" : "")}>
-          {deleteStep === 0 && (
-            <button
-              onClick={() => { if (!isGuest) setDeleteStep(1); }}
-              disabled={isGuest}
-              className="w-full rounded-lg bg-red-500 text-white px-4 py-3 text-sm font-medium hover:bg-red-600 transition-colors disabled:opacity-50"
-            >
-              アカウントを削除
-            </button>
-          )}
-
-          {deleteStep === 1 && isEmailLogin && (
-            <div className="bg-card border border-red-500 rounded-lg p-4 space-y-3">
-              <p className="text-sm font-medium text-red-500">アカウント削除の確認</p>
-              <p className="text-xs text-muted-foreground">この操作は取り消せません。確認のためパスワードを入力してください。</p>
-              <input
-                type="password"
-                value={deletePassword}
-                onChange={(e) => setDeletePassword(e.target.value)}
-                className="w-full rounded-lg bg-background border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
-                placeholder="パスワードを入力"
-              />
-              {deleteMessage && (
-                <p className="text-xs text-red-500">{deleteMessage}</p>
-              )}
-              <div className="flex gap-2">
-                <button
-                  onClick={() => { setDeleteStep(0); setDeletePassword(""); setDeleteMessage(""); }}
-                  className="flex-1 rounded-lg border border-border px-3 py-2 text-sm hover:bg-muted transition-colors"
-                >
-                  キャンセル
-                </button>
-                <button
-                  onClick={handleDeleteAccount}
-                  disabled={deleteLoading || !deletePassword}
-                  className="flex-1 rounded-lg bg-red-500 text-white px-3 py-2 text-sm font-medium hover:bg-red-600 transition-colors disabled:opacity-50"
-                >
-                  {deleteLoading ? "削除中..." : "削除する"}
-                </button>
+                <div>
+                  <p className="text-[14px] text-[#e85d75]">アカウントを削除</p>
+                  <p className="text-[11px] text-gray-500 mt-0.5">すべてのデータが完全に削除されます</p>
+                </div>
+                <span className="text-[#e85d75] text-[18px] flex-shrink-0">&rsaquo;</span>
               </div>
-            </div>
-          )}
+            )}
 
-          {deleteStep === 1 && isSnsLogin && (
-            <div className="bg-card border border-red-500 rounded-lg p-4 space-y-3">
-              <p className="text-sm font-medium text-red-500">アカウント削除の確認</p>
-              <p className="text-xs text-muted-foreground">本当にアカウントを削除しますか？この操作は取り消せません。</p>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => { setDeleteStep(0); setDeleteMessage(""); }}
-                  className="flex-1 rounded-lg border border-border px-3 py-2 text-sm hover:bg-muted transition-colors"
-                >
-                  キャンセル
-                </button>
-                <button
-                  onClick={() => setDeleteStep(2)}
-                  className="flex-1 rounded-lg bg-red-500 text-white px-3 py-2 text-sm font-medium hover:bg-red-600 transition-colors"
-                >
-                  削除する
-                </button>
+            {deleteStep === 1 && isEmailLogin && (
+              <div className="bg-[#232640] rounded-[10px] px-4 py-[14px] space-y-3" style={{ border: "0.5px solid rgba(232,93,117,0.4)" }}>
+                <p className="text-[14px] font-medium text-[#e85d75]">アカウント削除の確認</p>
+                <p className="text-[11px] text-gray-500">この操作は取り消せません。確認のためパスワードを入力してください。</p>
+                <input
+                  type="password"
+                  value={deletePassword}
+                  onChange={(e) => setDeletePassword(e.target.value)}
+                  className="w-full bg-[#1a1d2e] rounded-[6px] px-3 py-2 text-[14px] focus:outline-none"
+                  style={{ border: "0.5px solid #333355" }}
+                  placeholder="パスワードを入力"
+                />
+                {deleteMessage && (
+                  <p className="text-xs text-[#e85d75]">{deleteMessage}</p>
+                )}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => { setDeleteStep(0); setDeletePassword(""); setDeleteMessage(""); }}
+                    className="flex-1 bg-[#1a1d2e] text-gray-400 rounded-[6px] px-3 py-2 text-[13px] hover:opacity-80"
+                    style={{ border: "0.5px solid #333355" }}
+                  >
+                    キャンセル
+                  </button>
+                  <button
+                    onClick={handleDeleteAccount}
+                    disabled={deleteLoading || !deletePassword}
+                    className="flex-1 bg-[#e85d75] text-white rounded-[6px] px-3 py-2 text-[13px] font-medium hover:opacity-90 disabled:opacity-50"
+                  >
+                    {deleteLoading ? "削除中..." : "削除する"}
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {deleteStep === 2 && isSnsLogin && (
-            <div className="bg-card border border-red-500 rounded-lg p-4 space-y-3">
-              <p className="text-sm font-medium text-red-500">最終確認</p>
-              <p className="text-xs text-muted-foreground">全てのデータが完全に削除されます。本当に削除しますか？</p>
-              {deleteMessage && (
-                <p className="text-xs text-red-500">{deleteMessage}</p>
-              )}
-              <div className="flex gap-2">
-                <button
-                  onClick={() => { setDeleteStep(0); setDeleteMessage(""); }}
-                  className="flex-1 rounded-lg border border-border px-3 py-2 text-sm hover:bg-muted transition-colors"
-                >
-                  キャンセル
-                </button>
-                <button
-                  onClick={handleDeleteAccount}
-                  disabled={deleteLoading}
-                  className="flex-1 rounded-lg bg-red-500 text-white px-3 py-2 text-sm font-medium hover:bg-red-600 transition-colors disabled:opacity-50"
-                >
-                  {deleteLoading ? "削除中..." : "完全に削除する"}
-                </button>
+            {deleteStep === 1 && isSnsLogin && (
+              <div className="bg-[#232640] rounded-[10px] px-4 py-[14px] space-y-3" style={{ border: "0.5px solid rgba(232,93,117,0.4)" }}>
+                <p className="text-[14px] font-medium text-[#e85d75]">アカウント削除の確認</p>
+                <p className="text-[11px] text-gray-500">本当にアカウントを削除しますか？この操作は取り消せません。</p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => { setDeleteStep(0); setDeleteMessage(""); }}
+                    className="flex-1 bg-[#1a1d2e] text-gray-400 rounded-[6px] px-3 py-2 text-[13px] hover:opacity-80"
+                    style={{ border: "0.5px solid #333355" }}
+                  >
+                    キャンセル
+                  </button>
+                  <button
+                    onClick={() => setDeleteStep(2)}
+                    className="flex-1 bg-[#e85d75] text-white rounded-[6px] px-3 py-2 text-[13px] font-medium hover:opacity-90"
+                  >
+                    削除する
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
-        </section>
+            )}
+
+            {deleteStep === 2 && isSnsLogin && (
+              <div className="bg-[#232640] rounded-[10px] px-4 py-[14px] space-y-3" style={{ border: "0.5px solid rgba(232,93,117,0.4)" }}>
+                <p className="text-[14px] font-medium text-[#e85d75]">最終確認</p>
+                <p className="text-[11px] text-gray-500">全てのデータが完全に削除されます。本当に削除しますか？</p>
+                {deleteMessage && (
+                  <p className="text-xs text-[#e85d75]">{deleteMessage}</p>
+                )}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => { setDeleteStep(0); setDeleteMessage(""); }}
+                    className="flex-1 bg-[#1a1d2e] text-gray-400 rounded-[6px] px-3 py-2 text-[13px] hover:opacity-80"
+                    style={{ border: "0.5px solid #333355" }}
+                  >
+                    キャンセル
+                  </button>
+                  <button
+                    onClick={handleDeleteAccount}
+                    disabled={deleteLoading}
+                    className="flex-1 bg-[#e85d75] text-white rounded-[6px] px-3 py-2 text-[13px] font-medium hover:opacity-90 disabled:opacity-50"
+                  >
+                    {deleteLoading ? "削除中..." : "完全に削除する"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
       <BottomNav />
     </>
