@@ -311,6 +311,7 @@ export function DeckList({
                     </button>
                     <button
                       onClick={(e) => {
+                        if (!window.confirm(`「${deck.name}」を削除しますか？`)) { e.stopPropagation(); return; }
                         e.stopPropagation();
                         handleArchive(deck.id);
                       }}
@@ -362,7 +363,7 @@ export function DeckList({
                             編集
                           </button>
                           <button
-                            onClick={() => handleDeleteTuning(deck.id, tuning.id)}
+                            onClick={() => { if (!window.confirm(`「${tuning.name}」を削除しますか？`)) return; handleDeleteTuning(deck.id, tuning.id); }}
                             className="text-xs text-[#e85d75]"
                           >
                             削除

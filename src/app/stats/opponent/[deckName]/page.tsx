@@ -29,7 +29,7 @@ export default function OpponentDeckDetailPage() {
   const [startDate, setStartDate] = useState(() => {
     return searchParams.get("start") || (() => {
       const d = new Date();
-      d.setDate(d.getDate() - 6);
+      d.setMonth(d.getMonth() - 1);
       return d.toLocaleDateString("sv-SE");
     })();
   });

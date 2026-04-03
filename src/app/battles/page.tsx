@@ -35,7 +35,7 @@ export default function BattlesPage() {
 
   const [startDate, setStartDate] = useState(() => {
     const d = new Date();
-    d.setDate(d.getDate() - 6);
+    d.setMonth(d.getMonth() - 1);
     return d.toLocaleDateString("sv-SE");
   });
   const [endDate, setEndDate] = useState(() => new Date().toLocaleDateString("sv-SE"));

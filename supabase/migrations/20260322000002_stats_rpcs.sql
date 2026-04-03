@@ -51,7 +51,7 @@ BEGIN
     SELECT
       my_deck,
       COUNT(*) FILTER (WHERE result = 'win') AS w,
-      COUNT(*) FILTER (WHERE result = 'lose') AS l,
+      COUNT(*) FILTER (WHERE result = 'loss') AS l,
       COUNT(*) AS t
     FROM battle_data
     GROUP BY my_deck
@@ -97,7 +97,7 @@ BEGIN
     SELECT
       opp_deck,
       COUNT(*) FILTER (WHERE result = 'win') AS w,
-      COUNT(*) FILTER (WHERE result = 'lose') AS l,
+      COUNT(*) FILTER (WHERE result = 'loss') AS l,
       COUNT(*) AS t
     FROM battle_data
     GROUP BY opp_deck

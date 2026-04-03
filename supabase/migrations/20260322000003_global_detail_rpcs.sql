@@ -14,16 +14,16 @@ BEGIN
   SELECT
     COALESCE(b.opponent_deck_normalized, b.opponent_deck_name) AS opponent_name,
     COUNT(*) FILTER (WHERE b.result = 'win') AS wins,
-    COUNT(*) FILTER (WHERE b.result = 'lose') AS losses,
+    COUNT(*) FILTER (WHERE b.result = 'loss') AS losses,
     COUNT(*) AS total,
     COUNT(*) FILTER (WHERE b.result = 'win' AND b.turn_order = 'first') AS first_wins,
-    COUNT(*) FILTER (WHERE b.result = 'lose' AND b.turn_order = 'first') AS first_losses,
+    COUNT(*) FILTER (WHERE b.result = 'loss' AND b.turn_order = 'first') AS first_losses,
     COUNT(*) FILTER (WHERE b.turn_order = 'first') AS first_total,
     COUNT(*) FILTER (WHERE b.result = 'win' AND b.turn_order = 'second') AS second_wins,
-    COUNT(*) FILTER (WHERE b.result = 'lose' AND b.turn_order = 'second') AS second_losses,
+    COUNT(*) FILTER (WHERE b.result = 'loss' AND b.turn_order = 'second') AS second_losses,
     COUNT(*) FILTER (WHERE b.turn_order = 'second') AS second_total,
     COUNT(*) FILTER (WHERE b.result = 'win' AND (b.turn_order IS NULL OR b.turn_order NOT IN ('first', 'second'))) AS unknown_wins,
-    COUNT(*) FILTER (WHERE b.result = 'lose' AND (b.turn_order IS NULL OR b.turn_order NOT IN ('first', 'second'))) AS unknown_losses,
+    COUNT(*) FILTER (WHERE b.result = 'loss' AND (b.turn_order IS NULL OR b.turn_order NOT IN ('first', 'second'))) AS unknown_losses,
     COUNT(*) FILTER (WHERE b.turn_order IS NULL OR b.turn_order NOT IN ('first', 'second')) AS unknown_total
   FROM battles b
   JOIN decks d ON d.id = b.my_deck_id
@@ -52,16 +52,16 @@ BEGIN
   SELECT
     d.name AS my_deck_name,
     COUNT(*) FILTER (WHERE b.result = 'win') AS wins,
-    COUNT(*) FILTER (WHERE b.result = 'lose') AS losses,
+    COUNT(*) FILTER (WHERE b.result = 'loss') AS losses,
     COUNT(*) AS total,
     COUNT(*) FILTER (WHERE b.result = 'win' AND b.turn_order = 'first') AS first_wins,
-    COUNT(*) FILTER (WHERE b.result = 'lose' AND b.turn_order = 'first') AS first_losses,
+    COUNT(*) FILTER (WHERE b.result = 'loss' AND b.turn_order = 'first') AS first_losses,
     COUNT(*) FILTER (WHERE b.turn_order = 'first') AS first_total,
     COUNT(*) FILTER (WHERE b.result = 'win' AND b.turn_order = 'second') AS second_wins,
-    COUNT(*) FILTER (WHERE b.result = 'lose' AND b.turn_order = 'second') AS second_losses,
+    COUNT(*) FILTER (WHERE b.result = 'loss' AND b.turn_order = 'second') AS second_losses,
     COUNT(*) FILTER (WHERE b.turn_order = 'second') AS second_total,
     COUNT(*) FILTER (WHERE b.result = 'win' AND (b.turn_order IS NULL OR b.turn_order NOT IN ('first', 'second'))) AS unknown_wins,
-    COUNT(*) FILTER (WHERE b.result = 'lose' AND (b.turn_order IS NULL OR b.turn_order NOT IN ('first', 'second'))) AS unknown_losses,
+    COUNT(*) FILTER (WHERE b.result = 'loss' AND (b.turn_order IS NULL OR b.turn_order NOT IN ('first', 'second'))) AS unknown_losses,
     COUNT(*) FILTER (WHERE b.turn_order IS NULL OR b.turn_order NOT IN ('first', 'second')) AS unknown_total
   FROM battles b
   JOIN decks d ON d.id = b.my_deck_id
