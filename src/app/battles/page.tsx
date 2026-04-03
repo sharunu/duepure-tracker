@@ -96,7 +96,7 @@ export default function BattlesPage() {
     <>
       <div className="min-h-screen pb-20 px-4 pt-6 max-w-lg mx-auto space-y-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold">対戦履歴</h1>
+          <h1 className="text-[20px] font-medium">対戦履歴</h1>
           <div className={!ready ? "invisible" : ""}>
             <FormatSelector format={format} setFormat={setFormat} />
           </div>

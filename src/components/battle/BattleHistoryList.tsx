@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Pencil, X } from "lucide-react";
 import { updateBattle, deleteBattle } from "@/lib/actions/battle-actions";
 import { EditBattleModal } from "./EditBattleModal";
 
@@ -26,13 +27,22 @@ type Props = {
   onRefresh: () => void;
 };
 
-function formatDate(dateStr: string) {
+function formatTime(dateStr: string) {
   const d = new Date(dateStr);
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
   const hours = String(d.getHours()).padStart(2, "0");
   const minutes = String(d.getMinutes()).padStart(2, "0");
-  return `${month}/${day} ${hours}:${minutes}`;
+  return `${hours}:${minutes}`;
+}
+
+function groupByDate(battles: Battle[]): { date: string; battles: Battle[] }[] {
+  const map = new Map<string, Battle[]>();
+  for (const b of battles) {
+    const d = new Date(b.fought_at);
+    const key = `${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}`;
+    if (!map.has(key)) map.set(key, []);
+    map.get(key)!.push(b);
+  }
+  return Array.from(map.entries()).map(([date, battles]) => ({ date, battles }));
 }
 
 export function BattleHistoryList({ battles, decks, suggestions, onRefresh }: Props) {
@@ -65,62 +75,111 @@ export function BattleHistoryList({ battles, decks, suggestions, onRefresh }: Pr
     onRefresh();
   };
 
+  const groups = groupByDate(battles);
+
   return (
     <>
-      <div className="space-y-2">
-        {battles.map((b) => {
-          const deckDisplay = b.decks?.name ?? "?";
-          const tuningDisplay = b.deck_tunings?.name;
-          const fullDeckName = tuningDisplay ? `${deckDisplay} / ${tuningDisplay}` : deckDisplay;
-
-          return (
+      <div className="space-y-0">
+        {groups.map((group, groupIdx) => (
+          <div key={group.date}>
+            {/* Date group header */}
             <div
-              key={b.id}
-              className="relative rounded-lg border border-border bg-card p-3"
+              className={`text-[11px] font-medium text-[#555577] ${
+                groupIdx === 0 ? "pt-[4px]" : "pt-[10px]"
+              } pb-[6px]`}
             >
-              {/* Edit/Delete buttons */}
-              <div className="absolute top-2 right-2 flex gap-1">
-                <button
-                  onClick={() => setEditingBattle(b)}
-                  className="text-xs text-muted-foreground hover:text-primary px-1.5 py-0.5"
-                >
-                  編集
-                </button>
-                <button
-                  onClick={() => handleDelete(b.id)}
-                  className="text-xs text-muted-foreground hover:text-destructive px-1.5 py-0.5"
-                >
-                  削除
-                </button>
-              </div>
-
-              <div className="flex items-center gap-2 pr-16">
-                {/* Result badge */}
-                <span
-                  className={`inline-block rounded px-2 py-0.5 text-xs font-bold text-white ${
-                    b.result === "win" ? "bg-success" : "bg-destructive"
-                  }`}
-                >
-                  {b.result === "win" ? "WIN" : "LOSE"}
-                </span>
-
-                {/* Deck names */}
-                <span className="text-sm font-medium truncate">
-                  {fullDeckName}
-                </span>
-                <span className="text-xs text-muted-foreground">vs</span>
-                <span className="text-sm truncate">{b.opponent_deck_name}</span>
-              </div>
-
-              <div className="flex gap-3 mt-1 text-xs text-muted-foreground">
-                {b.turn_order && (
-                  <span>{b.turn_order === "first" ? "先攻" : "後攻"}</span>
-                )}
-                <span>{formatDate(b.fought_at)}</span>
-              </div>
+              {group.date}
             </div>
-          );
-        })}
+
+            {/* Battle cards */}
+            <div className="flex flex-col gap-[6px]">
+              {group.battles.map((b) => {
+                const deckDisplay = b.decks?.name ?? "?";
+                const tuningDisplay = b.deck_tunings?.name;
+                const isWin = b.result === "win";
+
+                return (
+                  <div
+                    key={b.id}
+                    className="bg-[#232640] rounded-[10px] overflow-hidden flex"
+                  >
+                    {/* Left color bar */}
+                    <div
+                      className={`w-[3px] shrink-0 ${
+                        isWin ? "bg-[#50c878]" : "bg-[#e85d75]"
+                      }`}
+                    />
+
+                    {/* Card content */}
+                    <div className="flex-1 px-3 py-2.5 min-w-0">
+                      {/* Top row: badge, deck, vs, opponent */}
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span
+                          className={`shrink-0 inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${
+                            isWin
+                              ? "bg-[rgba(80,200,120,0.12)] text-[#50c878]"
+                              : "bg-[rgba(232,93,117,0.12)] text-[#e85d75]"
+                          }`}
+                        >
+                          {isWin ? "WIN" : "LOSE"}
+                        </span>
+
+                        <span className="text-[13px] font-medium text-white truncate">
+                          {deckDisplay}
+                        </span>
+                        {tuningDisplay && (
+                          <>
+                            <span className="text-[11px] text-[#8888aa] shrink-0">/</span>
+                            <span className="text-[11px] text-[#8888aa] truncate">
+                              {tuningDisplay}
+                            </span>
+                          </>
+                        )}
+                        <span className="text-[11px] text-[#555577] shrink-0">vs</span>
+                        <span className="text-[13px] text-[#ccccdd] truncate">
+                          {b.opponent_deck_name}
+                        </span>
+                      </div>
+
+                      {/* Bottom row: turn order, time, buttons */}
+                      <div className="flex items-center gap-2 mt-1">
+                        {b.turn_order && (
+                          <span
+                            className={`text-[10px] font-medium px-1.5 py-0.5 rounded-[3px] ${
+                              b.turn_order === "first"
+                                ? "bg-[rgba(240,160,48,0.1)] text-[#f0a030]"
+                                : "bg-[rgba(91,141,239,0.1)] text-[#5b8def]"
+                            }`}
+                          >
+                            {b.turn_order === "first" ? "先攻" : "後攻"}
+                          </span>
+                        )}
+                        <span className="text-[10px] text-[#555577]">
+                          {formatTime(b.fought_at)}
+                        </span>
+
+                        <div className="ml-auto flex gap-1.5">
+                          <button
+                            onClick={() => setEditingBattle(b)}
+                            className="w-[28px] h-[28px] flex items-center justify-center rounded-[6px] bg-[rgba(91,141,239,0.08)]"
+                          >
+                            <Pencil size={13} color="#5b8def" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(b.id)}
+                            className="w-[28px] h-[28px] flex items-center justify-center rounded-[6px] bg-[rgba(232,93,117,0.08)]"
+                          >
+                            <X size={13} color="#e85d75" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </div>
 
       {editingBattle && (

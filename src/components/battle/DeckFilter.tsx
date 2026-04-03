@@ -8,13 +8,13 @@ type Props = {
 
 export function DeckFilter({ deckNames, selectedDeck, onSelect }: Props) {
   return (
-    <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
+    <div className="flex flex-wrap gap-2">
       <button
         onClick={() => onSelect(null)}
-        className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+        className={`rounded-[20px] border px-3 py-1.5 text-xs font-medium transition-colors ${
           selectedDeck === null
-            ? "border-primary bg-primary/10 text-primary"
-            : "border-border bg-card text-muted-foreground hover:bg-muted"
+            ? "bg-[rgba(91,141,239,0.15)] text-[#5b8def] font-medium border-transparent"
+            : "bg-[#232640] text-[#8888aa] border-transparent"
         }`}
       >
         すべて
@@ -23,10 +23,10 @@ export function DeckFilter({ deckNames, selectedDeck, onSelect }: Props) {
         <button
           key={name}
           onClick={() => onSelect(name)}
-          className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+          className={`rounded-[20px] border px-3 py-1.5 text-xs font-medium transition-colors ${
             selectedDeck === name
-              ? "border-primary bg-primary/10 text-primary"
-              : "border-border bg-card text-muted-foreground hover:bg-muted"
+              ? "bg-[rgba(91,141,239,0.15)] text-[#5b8def] font-medium border-transparent"
+              : "bg-[#232640] text-[#8888aa] border-transparent"
           }`}
         >
           {name}
