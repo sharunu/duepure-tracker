@@ -24,6 +24,20 @@ type Deck = {
   deck_tunings: Tuning[];
 };
 
+const PencilIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+    <path d="m15 5 4 4" />
+  </svg>
+);
+
+const XIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M18 6 6 18" />
+    <path d="m6 6 12 12" />
+  </svg>
+);
+
 export function DeckList({
   initialDecks,
   format,
@@ -45,10 +59,22 @@ export function DeckList({
   const [tuningError, setTuningError] = useState<string | null>(null);
 
   // Tuning state
-  const [expandedTuningDeck, setExpandedTuningDeck] = useState<string | null>(null);
+  const [expandedDecks, setExpandedDecks] = useState<Set<string>>(new Set());
   const [newTuningName, setNewTuningName] = useState("");
   const [editingTuningId, setEditingTuningId] = useState<string | null>(null);
   const [editTuningName, setEditTuningName] = useState("");
+
+  const toggleExpanded = (deckId: string) => {
+    setExpandedDecks((prev) => {
+      const next = new Set(prev);
+      if (next.has(deckId)) {
+        next.delete(deckId);
+      } else {
+        next.add(deckId);
+      }
+      return next;
+    });
+  };
 
   const filteredSuggestions =
     newName.length >= 1
@@ -171,8 +197,10 @@ export function DeckList({
     }
   };
 
+  const isExpanded = (deckId: string) => expandedDecks.has(deckId);
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Add new deck */}
       <div className="relative">
         <div className="flex gap-2">
@@ -189,25 +217,25 @@ export function DeckList({
             }}
             onFocus={handleInputFocus}
             onBlur={handleInputBlur}
-            className="flex-1 rounded-lg bg-card border border-border px-4 py-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            className="flex-1 rounded-lg bg-[#232640] border-[0.5px] border-[#333355] px-4 py-3 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#5b8def]"
           />
           <button
             onClick={handleCreate}
             disabled={loading || !newName.trim()}
-            className="rounded-lg bg-primary text-primary-foreground px-4 py-3 text-sm font-medium hover:opacity-90 disabled:opacity-50"
+            className="rounded-lg bg-[#3d4070] text-white px-4 py-3 text-sm font-medium hover:opacity-90 disabled:opacity-50"
           >
             追加
           </button>
         </div>
         {showSuggestions && filteredSuggestions.length > 0 && (
-          <ul className="absolute z-10 left-0 right-16 mt-1 max-h-48 overflow-y-auto rounded-lg border border-border bg-card shadow-lg">
+          <ul className="absolute z-10 left-0 right-16 mt-1 max-h-48 overflow-y-auto rounded-lg border border-[#333355] bg-[#232640] shadow-lg">
             {filteredSuggestions.map((s) => (
               <li key={s}>
                 <button
                   type="button"
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => handleSuggestionSelect(s)}
-                  className="w-full text-left px-4 py-2 text-sm hover:bg-muted transition-colors"
+                  className="w-full text-left px-4 py-2 text-sm text-white hover:bg-[#2a2d50] transition-colors"
                 >
                   {s}
                 </button>
@@ -216,22 +244,28 @@ export function DeckList({
           </ul>
         )}
         {deckError && (
-          <p className="text-sm text-destructive mt-1">{deckError}</p>
+          <p className="text-sm text-[#e85d75] mt-1">{deckError}</p>
         )}
       </div>
 
       {/* Deck list */}
       {decks.length === 0 ? (
-        <p className="text-center text-muted-foreground py-8 text-sm">
+        <p className="text-center text-gray-500 py-8 text-sm">
           デッキを追加してください
         </p>
       ) : (
-        <ul className="space-y-2">
+        <div className="space-y-3">
           {decks.map((deck) => (
-            <li key={deck.id}>
-              <div className="flex items-center gap-2 rounded-lg bg-card border border-border px-4 py-3">
+            <div key={deck.id} className="rounded-[10px] bg-[#232640] overflow-hidden">
+              {/* Card header */}
+              <div
+                className="flex items-center gap-2 px-4 py-3 cursor-pointer"
+                onClick={() => {
+                  if (editingId !== deck.id) toggleExpanded(deck.id);
+                }}
+              >
                 {editingId === deck.id ? (
-                  <>
+                  <div className="flex items-center gap-2 flex-1">
                     <input
                       type="text"
                       value={editName}
@@ -239,57 +273,71 @@ export function DeckList({
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && !e.nativeEvent.isComposing) handleUpdate(deck.id);
                       }}
-                      className="flex-1 bg-transparent border-b border-primary text-sm focus:outline-none"
+                      onClick={(e) => e.stopPropagation()}
+                      className="flex-1 bg-transparent border-b border-[#5b8def] text-sm text-white focus:outline-none"
                       autoFocus
                     />
                     <button
-                      onClick={() => handleUpdate(deck.id)}
-                      className="text-sm text-primary"
+                      onClick={(e) => { e.stopPropagation(); handleUpdate(deck.id); }}
+                      className="text-sm text-[#5b8def]"
                     >
                       保存
                     </button>
                     <button
-                      onClick={() => setEditingId(null)}
-                      className="text-sm text-muted-foreground"
+                      onClick={(e) => { e.stopPropagation(); setEditingId(null); }}
+                      className="text-sm text-gray-400"
                     >
                       取消
                     </button>
-                  </>
+                  </div>
                 ) : (
                   <>
-                    <span className="flex-1 text-sm">{deck.name}</span>
+                    {/* Left: deck name + tuning count */}
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[14px] font-medium text-white truncate">{deck.name}</div>
+                      <div className="text-[11px] text-gray-500">チューニング {deck.deck_tunings.length}件</div>
+                    </div>
+                    {/* Right: edit, delete, arrow */}
                     <button
-                      onClick={() => setExpandedTuningDeck(expandedTuningDeck === deck.id ? null : deck.id)}
-                      className={"text-xs px-2 py-1 rounded border transition-colors min-h-[44px] flex items-center " + (expandedTuningDeck === deck.id ? "border-primary text-primary bg-primary/10" : "border-border text-muted-foreground hover:text-foreground")}
-                    >
-                      チューニング{deck.deck_tunings.length > 0 ? ` (${deck.deck_tunings.length})` : ""}
-                    </button>
-                    <button
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation();
                         setEditingId(deck.id);
                         setEditName(deck.name);
                       }}
-                      className="text-sm text-muted-foreground hover:text-foreground min-w-[44px] min-h-[44px] flex items-center justify-center"
+                      className="w-8 h-8 flex items-center justify-center rounded-md"
+                      style={{ backgroundColor: "rgba(91,141,239,0.1)", color: "#5b8def" }}
                     >
-                      編集
+                      <PencilIcon />
                     </button>
                     <button
-                      onClick={() => handleArchive(deck.id)}
-                      className="text-sm text-destructive hover:opacity-80 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleArchive(deck.id);
+                      }}
+                      className="w-8 h-8 flex items-center justify-center rounded-md"
+                      style={{ backgroundColor: "rgba(232,93,117,0.1)", color: "#e85d75" }}
                     >
-                      削除
+                      <XIcon />
                     </button>
+                    <span className="text-gray-500 text-sm ml-1 w-4 text-center select-none">
+                      {isExpanded(deck.id) ? "▾" : "▸"}
+                    </span>
                   </>
                 )}
               </div>
 
-              {/* Tuning section */}
-              {expandedTuningDeck === deck.id && (
-                <div className="ml-4 border-l-2 border-border pl-3 mt-1 space-y-1">
-                  {deck.deck_tunings.map((tuning) => (
-                    <div key={tuning.id} className="flex items-center gap-2 py-1.5 text-sm">
+              {/* Expanded tuning section */}
+              {isExpanded(deck.id) && (
+                <div className="bg-[#1e2138] border-t border-[#333355]">
+                  {/* Tuning list */}
+                  {deck.deck_tunings.map((tuning, idx) => (
+                    <div
+                      key={tuning.id}
+                      className={"flex items-center gap-3 px-4 py-2.5" + (idx < deck.deck_tunings.length - 1 ? " border-b border-[#333355]" : "")}
+                    >
                       {editingTuningId === tuning.id ? (
                         <>
+                          <div className="w-[3px] self-stretch rounded-sm bg-[#5b8def] flex-shrink-0" />
                           <input
                             type="text"
                             value={editTuningName}
@@ -297,24 +345,25 @@ export function DeckList({
                             onKeyDown={(e) => {
                               if (e.key === "Enter" && !e.nativeEvent.isComposing) handleUpdateTuning(deck.id, tuning.id);
                             }}
-                            className="flex-1 bg-transparent border-b border-primary text-sm focus:outline-none"
+                            className="flex-1 bg-transparent border-b border-[#5b8def] text-[13px] text-white focus:outline-none"
                             autoFocus
                           />
-                          <button onClick={() => handleUpdateTuning(deck.id, tuning.id)} className="text-xs text-primary">保存</button>
-                          <button onClick={() => setEditingTuningId(null)} className="text-xs text-muted-foreground">取消</button>
+                          <button onClick={() => handleUpdateTuning(deck.id, tuning.id)} className="text-xs text-[#5b8def]">保存</button>
+                          <button onClick={() => setEditingTuningId(null)} className="text-xs text-gray-400">取消</button>
                         </>
                       ) : (
                         <>
-                          <span className="flex-1 text-muted-foreground">{tuning.name}</span>
+                          <div className="w-[3px] self-stretch rounded-sm bg-[#5b8def] flex-shrink-0" />
+                          <span className="flex-1 text-[13px] text-gray-300">{tuning.name}</span>
                           <button
                             onClick={() => { setEditingTuningId(tuning.id); setEditTuningName(tuning.name); }}
-                            className="text-xs text-muted-foreground hover:text-foreground"
+                            className="text-xs text-[#5b8def]"
                           >
                             編集
                           </button>
                           <button
                             onClick={() => handleDeleteTuning(deck.id, tuning.id)}
-                            className="text-xs text-destructive hover:opacity-80"
+                            className="text-xs text-[#e85d75]"
                           >
                             削除
                           </button>
@@ -322,8 +371,9 @@ export function DeckList({
                       )}
                     </div>
                   ))}
-                  {/* Add tuning */}
-                  <div className="flex gap-2 pt-1">
+
+                  {/* Add tuning form */}
+                  <div className="flex gap-2 px-4 py-3 border-t border-[#333355]">
                     <input
                       type="text"
                       placeholder="チューニング名"
@@ -332,24 +382,25 @@ export function DeckList({
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && !e.nativeEvent.isComposing) handleCreateTuning(deck.id);
                       }}
-                      className="flex-1 rounded bg-card border border-border px-3 py-1.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                      className="flex-1 rounded-md bg-[#282b48] border-[0.5px] border-[#333355] px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-[#5b8def]"
                     />
                     <button
                       onClick={() => handleCreateTuning(deck.id)}
                       disabled={!newTuningName.trim()}
-                      className="rounded bg-primary text-primary-foreground px-3 py-1.5 text-xs font-medium hover:opacity-90 disabled:opacity-50"
+                      className="rounded-md px-3 py-2 text-xs font-medium disabled:opacity-50"
+                      style={{ backgroundColor: "rgba(91,141,239,0.15)", color: "#5b8def" }}
                     >
                       追加
                     </button>
                   </div>
-                  {tuningError && expandedTuningDeck === deck.id && (
-                    <p className="text-xs text-destructive mt-1">{tuningError}</p>
+                  {tuningError && isExpanded(deck.id) && (
+                    <p className="text-xs text-[#e85d75] px-4 pb-2">{tuningError}</p>
                   )}
                 </div>
               )}
-            </li>
+            </div>
           ))}
-        </ul>
+        </div>
       )}
     </div>
   );
