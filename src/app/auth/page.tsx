@@ -96,10 +96,10 @@ export default function AuthPage() {
     <div className="min-h-screen flex items-center justify-center px-4">
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-primary">
+          <h1 className="text-[24px] font-bold text-white">
             デュエプレトラッカー
           </h1>
-          <p className="text-muted-foreground mt-2 text-sm">
+          <p className="text-[13px] text-gray-400 mt-2">
             対戦記録・環境分析ツール
           </p>
         </div>
@@ -107,22 +107,33 @@ export default function AuthPage() {
         <div className="space-y-3">
           <button
             onClick={() => signInWithOAuth("google")}
-            className="w-full rounded-lg bg-card border border-border px-4 py-3 text-sm font-medium hover:bg-muted transition-colors"
+            className="w-full rounded-[10px] bg-[#232640] px-4 py-3 text-[14px] font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-3"
+            style={{ border: "0.5px solid rgba(100,100,150,0.2)" }}
           >
+            <svg width="16" height="16" viewBox="0 0 48 48">
+              <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+              <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+              <path fill="#FBBC05" d="M10.53 28.59a14.5 14.5 0 0 1 0-9.18l-7.98-6.19a24.0 24.0 0 0 0 0 21.56l7.98-6.19z"/>
+              <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+            </svg>
             Googleでログイン
           </button>
           <button
             onClick={() => signInWithOAuth("twitter")}
-            className="w-full rounded-lg bg-card border border-border px-4 py-3 text-sm font-medium hover:bg-muted transition-colors"
+            className="w-full rounded-[10px] bg-[#232640] px-4 py-3 text-[14px] font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-3"
+            style={{ border: "0.5px solid rgba(100,100,150,0.2)" }}
           >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+            </svg>
             X (Twitter) でログイン
           </button>
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="flex-1 h-px bg-border" />
-          <span className="text-xs text-muted-foreground">or</span>
-          <div className="flex-1 h-px bg-border" />
+          <div className="flex-1 h-px" style={{ backgroundColor: "rgba(100,100,150,0.2)" }} />
+          <span className="text-[12px] text-gray-500">or</span>
+          <div className="flex-1 h-px" style={{ backgroundColor: "rgba(100,100,150,0.2)" }} />
         </div>
 
         <div className="space-y-3">
@@ -131,7 +142,8 @@ export default function AuthPage() {
             placeholder="メールアドレス"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-lg bg-card border border-border px-4 py-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            className="w-full rounded-[6px] bg-[#1a1d2e] px-4 py-3 text-[14px] placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#6366f1]"
+            style={{ border: "0.5px solid #333355" }}
           />
           {mode === "signup" && (
             <input
@@ -139,7 +151,8 @@ export default function AuthPage() {
               placeholder="ユーザー名（任意）"
               value={userName}
               onChange={(e) => setUserName(e.target.value)}
-              className="w-full rounded-lg bg-card border border-border px-4 py-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full rounded-[6px] bg-[#1a1d2e] px-4 py-3 text-[14px] placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#6366f1]"
+              style={{ border: "0.5px solid #333355" }}
             />
           )}
           <input
@@ -150,12 +163,13 @@ export default function AuthPage() {
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.nativeEvent.isComposing) handleSubmit();
             }}
-            className="w-full rounded-lg bg-card border border-border px-4 py-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            className="w-full rounded-[6px] bg-[#1a1d2e] px-4 py-3 text-[14px] placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#6366f1]"
+            style={{ border: "0.5px solid #333355" }}
           />
           <button
             onClick={handleSubmit}
             disabled={loading || !email || !password}
-            className="w-full rounded-lg bg-primary text-primary-foreground px-4 py-3 text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+            className="w-full rounded-[10px] bg-[#6366f1] text-white px-4 py-3 text-[14px] font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
           >
             {mode === "login" ? "ログイン" : "アカウント作成"}
           </button>
@@ -164,31 +178,32 @@ export default function AuthPage() {
               setMode(mode === "login" ? "signup" : "login");
               setMessage("");
             }}
-            className="w-full text-center text-xs text-primary hover:underline"
+            className="w-full text-center text-[12px] text-[#818cf8] hover:underline"
           >
             {mode === "login" ? "アカウント新規作成はこちら" : "ログインに戻る"}
           </button>
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="flex-1 h-px bg-border" />
-          <span className="text-xs text-muted-foreground">or</span>
-          <div className="flex-1 h-px bg-border" />
+          <div className="flex-1 h-px" style={{ backgroundColor: "rgba(100,100,150,0.2)" }} />
+          <span className="text-[12px] text-gray-500">or</span>
+          <div className="flex-1 h-px" style={{ backgroundColor: "rgba(100,100,150,0.2)" }} />
         </div>
 
         <button
           onClick={signInAsGuest}
           disabled={loading}
-          className="w-full rounded-lg border border-border px-4 py-3 text-sm text-muted-foreground hover:bg-muted transition-colors"
+          className="w-full rounded-[10px] bg-[#232640] px-4 py-3 text-[13px] text-gray-400 hover:opacity-90 transition-opacity"
+          style={{ border: "0.5px solid rgba(100,100,150,0.2)" }}
         >
           ゲストとして使う
         </button>
 
         {message && (
-          <p className="text-center text-sm text-accent">{message}</p>
+          <p className="text-center text-[13px] text-[#ef4444]">{message}</p>
         )}
 
-        <p className="text-center text-xs text-muted-foreground">
+        <p className="text-center text-[11px] text-gray-500">
           ゲストは個人記録のみ。環境統計・投票への参加にはログインが必要です。
         </p>
       </div>
