@@ -98,7 +98,6 @@ export function BattleRecordForm({
   useEffect(() => {
     const saved = localStorage.getItem(`selectedDeckSelection_${format}`);
     if (saved) {
-      // Validate that this selection still exists
       const { deckId, tuningId } = parseDeckSelection(saved);
       const deck = decks.find(d => d.id === deckId);
       if (deck) {
@@ -106,12 +105,10 @@ export function BattleRecordForm({
           setSelectedValue(saved);
           return;
         }
-        // Tuning no longer exists, fall back to deck only
         setSelectedValue(deckId);
         return;
       }
     }
-    // Fallback: pick first deck
     if (decks.length > 0) {
       setSelectedValue(decks[0].id);
     } else {
@@ -142,9 +139,7 @@ export function BattleRecordForm({
       setLastResult(result);
       setOpponentDeck("");
       setTurnOrder(null);
-      // Flash feedback then reset
       setTimeout(() => setLastResult(null), 1500);
-      // Refresh mini stats immediately
       const updatedStats = await getMiniStats(format, measureSince ?? undefined);
       setMiniStats(updatedStats);
     } catch {
@@ -164,7 +159,6 @@ export function BattleRecordForm({
     if (timestamp === null) {
       localStorage.removeItem(`measureSince_${format}`);
       setMeasureSince(null);
-      // Reset to all battles
       getMiniStats(format).then(setMiniStats);
     } else {
       localStorage.setItem(`measureSince_${format}`, timestamp);
@@ -172,7 +166,6 @@ export function BattleRecordForm({
     }
   };
 
-  // Build options for the composite deck+tuning select
   const deckOptions: { value: string; label: string }[] = [];
   for (const deck of decks) {
     const tunings = deck.deck_tunings ?? [];
@@ -191,12 +184,12 @@ export function BattleRecordForm({
 
       {decks.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-muted-foreground mb-4">
+          <p className="text-gray-400 mb-4 text-[14px]">
             まずデッキを登録してください
           </p>
           <a
             href="/decks"
-            className="inline-block rounded-lg bg-primary text-primary-foreground px-6 py-3 text-sm font-medium"
+            className="inline-block rounded-[10px] bg-indigo-500 text-white px-6 py-3 text-[14px] font-medium"
           >
             デッキ登録へ
           </a>
@@ -210,20 +203,19 @@ export function BattleRecordForm({
           />
 
           {/* Deck selector */}
-          <div>
-            <p className="text-sm text-muted-foreground mb-1">使用デッキ</p>
-            <select
-              value={selectedValue}
-              onChange={(e) => setSelectedValue(e.target.value)}
-              className="w-full rounded-lg bg-card border border-border px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary appearance-none"
-            >
-              {deckOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </div>
+          <p className="text-[12px] text-gray-500 mb-2">使用デッキ</p>
+          <select
+            value={selectedValue}
+            onChange={(e) => setSelectedValue(e.target.value)}
+            className="w-full rounded-[6px] px-4 py-3 text-[14px] focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none"
+            style={{ backgroundColor: "#1a1d2e", border: "0.5px solid #333355", color: "#e5e7eb" }}
+          >
+            {deckOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
 
           {/* Normalization vote */}
           {pendingVote && <NormalizationBanner vote={pendingVote} />}
@@ -237,8 +229,8 @@ export function BattleRecordForm({
           />
 
           {/* Turn order */}
-          <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">先攻/後攻（任意）</p>
+          <div>
+            <p className="text-[12px] text-gray-500 mb-2">先攻/後攻（任意）</p>
             <div className="flex gap-2">
               {(["first", "second"] as const).map((order) => (
                 <button
@@ -247,11 +239,12 @@ export function BattleRecordForm({
                   onClick={() =>
                     setTurnOrder(turnOrder === order ? null : order)
                   }
-                  className={`flex-1 rounded-lg border px-3 py-2 text-sm transition-colors min-h-[44px] ${
+                  className="flex-1 rounded-[6px] px-3 py-2 text-[13px] transition-colors min-h-[44px]"
+                  style={
                     turnOrder === order
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-border bg-card hover:bg-muted"
-                  }`}
+                      ? { backgroundColor: "rgba(99,102,241,0.1)", border: "1px solid #6366f1", color: "#818cf8" }
+                      : { backgroundColor: "#232640", border: "0.5px solid rgba(100,100,150,0.2)", color: "#9ca3af" }
+                  }
                 >
                   {order === "first" ? "先攻" : "後攻"}
                 </button>
@@ -264,22 +257,24 @@ export function BattleRecordForm({
             <button
               onClick={() => handleSubmit("win")}
               disabled={submitting || !opponentDeck.trim()}
-              className={`flex-1 rounded-lg py-4 text-lg font-bold transition-all min-h-[56px] ${
+              className={"flex-1 rounded-[10px] py-4 text-[18px] font-bold transition-all min-h-[56px] shadow-lg text-white " + (
                 lastResult === "win"
-                  ? "bg-success text-white scale-95"
-                  : "bg-success/80 text-white hover:bg-success disabled:opacity-40"
-              }`}
+                  ? "scale-95 opacity-90"
+                  : "hover:brightness-110 disabled:opacity-40"
+              )}
+              style={{ background: "linear-gradient(to right, #22c55e, #16a34a)" }}
             >
               WIN
             </button>
             <button
               onClick={() => handleSubmit("loss")}
               disabled={submitting || !opponentDeck.trim()}
-              className={`flex-1 rounded-lg py-4 text-lg font-bold transition-all min-h-[56px] ${
+              className={"flex-1 rounded-[10px] py-4 text-[18px] font-bold transition-all min-h-[56px] shadow-lg text-white " + (
                 lastResult === "loss"
-                  ? "bg-destructive text-white scale-95"
-                  : "bg-destructive/80 text-white hover:bg-destructive disabled:opacity-40"
-              }`}
+                  ? "scale-95 opacity-90"
+                  : "hover:brightness-110 disabled:opacity-40"
+              )}
+              style={{ background: "linear-gradient(to right, #ef4444, #dc2626)" }}
             >
               LOSE
             </button>

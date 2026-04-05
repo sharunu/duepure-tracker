@@ -57,21 +57,21 @@ export default function BattlePage() {
     <>
       <div className="min-h-screen pb-20 px-4 pt-6 max-w-lg mx-auto">
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-xl font-bold">対戦記録</h1>
-          <div className={!ready ? "invisible" : ""}>
+          <h1 className="text-[20px] font-medium">対戦記録</h1>
+          <div className={"flex items-center gap-2" + (!ready ? " invisible" : "")}>
+            {data.isAdmin && (
+              <a
+                href="/admin/opponent-decks"
+                className="text-[11px] text-gray-400 hover:text-white px-2 py-1 rounded-[6px] transition-colors"
+                style={{ backgroundColor: "#1a1d2e", border: "0.5px solid #333355" }}
+              >
+                対面デッキ管理
+              </a>
+            )}
             <FormatSelector format={format} setFormat={setFormat} />
           </div>
         </div>
-        {data.isAdmin && (
-          <div className="flex justify-end mb-2">
-            <a
-              href="/admin/opponent-decks"
-              className="text-xs text-muted-foreground hover:text-primary underline"
-            >
-              対面デッキ管理
-            </a>
-          </div>
-        )}
+
         <BattleRecordForm
           decks={data.decks}
           suggestions={data.suggestions}

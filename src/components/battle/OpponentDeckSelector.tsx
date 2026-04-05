@@ -27,7 +27,7 @@ export function OpponentDeckSelector({
 
     return (
       <div className="space-y-2">
-        <p className="text-sm text-muted-foreground">対面デッキ</p>
+        <p className="text-[12px] text-gray-500 mb-2">対面デッキ</p>
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -36,7 +36,8 @@ export function OpponentDeckSelector({
               setSearchText("");
               onChange("");
             }}
-            className="text-sm text-muted-foreground hover:text-foreground min-h-[44px] px-2"
+            className="text-[13px] text-gray-400 hover:text-white min-h-[44px] px-3 py-1 rounded-[6px] transition-colors"
+            style={{ backgroundColor: "#1a1d2e", border: "0.5px solid #333355" }}
           >
             ← 戻る
           </button>
@@ -49,7 +50,8 @@ export function OpponentDeckSelector({
             setSearchText(e.target.value);
             onChange(e.target.value);
           }}
-          className="w-full rounded-lg bg-card border border-border px-4 py-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+          className="w-full rounded-[6px] px-4 py-3 text-[14px] placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          style={{ backgroundColor: "#1a1d2e", border: "0.5px solid #333355" }}
           autoFocus
         />
         {filtered.length > 0 && (
@@ -62,11 +64,12 @@ export function OpponentDeckSelector({
                   onChange(name);
                   setSearchText(name);
                 }}
-                className={`rounded-lg border px-3 py-3 text-sm text-left transition-colors min-h-[44px] ${
+                className="rounded-[10px] px-3 py-3 text-[13px] text-left transition-colors min-h-[44px]"
+                style={
                   value === name
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-border bg-card hover:bg-muted"
-                }`}
+                    ? { backgroundColor: "rgba(99,102,241,0.1)", border: "1px solid #6366f1" }
+                    : { backgroundColor: "#232640", border: "0.5px solid rgba(100,100,150,0.2)" }
+                }
               >
                 {name}
               </button>
@@ -79,18 +82,19 @@ export function OpponentDeckSelector({
 
   return (
     <div className="space-y-2">
-      <p className="text-sm text-muted-foreground">対面デッキ</p>
+      <p className="text-[12px] text-gray-500 mb-2">対面デッキ</p>
       <div className="grid grid-cols-2 gap-2">
         {majorSuggestions.map((name) => (
           <button
             key={name}
             type="button"
             onClick={() => onChange(name)}
-            className={`rounded-lg border px-3 py-3 text-sm text-left transition-colors min-h-[44px] ${
+            className="rounded-[10px] px-3 py-3 text-[13px] text-left transition-colors min-h-[44px]"
+            style={
               value === name
-                ? "border-primary bg-primary/10 text-primary"
-                : "border-border bg-card hover:bg-muted"
-            }`}
+                ? { backgroundColor: "rgba(99,102,241,0.1)", border: "1px solid #6366f1" }
+                : { backgroundColor: "#232640", border: "0.5px solid rgba(100,100,150,0.2)" }
+            }
           >
             {name}
           </button>
@@ -98,11 +102,12 @@ export function OpponentDeckSelector({
         <button
           type="button"
           onClick={() => setMode("other")}
-          className={`rounded-lg border border-dashed border-border px-3 py-3 text-sm text-muted-foreground hover:bg-muted transition-colors min-h-[44px] ${
+          className="rounded-[10px] px-3 py-3 text-[13px] text-gray-400 hover:text-white transition-colors min-h-[44px]"
+          style={
             value && !majorSuggestions.includes(value)
-              ? "border-primary bg-primary/10 text-primary"
-              : ""
-          }`}
+              ? { backgroundColor: "rgba(99,102,241,0.1)", border: "1px solid #6366f1" }
+              : { backgroundColor: "#232640", border: "1px dashed rgba(100,100,150,0.4)" }
+          }
         >
           その他...
         </button>
