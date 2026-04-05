@@ -37,7 +37,7 @@ export default function AdminOpponentDecksPage() {
   if (loading) {
     return (
       <div className="min-h-screen px-4 pt-6 pb-8 max-w-lg mx-auto">
-        <p className="text-muted-foreground text-sm">読み込み中...</p>
+        <p className="text-gray-500 text-sm">読み込み中...</p>
       </div>
     );
   }
@@ -45,15 +45,15 @@ export default function AdminOpponentDecksPage() {
   return (
     <div className="min-h-screen px-4 pt-6 pb-8 max-w-lg mx-auto">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-bold">対面デッキ管理</h1>
+        <h1 className="text-[20px] font-medium">対面デッキ管理</h1>
         <a
           href="/battle"
-          className="text-sm text-muted-foreground hover:text-foreground"
+          className="text-sm text-gray-500 hover:text-gray-300"
         >
           ← 戻る
         </a>
       </div>
-      <div className="mb-4">
+      <div className="bg-[#232640] rounded-[10px] px-4 py-3 mb-4">
         <FormatSelector format={format} setFormat={setFormat} />
       </div>
       <OpponentDeckManager initialDecks={decks} format={format} />
