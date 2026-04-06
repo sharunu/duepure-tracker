@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
-import { getDeckDetailStats, getGlobalDeckDetailStats } from "@/lib/actions/stats-actions";
+import { getDeckDetailStats, getGlobalDeckDetailStats, getTeamDeckDetailStats } from "@/lib/actions/stats-actions";
 import type { DeckDetailStats } from "@/lib/actions/stats-actions";
 import { getDailyBattleCounts } from "@/lib/actions/battle-actions";
 import { useFormat } from "@/hooks/use-format";
@@ -21,7 +21,12 @@ export default function DeckDetailPage() {
   const { format, setFormat, ready } = useFormat();
 
   const deckName = decodeURIComponent(params.deckName as string);
-  const isGlobal = searchParams.get("scope") === "global";
+  const scope = searchParams.get("scope") ?? "personal";
+  const isGlobal = scope === "global";
+  const isTeam = scope === "team";
+  const teamId = searchParams.get("teamId");
+  const memberId = searchParams.get("memberId");
+  const memberName = searchParams.get("memberName");
 
   const [stats, setStats] = useState<DeckDetailStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -43,12 +48,19 @@ export default function DeckDetailPage() {
   const loadStats = useCallback(() => {
     if (!ready) return;
     setLoading(true);
-    const fetchFn = isGlobal ? getGlobalDeckDetailStats : getDeckDetailStats;
-    fetchFn(deckName, format, startDate, endDate).then((s) => {
+    let promise: Promise<DeckDetailStats>;
+    if (isTeam && teamId) {
+      promise = getTeamDeckDetailStats(teamId, memberId, deckName, format, startDate, endDate);
+    } else if (isGlobal) {
+      promise = getGlobalDeckDetailStats(deckName, format, startDate, endDate);
+    } else {
+      promise = getDeckDetailStats(deckName, format, startDate, endDate);
+    }
+    promise.then((s) => {
       setStats(s);
       setLoading(false);
     });
-  }, [deckName, format, startDate, endDate, ready, isGlobal]);
+  }, [deckName, format, startDate, endDate, ready, isGlobal, isTeam, teamId, memberId]);
 
   const loadCounts = useCallback((year: number, month: number) => {
     if (!ready) return;
@@ -85,16 +97,22 @@ export default function DeckDetailPage() {
     setEndDate(end);
   };
 
+  const titleSuffix = isTeam
+    ? memberId && memberName ? `（${memberName}）` : "（チーム全体）"
+    : isGlobal ? "（全体）" : "（個人）";
+
+  const backScope = isTeam ? "team" : isGlobal ? "global" : "personal";
+
   return (
     <>
       <div className="min-h-screen pb-20 px-4 pt-6 max-w-lg mx-auto space-y-4">
         <button
           onClick={() => {
-            const params = new URLSearchParams();
-            params.set("scope", isGlobal ? "global" : "personal");
-            params.set("start", startDate);
-            params.set("end", endDate);
-            router.push("/stats?" + params.toString());
+            const p = new URLSearchParams();
+            p.set("scope", backScope);
+            p.set("start", startDate);
+            p.set("end", endDate);
+            router.push("/stats?" + p.toString());
           }}
           className="text-sm text-primary hover:underline flex items-center gap-1"
         >
@@ -105,7 +123,7 @@ export default function DeckDetailPage() {
         </button>
 
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold">{`${deckName}（${isGlobal ? "全体" : "個人"}）`}</h1>
+          <h1 className="text-xl font-bold">{`${deckName}${titleSuffix}`}</h1>
           <div className={!ready ? "invisible" : ""}>
             <FormatSelector format={format} setFormat={setFormat} />
           </div>
@@ -193,7 +211,7 @@ export default function DeckDetailPage() {
               )}
             </div>
 
-            {/* Tuning stats section - only for personal scope */}
+            {/* Tuning stats section - for personal and team scope */}
             {!isGlobal && stats.tuningStats.length > 0 && (
               <div>
                 <h2 className="text-base font-bold mb-2">チューニング別</h2>

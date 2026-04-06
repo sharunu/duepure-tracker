@@ -542,6 +542,32 @@ export type Database = {
           share_pct: number
         }[]
       }
+      get_team_deck_detail_stats: {
+        Args: {
+          p_deck_name: string
+          p_end_date?: string
+          p_format?: string
+          p_start_date?: string
+          p_team_id: string
+          p_user_id?: string
+        }
+        Returns: {
+          first_losses: number
+          first_total: number
+          first_wins: number
+          losses: number
+          opponent_name: string
+          second_losses: number
+          second_total: number
+          second_wins: number
+          total: number
+          tuning_name: string
+          unknown_losses: number
+          unknown_total: number
+          unknown_wins: number
+          wins: number
+        }[]
+      }
       get_team_deck_trend_range: {
         Args: {
           p_end_date?: string
@@ -580,6 +606,31 @@ export type Database = {
           wins: number
         }[]
       }
+      get_team_opponent_deck_detail_stats: {
+        Args: {
+          p_end_date?: string
+          p_format?: string
+          p_opponent_deck_name: string
+          p_start_date?: string
+          p_team_id: string
+          p_user_id?: string
+        }
+        Returns: {
+          first_losses: number
+          first_total: number
+          first_wins: number
+          losses: number
+          my_deck_name: string
+          second_losses: number
+          second_total: number
+          second_wins: number
+          total: number
+          unknown_losses: number
+          unknown_total: number
+          unknown_wins: number
+          wins: number
+        }[]
+      }
       get_team_opponent_deck_stats_range: {
         Args: {
           p_end_date?: string
@@ -595,6 +646,10 @@ export type Database = {
           win_rate: number
           wins: number
         }[]
+      }
+      is_team_member: {
+        Args: { p_team_id: string; p_user_id: string }
+        Returns: boolean
       }
       submit_normalization_vote: {
         Args: { p_candidate_id: string; p_vote: string }
