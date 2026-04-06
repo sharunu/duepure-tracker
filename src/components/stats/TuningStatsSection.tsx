@@ -4,9 +4,10 @@ import { useState } from "react";
 import type { TuningStats } from "@/lib/actions/stats-actions";
 import { getWinRateColor } from "@/lib/stats-utils";
 import { MatchupCard } from "@/components/stats/MatchupCard";
+import { MatchupTable } from "@/components/stats/MatchupTable";
 import { BattleCountBadge } from "@/components/ui/BattleCountBadge";
 
-export function TuningStatsSection({ tuningStats }: { tuningStats: TuningStats[] }) {
+export function TuningStatsSection({ tuningStats, viewMode }: { tuningStats: TuningStats[]; viewMode?: "visual" | "table" }) {
   const [expandedTuning, setExpandedTuning] = useState<string | null>(null);
 
   if (tuningStats.length === 0) {
@@ -47,9 +48,16 @@ export function TuningStatsSection({ tuningStats }: { tuningStats: TuningStats[]
 
             {expanded && (
               <div style={{ backgroundColor: "#1b1e35", borderTop: "0.5px solid #2a2d48" }} className="px-4 py-2 space-y-3">
-                {t.opponents.map((opp) => (
-                  <MatchupCard key={opp.opponentName} name={opp.opponentName} namePrefix="vs " detail={opp} />
-                ))}
+                {viewMode === "table" ? (
+                  <MatchupTable
+                    rows={t.opponents.map((opp) => ({ ...opp, name: opp.opponentName, namePrefix: "vs " }))}
+                    showTotal
+                  />
+                ) : (
+                  t.opponents.map((opp) => (
+                    <MatchupCard key={opp.opponentName} name={opp.opponentName} namePrefix="vs " detail={opp} />
+                  ))
+                )}
               </div>
             )}
           </div>

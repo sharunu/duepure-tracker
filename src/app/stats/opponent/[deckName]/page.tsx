@@ -9,6 +9,7 @@ import { useFormat } from "@/hooks/use-format";
 import { FormatSelector } from "@/components/ui/FormatSelector";
 import { DateRangeCalendar } from "@/components/battle/DateRangeCalendar";
 import { MatchupCard } from "@/components/stats/MatchupCard";
+import { MatchupTable } from "@/components/stats/MatchupTable";
 import { EncounterDonutChart } from "@/components/stats/EncounterDonutChart";
 import { BottomNav } from "@/components/layout/BottomNav";
 
@@ -25,6 +26,7 @@ export default function OpponentDeckDetailPage() {
   const [loading, setLoading] = useState(true);
   const [battleCounts, setBattleCounts] = useState<Record<string, number>>({});
   const [sortBy, setSortBy] = useState<"count" | "winRate">("count");
+  const [viewMode, setViewMode] = useState<"visual" | "table">("visual");
 
   const [startDate, setStartDate] = useState(() => {
     return searchParams.get("start") || (() => {
@@ -137,27 +139,54 @@ export default function OpponentDeckDetailPage() {
                     overallTotal={stats.overallTotal}
                   />
 
-                  <div className="flex items-center gap-2 text-xs">
-                    <span className="text-muted-foreground">並び替え:</span>
-                    <button
-                      onClick={() => setSortBy("count")}
-                      className={`px-2 py-0.5 rounded ${sortBy === "count" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
-                    >
-                      対戦数
-                    </button>
-                    <button
-                      onClick={() => setSortBy("winRate")}
-                      className={`px-2 py-0.5 rounded ${sortBy === "winRate" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
-                    >
-                      勝率
-                    </button>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span style={{ fontSize: 11, color: "#666688", fontWeight: 500 }}>表示形式</span>
+                      <div className="flex rounded-full border border-border overflow-hidden">
+                        <button
+                          onClick={() => setViewMode("visual")}
+                          className={`px-3 py-1 text-xs font-medium ${viewMode === "visual" ? "bg-primary text-primary-foreground" : ""}`}
+                        >
+                          視覚的
+                        </button>
+                        <button
+                          onClick={() => setViewMode("table")}
+                          className={`px-3 py-1 text-xs font-medium ${viewMode === "table" ? "bg-primary text-primary-foreground" : ""}`}
+                        >
+                          表形式
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className="text-muted-foreground">並び替え:</span>
+                      <button
+                        onClick={() => setSortBy("count")}
+                        className={`px-2 py-0.5 rounded ${sortBy === "count" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
+                      >
+                        対戦数
+                      </button>
+                      <button
+                        onClick={() => setSortBy("winRate")}
+                        className={`px-2 py-0.5 rounded ${sortBy === "winRate" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
+                      >
+                        勝率
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="space-y-2">
-                    {sortedOverall.map((row) => (
-                      <MatchupCard key={row.myDeckName} name={row.myDeckName} detail={row} />
-                    ))}
-                  </div>
+                  {viewMode === "visual" ? (
+                    <div className="space-y-2">
+                      {sortedOverall.map((row) => (
+                        <MatchupCard key={row.myDeckName} name={row.myDeckName} detail={row} />
+                      ))}
+                    </div>
+                  ) : (
+                    <MatchupTable
+                      rows={sortedOverall.map((row) => ({ ...row, name: row.myDeckName }))}
+                      showTotal
+                    />
+                  )}
                 </>
               )}
             </div>
