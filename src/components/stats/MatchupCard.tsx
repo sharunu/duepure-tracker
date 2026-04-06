@@ -2,6 +2,7 @@
 
 import type { OpponentDetail } from "@/lib/actions/stats-actions";
 import { getWinRateColor } from "@/lib/stats-utils";
+import { BattleCountBadge } from "@/components/ui/BattleCountBadge";
 
 function TurnOrderBar({ label, wins, losses, total, winRate }: { label: string; wins: number; losses: number; total: number; winRate: number }) {
   if (total === 0) return null;
@@ -25,7 +26,10 @@ export function MatchupCard({ name, namePrefix, detail }: { name: string; namePr
       <div className="w-[3px] shrink-0" style={{ backgroundColor: color }} />
       <div className="flex-1 px-3 py-2 space-y-1.5">
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium">{namePrefix}{name}</span>
+          <span className="flex items-center gap-1.5">
+            <span className="text-sm font-medium">{namePrefix}{name}</span>
+            <BattleCountBadge count={detail.total} />
+          </span>
           <div className="flex items-center gap-2">
             <span className="text-lg font-bold" style={{ color }}>{detail.winRate}%</span>
             <span className="text-muted-foreground text-xs">{detail.wins}勝{detail.losses}敗</span>
