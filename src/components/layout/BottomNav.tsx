@@ -12,15 +12,6 @@ function IconRecord({ className }: { className?: string }) {
   );
 }
 
-function IconDeck({ className }: { className?: string }) {
-  return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className={className}>
-      <rect x="3" y="4" width="11" height="14" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
-      <path d="M6 2h9.5a1.5 1.5 0 011.5 1.5V16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  );
-}
-
 function IconHistory({ className }: { className?: string }) {
   return (
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className={className}>
@@ -49,7 +40,6 @@ function IconAccount({ className }: { className?: string }) {
 
 const navItems = [
   { href: "/battle", label: "記録", Icon: IconRecord },
-  { href: "/decks", label: "デッキ", Icon: IconDeck },
   { href: "/battles", label: "履歴", Icon: IconHistory },
   { href: "/stats", label: "統計", Icon: IconStats },
   { href: "/account", label: "アカウント", Icon: IconAccount },

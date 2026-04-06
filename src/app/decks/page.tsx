@@ -1,14 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { getDecks } from "@/lib/actions/deck-actions";
 import { getOpponentDeckSuggestions } from "@/lib/actions/battle-actions";
 import { useFormat } from "@/hooks/use-format";
 import { FormatSelector } from "@/components/ui/FormatSelector";
 import { DeckList } from "./DeckList";
-import { BottomNav } from "@/components/layout/BottomNav";
 
 export default function DecksPage() {
+  const router = useRouter();
   const { format, setFormat, ready } = useFormat();
   const [decks, setDecks] = useState<Awaited<ReturnType<typeof getDecks>>>([]);
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -29,6 +30,15 @@ export default function DecksPage() {
   return (
     <>
       <div className="min-h-screen pb-20 px-4 pt-6 max-w-lg mx-auto">
+        <button
+          onClick={() => router.push("/battle")}
+          className="text-sm text-primary hover:underline flex items-center gap-1 mb-3"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
+          対戦記録に戻る
+        </button>
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-xl font-bold">使用デッキ管理</h1>
           <div className={!ready ? "invisible" : ""}>
@@ -43,7 +53,6 @@ export default function DecksPage() {
           <DeckList initialDecks={decks} format={format} suggestions={suggestions} />
         )}
       </div>
-      <BottomNav />
     </>
   );
 }

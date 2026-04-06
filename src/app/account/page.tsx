@@ -298,16 +298,19 @@ export default function AccountPage() {
             {/* アカウント削除 */}
             {deleteStep === 0 && (
               <div
-                className={"rounded-[10px] px-4 py-[14px] flex items-center justify-between" + (isGuest ? " opacity-50" : " cursor-pointer")}
+                className={"rounded-[10px] px-4 py-[14px] flex items-center justify-between" + (isGuest || isSnsLogin ? " opacity-50" : " cursor-pointer")}
                 style={{
                   backgroundColor: "rgba(232,93,117,0.06)",
                   border: "0.5px solid rgba(232,93,117,0.2)",
                 }}
-                onClick={() => { if (!isGuest) setDeleteStep(1); }}
+                onClick={() => { if (isEmailLogin && window.confirm('本当にアカウントを削除しますか？')) setDeleteStep(1); }}
               >
                 <div>
                   <p className="text-[14px] text-[#e85d75]">アカウントを削除</p>
                   <p className="text-[11px] text-gray-500 mt-0.5">すべてのデータが完全に削除されます</p>
+                  {isSnsLogin && (
+                    <p className="text-[11px] text-[#e85d75] mt-1">SNSログインではアカウント削除できません。メールアドレスでログインしてください</p>
+                  )}
                 </div>
                 <span className="text-[#e85d75] text-[18px] flex-shrink-0">&rsaquo;</span>
               </div>
@@ -347,53 +350,9 @@ export default function AccountPage() {
               </div>
             )}
 
-            {deleteStep === 1 && isSnsLogin && (
-              <div className="bg-[#232640] rounded-[10px] px-4 py-[14px] space-y-3" style={{ border: "0.5px solid rgba(232,93,117,0.4)" }}>
-                <p className="text-[14px] font-medium text-[#e85d75]">アカウント削除の確認</p>
-                <p className="text-[11px] text-gray-500">本当にアカウントを削除しますか？この操作は取り消せません。</p>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => { setDeleteStep(0); setDeleteMessage(""); }}
-                    className="flex-1 bg-[#1a1d2e] text-gray-400 rounded-[6px] px-3 py-2 text-[13px] hover:opacity-80"
-                    style={{ border: "0.5px solid #333355" }}
-                  >
-                    キャンセル
-                  </button>
-                  <button
-                    onClick={() => setDeleteStep(2)}
-                    className="flex-1 bg-[#e85d75] text-white rounded-[6px] px-3 py-2 text-[13px] font-medium hover:opacity-90"
-                  >
-                    削除する
-                  </button>
-                </div>
-              </div>
-            )}
 
-            {deleteStep === 2 && isSnsLogin && (
-              <div className="bg-[#232640] rounded-[10px] px-4 py-[14px] space-y-3" style={{ border: "0.5px solid rgba(232,93,117,0.4)" }}>
-                <p className="text-[14px] font-medium text-[#e85d75]">最終確認</p>
-                <p className="text-[11px] text-gray-500">全てのデータが完全に削除されます。本当に削除しますか？</p>
-                {deleteMessage && (
-                  <p className="text-xs text-[#e85d75]">{deleteMessage}</p>
-                )}
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => { setDeleteStep(0); setDeleteMessage(""); }}
-                    className="flex-1 bg-[#1a1d2e] text-gray-400 rounded-[6px] px-3 py-2 text-[13px] hover:opacity-80"
-                    style={{ border: "0.5px solid #333355" }}
-                  >
-                    キャンセル
-                  </button>
-                  <button
-                    onClick={handleDeleteAccount}
-                    disabled={deleteLoading}
-                    className="flex-1 bg-[#e85d75] text-white rounded-[6px] px-3 py-2 text-[13px] font-medium hover:opacity-90 disabled:opacity-50"
-                  >
-                    {deleteLoading ? "削除中..." : "完全に削除する"}
-                  </button>
-                </div>
-              </div>
-            )}
+
+
           </div>
         </div>
       </div>
