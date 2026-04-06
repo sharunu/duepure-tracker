@@ -48,7 +48,7 @@ export function OpponentDeckStatsSection({ stats, startDate, endDate, scope }: {
                     {row.winRate}%
                   </span>
                   <span className="text-muted-foreground text-xs">
-                    {row.wins}勝 {row.losses}敗 ({row.total}件)
+                    {row.wins}勝 {row.losses}敗
                   </span>
                   <span className="text-muted-foreground">›</span>
                 </span>

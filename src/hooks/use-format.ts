@@ -5,7 +5,13 @@ import { useState, useEffect } from "react";
 export type Format = "AD" | "ND";
 
 export function useFormat() {
-  const [format, setFormatState] = useState<Format>("ND");
+  const [format, setFormatState] = useState<Format>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("selectedFormat");
+      if (saved === "AD" || saved === "ND") return saved;
+    }
+    return "ND";
+  });
   const [ready, setReady] = useState(false);
 
   useEffect(() => {

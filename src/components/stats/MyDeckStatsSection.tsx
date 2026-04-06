@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import type { DetailedPersonalStats } from "@/lib/actions/stats-actions";
 import { getWinRateColor } from "@/lib/stats-utils";
+import { BattleCountBadge } from "@/components/ui/BattleCountBadge";
 
 type MyDeckRow = DetailedPersonalStats["myDeckStats"][number];
 
@@ -38,13 +39,16 @@ export function MyDeckStatsSection({ stats, startDate, endDate, scope }: { stats
               className="w-full pl-4 pr-4 py-3 text-sm transition-colors hover:bg-muted/50"
             >
               <div className="flex items-center justify-between mb-2">
-                <span className="font-medium">{deck.deckName}</span>
+                <span className="flex items-center gap-1.5">
+                  <span className="font-medium">{deck.deckName}</span>
+                  <BattleCountBadge count={deck.total} />
+                </span>
                 <span className="flex items-center gap-2">
                   <span className="text-base font-bold" style={{ color }}>
                     {deck.winRate}%
                   </span>
                   <span className="text-muted-foreground text-xs">
-                    {deck.wins}勝 {deck.losses}敗 ({deck.total}件)
+                    {deck.wins}勝 {deck.losses}敗
                   </span>
                   <span className="text-muted-foreground">›</span>
                 </span>
