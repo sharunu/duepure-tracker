@@ -41,7 +41,7 @@ function IconAccount({ className }: { className?: string }) {
 const navItems = [
   { href: "/battle", label: "記録", Icon: IconRecord },
   { href: "/battles", label: "履歴", Icon: IconHistory },
-  { href: "/stats", label: "統計", Icon: IconStats },
+  { href: "/stats", label: "分析", Icon: IconStats },
   { href: "/account", label: "アカウント", Icon: IconAccount },
 ];
 

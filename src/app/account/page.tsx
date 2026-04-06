@@ -295,22 +295,19 @@ export default function AccountPage() {
               <span className="text-gray-500 text-[18px]">&rsaquo;</span>
             </div>
 
-            {/* アカウント削除 */}
-            {deleteStep === 0 && (
+                        {/* アカウント削除 */}
+            {deleteStep === 0 && isEmailLogin && (
               <div
-                className={"rounded-[10px] px-4 py-[14px] flex items-center justify-between" + (isGuest || isSnsLogin ? " opacity-50" : " cursor-pointer")}
+                className="rounded-[10px] px-4 py-[14px] flex items-center justify-between cursor-pointer"
                 style={{
                   backgroundColor: "rgba(232,93,117,0.06)",
                   border: "0.5px solid rgba(232,93,117,0.2)",
                 }}
-                onClick={() => { if (isEmailLogin && window.confirm('本当にアカウントを削除しますか？')) setDeleteStep(1); }}
+                onClick={() => { if (window.confirm('本当にアカウントを削除しますか？')) setDeleteStep(1); }}
               >
                 <div>
                   <p className="text-[14px] text-[#e85d75]">アカウントを削除</p>
                   <p className="text-[11px] text-gray-500 mt-0.5">すべてのデータが完全に削除されます</p>
-                  {isSnsLogin && (
-                    <p className="text-[11px] text-[#e85d75] mt-1">SNSログインではアカウント削除できません。メールアドレスでログインしてください</p>
-                  )}
                 </div>
                 <span className="text-[#e85d75] text-[18px] flex-shrink-0">&rsaquo;</span>
               </div>

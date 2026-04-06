@@ -15,6 +15,7 @@ import { DateRangeCalendar } from "@/components/battle/DateRangeCalendar";
 import { MyDeckStatsSection } from "@/components/stats/MyDeckStatsSection";
 import { OpponentDeckStatsSection } from "@/components/stats/OpponentDeckStatsSection";
 import { EnvironmentChart } from "@/components/stats/EnvironmentChart";
+import { EncounterDonutChart } from "@/components/stats/EncounterDonutChart";
 import { TrendChart } from "@/components/stats/TrendChart";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { getWinRateColor } from "@/lib/stats-utils";
@@ -122,19 +123,19 @@ function StatsPageInner() {
 
       return (
         <>
-          <div className="flex gap-3">
-            <div className="flex-1 rounded-[10px] p-4" style={{ backgroundColor: "#232640" }}>
-              <p className="text-xs text-muted-foreground">全体勝率</p>
-              <p className="text-2xl font-bold mt-1" style={{ color: getWinRateColor(overallWinRate) }}>
-                {overallWinRate}%
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">{totalWins}勝 {totalLosses}敗</p>
-            </div>
-            <div className="flex-1 rounded-[10px] p-4" style={{ backgroundColor: "#232640" }}>
-              <p className="text-xs text-muted-foreground">総対戦数</p>
-              <p className="text-2xl font-bold mt-1">{totalBattles}</p>
-              <p className="text-xs text-muted-foreground mt-1">件</p>
-            </div>
+          <div>
+            <h2 className="text-base font-bold mb-2">対面デッキ分布</h2>
+            {stats.opponentDeckStats.length > 0 ? (
+              <EncounterDonutChart
+                items={stats.opponentDeckStats.map(o => ({ name: o.deckName, total: o.total, winRate: o.winRate }))}
+                overallWinRate={overallWinRate}
+                overallWins={totalWins}
+                overallLosses={totalLosses}
+                overallTotal={totalBattles}
+              />
+            ) : (
+              <p className="text-center text-muted-foreground py-4 text-sm">データがありません</p>
+            )}
           </div>
           <div>
             <h2 className="text-base font-bold mb-2">使用デッキ別</h2>
@@ -163,7 +164,7 @@ function StatsPageInner() {
     <>
       <div className="min-h-screen pb-20 px-4 pt-6 max-w-lg mx-auto space-y-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold">統計</h1>
+          <h1 className="text-xl font-bold">分析</h1>
           <div className={!ready ? "invisible" : ""}>
             <FormatSelector format={format} setFormat={setFormat} />
           </div>

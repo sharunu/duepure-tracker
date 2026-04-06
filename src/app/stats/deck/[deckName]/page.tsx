@@ -99,7 +99,7 @@ export default function DeckDetailPage() {
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M15 18l-6-6 6-6" />
           </svg>
-          統計に戻る
+          分析に戻る
         </button>
 
         <div className="flex items-center justify-between">
@@ -125,7 +125,7 @@ export default function DeckDetailPage() {
 
             {/* Overall section */}
             <div className="space-y-3">
-              <h2 className="text-base font-bold">全体</h2>
+              <h2 className="text-base font-bold">対面デッキ分布</h2>
 
               {stats.overall.length === 0 ? (
                 <p className="text-center text-muted-foreground py-4 text-sm">データがありません</p>
