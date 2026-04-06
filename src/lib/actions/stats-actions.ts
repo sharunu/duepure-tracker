@@ -513,10 +513,10 @@ export async function getDeckTrendByRange(
   isPersonal: boolean = false
 ): Promise<TrendRow[]> {
   const supabase = createClient();
-  let userId: string | null = null;
+  let userId: string | undefined = undefined;
   if (isPersonal) {
     const { data: { user } } = await supabase.auth.getUser();
-    userId = user?.id ?? null;
+    userId = user?.id;
     if (!userId) return [];
   }
 
@@ -524,7 +524,7 @@ export async function getDeckTrendByRange(
     p_start_date: startDate,
     p_end_date: endDate,
     p_format: format,
-    p_user_id: userId,
+    p_user_id: userId ?? undefined,
   });
 
   if (error) return [];
@@ -546,8 +546,8 @@ export async function getGlobalDeckDetailStats(
   const { data, error } = await supabase.rpc("get_global_deck_detail_stats", {
     p_deck_name: deckName,
     p_format: format,
-    p_start_date: startDate ?? null,
-    p_end_date: endDate ?? null,
+    p_start_date: startDate ?? undefined,
+    p_end_date: endDate ?? undefined,
   });
 
   if (error || !data || data.length === 0) {
@@ -591,8 +591,8 @@ export async function getGlobalOpponentDeckDetailStats(
   const { data, error } = await supabase.rpc("get_global_opponent_deck_detail_stats", {
     p_opponent_deck_name: opponentDeckName,
     p_format: format,
-    p_start_date: startDate ?? null,
-    p_end_date: endDate ?? null,
+    p_start_date: startDate ?? undefined,
+    p_end_date: endDate ?? undefined,
   });
 
   if (error || !data || data.length === 0) {
@@ -624,4 +624,80 @@ export async function getGlobalOpponentDeckDetailStats(
 
   const overallTotal = totalWins + totalLosses;
   return { overall, overallWins: totalWins, overallLosses: totalLosses, overallTotal, overallWinRate: safeRate(totalWins, overallTotal) };
+}
+
+// === チーム統計 ===
+
+export async function getTeamStatsByRange(
+  teamId: string,
+  memberId: string | null,
+  format: string,
+  startDate: string,
+  endDate: string
+): Promise<DetailedPersonalStats> {
+  const supabase = createClient();
+
+  const [{ data: myDeckData }, { data: oppDeckData }] = await Promise.all([
+    supabase.rpc("get_team_my_deck_stats_range", {
+      p_team_id: teamId,
+      p_user_id: memberId ?? undefined,
+      p_start_date: startDate,
+      p_end_date: endDate,
+      p_format: format,
+    }),
+    supabase.rpc("get_team_opponent_deck_stats_range", {
+      p_team_id: teamId,
+      p_user_id: memberId ?? undefined,
+      p_start_date: startDate,
+      p_end_date: endDate,
+      p_format: format,
+    }),
+  ]);
+
+  type RpcRow = { deck_name: string; wins: number; losses: number; total: number; win_rate: number };
+
+  const myDeckStats = ((myDeckData as RpcRow[]) ?? []).map((r) => ({
+    deckName: r.deck_name,
+    wins: Number(r.wins),
+    losses: Number(r.losses),
+    total: Number(r.total),
+    winRate: Number(r.win_rate),
+    opponents: [],
+  }));
+
+  const opponentDeckStats = ((oppDeckData as RpcRow[]) ?? []).map((r) => ({
+    deckName: r.deck_name,
+    wins: Number(r.wins),
+    losses: Number(r.losses),
+    total: Number(r.total),
+    winRate: Number(r.win_rate),
+  }));
+
+  return { myDeckStats, opponentDeckStats };
+}
+
+export async function getTeamDeckTrendByRange(
+  teamId: string,
+  memberId: string | null,
+  startDate: string,
+  endDate: string,
+  format: string
+): Promise<TrendRow[]> {
+  const supabase = createClient();
+
+  const { data, error } = await supabase.rpc("get_team_deck_trend_range", {
+    p_team_id: teamId,
+    p_user_id: memberId ?? undefined,
+    p_start_date: startDate,
+    p_end_date: endDate,
+    p_format: format,
+  });
+
+  if (error) return [];
+  return ((data as { period_start: string; deck_name: string; battle_count: number; share_pct: number }[]) ?? []).map((r) => ({
+    periodStart: r.period_start,
+    deckName: r.deck_name,
+    battleCount: Number(r.battle_count),
+    sharePct: Number(r.share_pct),
+  }));
 }

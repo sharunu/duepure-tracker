@@ -2,10 +2,13 @@
 
 import { Suspense, useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
-import { getDetailedPersonalStats, getGlobalStatsByRange, getDeckTrendByRange } from "@/lib/actions/stats-actions";
+import { getDetailedPersonalStats, getGlobalStatsByRange, getDeckTrendByRange, getTeamStatsByRange, getTeamDeckTrendByRange } from "@/lib/actions/stats-actions";
 import type { DetailedPersonalStats, TrendRow } from "@/lib/actions/stats-actions";
 import { getDailyBattleCounts } from "@/lib/actions/battle-actions";
+import { getTeamMembers } from "@/lib/actions/team-actions";
+import type { TeamMember } from "@/lib/actions/team-actions";
 import { useFormat } from "@/hooks/use-format";
+import { useActiveTeam } from "@/hooks/use-active-team";
 import { FormatSelector } from "@/components/ui/FormatSelector";
 import { ScopeSelector } from "@/components/ui/ScopeSelector";
 import type { Scope } from "@/components/ui/ScopeSelector";
@@ -16,12 +19,14 @@ import { MyDeckStatsSection } from "@/components/stats/MyDeckStatsSection";
 import { OpponentDeckStatsSection } from "@/components/stats/OpponentDeckStatsSection";
 import { EncounterDonutChart } from "@/components/stats/EncounterDonutChart";
 import { TrendChart } from "@/components/stats/TrendChart";
+import { TeamMemberSelector } from "@/components/stats/TeamMemberSelector";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { getWinRateColor } from "@/lib/stats-utils";
 
 function StatsPageInner() {
   const searchParams = useSearchParams();
   const { format, setFormat, ready } = useFormat();
+  const { activeTeamId, ready: teamReady } = useActiveTeam();
   const [scope, setScope] = useState<Scope>(() => {
     const sp = searchParams.get("scope");
     return (sp === "personal" || sp === "global" || sp === "team") ? sp : "personal";
@@ -44,13 +49,39 @@ function StatsPageInner() {
   // Data states
   const [personalStats, setPersonalStats] = useState<DetailedPersonalStats>({ myDeckStats: [], opponentDeckStats: [] });
   const [globalStats, setGlobalStats] = useState<DetailedPersonalStats>({ myDeckStats: [], opponentDeckStats: [] });
+  const [teamStats, setTeamStats] = useState<DetailedPersonalStats>({ myDeckStats: [], opponentDeckStats: [] });
   const [trendData, setTrendData] = useState<TrendRow[]>([]);
 
+  // Team member states
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
+
+  // Load team members when activeTeamId changes
+  useEffect(() => {
+    if (activeTeamId) {
+      getTeamMembers(activeTeamId).then(setTeamMembers);
+    } else {
+      setTeamMembers([]);
+    }
+  }, [activeTeamId]);
+
+  // Reset selectedMemberId when scope changes away from team
+  useEffect(() => {
+    if (scope !== "team") {
+      setSelectedMemberId(null);
+    }
+  }, [scope]);
+
   const loadData = useCallback(async () => {
-    if (!ready || scope === "team") {
+    if (!ready || !teamReady) {
+      return;
+    }
+
+    if (scope === "team" && !activeTeamId) {
       setLoading(false);
       return;
     }
+
     setLoading(true);
 
     if (scope === "personal" && view === "stats") {
@@ -65,10 +96,16 @@ function StatsPageInner() {
     } else if (scope === "global" && view === "trend") {
       const t = await getDeckTrendByRange(startDate, endDate, format, false);
       setTrendData(t);
+    } else if (scope === "team" && activeTeamId && view === "stats") {
+      const s = await getTeamStatsByRange(activeTeamId, selectedMemberId, format, startDate, endDate);
+      setTeamStats(s);
+    } else if (scope === "team" && activeTeamId && view === "trend") {
+      const t = await getTeamDeckTrendByRange(activeTeamId, selectedMemberId, startDate, endDate, format);
+      setTrendData(t);
     }
 
     setLoading(false);
-  }, [format, startDate, endDate, ready, scope, view]);
+  }, [format, startDate, endDate, ready, teamReady, scope, view, activeTeamId, selectedMemberId]);
 
   const loadCounts = useCallback((year: number, month: number) => {
     if (!ready) return;
@@ -90,10 +127,10 @@ function StatsPageInner() {
   };
 
   const renderContent = () => {
-    if (scope === "team") {
+    if (scope === "team" && !activeTeamId) {
       return (
         <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-          <p className="text-sm">チーム機能は近日公開予定です</p>
+          <p className="text-sm">ホームタブでチームを選択してください</p>
         </div>
       );
     }
@@ -107,7 +144,7 @@ function StatsPageInner() {
     }
 
     if (view === "stats") {
-      const stats = scope === "personal" ? personalStats : globalStats;
+      const stats = scope === "personal" ? personalStats : scope === "global" ? globalStats : teamStats;
       const totalWins = stats.myDeckStats.reduce((sum, d) => sum + d.wins, 0);
       const totalLosses = stats.myDeckStats.reduce((sum, d) => sum + d.losses, 0);
       const totalBattles = totalWins + totalLosses;
@@ -157,7 +194,7 @@ function StatsPageInner() {
             <FormatSelector format={format} setFormat={setFormat} />
           </div>
         </div>
-        {(!ready) ? (
+        {(!ready || !teamReady) ? (
           <div className="flex justify-center py-12">
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
           </div>
@@ -170,7 +207,14 @@ function StatsPageInner() {
               battleCounts={battleCounts}
               onMonthChange={loadCounts}
             />
-            <ScopeSelector scope={scope} setScope={setScope} />
+            <ScopeSelector scope={scope} setScope={setScope} teamEnabled={!!activeTeamId} />
+            {scope === "team" && activeTeamId && teamMembers.length > 0 && (
+              <TeamMemberSelector
+                members={teamMembers}
+                selectedMemberId={selectedMemberId}
+                onSelect={setSelectedMemberId}
+              />
+            )}
             <ViewSelector view={view} setView={setView} />
             {renderContent()}
           </>

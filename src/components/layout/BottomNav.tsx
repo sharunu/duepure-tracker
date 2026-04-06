@@ -3,6 +3,15 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+function IconHome({ className }: { className?: string }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className={className}>
+      <path d="M3 10L10 3.5L17 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M5 8.5V16.5H8.5V12.5H11.5V16.5H15V8.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 function IconRecord({ className }: { className?: string }) {
   return (
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className={className}>
@@ -39,6 +48,7 @@ function IconAccount({ className }: { className?: string }) {
 }
 
 const navItems = [
+  { href: "/home", label: "ホーム", Icon: IconHome },
   { href: "/battle", label: "記録", Icon: IconRecord },
   { href: "/battles", label: "履歴", Icon: IconHistory },
   { href: "/stats", label: "分析", Icon: IconStats },
@@ -64,7 +74,7 @@ export function BottomNav() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-col items-center justify-center min-w-[64px] min-h-[44px] transition-colors ${
+              className={`flex flex-col items-center justify-center min-w-[52px] min-h-[44px] transition-colors ${
                 isActive
                   ? "text-[#818cf8] font-medium"
                   : "text-gray-500 hover:text-gray-300"

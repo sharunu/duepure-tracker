@@ -7,7 +7,7 @@ import { BattleCountBadge } from "@/components/ui/BattleCountBadge";
 
 type OpponentRow = DetailedPersonalStats["opponentDeckStats"][number];
 
-export function OpponentDeckStatsSection({ stats, startDate, endDate, scope }: { stats: OpponentRow[]; startDate?: string; endDate?: string; scope?: "personal" | "global" }) {
+export function OpponentDeckStatsSection({ stats, startDate, endDate, scope }: { stats: OpponentRow[]; startDate?: string; endDate?: string; scope?: "personal" | "global" | "team" }) {
   const router = useRouter();
 
   if (stats.length === 0) {

@@ -178,6 +178,50 @@ export type Database = {
           },
         ]
       }
+      discord_connections: {
+        Row: {
+          access_token: string
+          created_at: string
+          discord_id: string
+          discord_username: string
+          id: string
+          refresh_token: string | null
+          token_expires_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          created_at?: string
+          discord_id: string
+          discord_username: string
+          id?: string
+          refresh_token?: string | null
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          created_at?: string
+          discord_id?: string
+          discord_username?: string
+          id?: string
+          refresh_token?: string | null
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discord_connections_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       normalization_results: {
         Row: {
           canonical_name: string
@@ -289,12 +333,92 @@ export type Database = {
         }
         Relationships: []
       }
+      team_members: {
+        Row: {
+          discord_username: string
+          id: string
+          joined_at: string
+          team_id: string
+          user_id: string
+        }
+        Insert: {
+          discord_username: string
+          id?: string
+          joined_at?: string
+          team_id: string
+          user_id: string
+        }
+        Update: {
+          discord_username?: string
+          id?: string
+          joined_at?: string
+          team_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_members_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      teams: {
+        Row: {
+          created_at: string
+          discord_guild_id: string
+          icon_url: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          discord_guild_id: string
+          icon_url?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          discord_guild_id?: string
+          icon_url?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
       delete_own_account: { Args: never; Returns: undefined }
+      get_deck_trend_range: {
+        Args: {
+          p_end_date: string
+          p_format?: string
+          p_start_date: string
+          p_user_id?: string
+        }
+        Returns: {
+          battle_count: number
+          deck_name: string
+          period_start: string
+          share_pct: number
+        }[]
+      }
       get_environment_deck_shares:
         | {
             Args: { p_days?: number }
@@ -312,6 +436,80 @@ export type Database = {
               share_pct: number
             }[]
           }
+      get_environment_deck_shares_range: {
+        Args: { p_end_date: string; p_format?: string; p_start_date: string }
+        Returns: {
+          battle_count: number
+          deck_name: string
+          share_pct: number
+        }[]
+      }
+      get_global_deck_detail_stats: {
+        Args: {
+          p_deck_name: string
+          p_end_date?: string
+          p_format?: string
+          p_start_date?: string
+        }
+        Returns: {
+          first_losses: number
+          first_total: number
+          first_wins: number
+          losses: number
+          opponent_name: string
+          second_losses: number
+          second_total: number
+          second_wins: number
+          total: number
+          unknown_losses: number
+          unknown_total: number
+          unknown_wins: number
+          wins: number
+        }[]
+      }
+      get_global_my_deck_stats_range: {
+        Args: { p_end_date: string; p_format?: string; p_start_date: string }
+        Returns: {
+          deck_name: string
+          losses: number
+          total: number
+          win_rate: number
+          wins: number
+        }[]
+      }
+      get_global_opponent_deck_detail_stats: {
+        Args: {
+          p_end_date?: string
+          p_format?: string
+          p_opponent_deck_name: string
+          p_start_date?: string
+        }
+        Returns: {
+          first_losses: number
+          first_total: number
+          first_wins: number
+          losses: number
+          my_deck_name: string
+          second_losses: number
+          second_total: number
+          second_wins: number
+          total: number
+          unknown_losses: number
+          unknown_total: number
+          unknown_wins: number
+          wins: number
+        }[]
+      }
+      get_global_opponent_deck_stats_range: {
+        Args: { p_end_date: string; p_format?: string; p_start_date: string }
+        Returns: {
+          deck_name: string
+          losses: number
+          total: number
+          win_rate: number
+          wins: number
+        }[]
+      }
       get_opponent_deck_suggestions:
         | {
             Args: never
@@ -336,92 +534,76 @@ export type Database = {
           same_count: number
         }[]
       }
-      get_environment_deck_shares_range: {
-        Args: { p_start_date: string; p_end_date: string; p_format?: string }
+      get_personal_environment_shares_range: {
+        Args: { p_end_date: string; p_format?: string; p_start_date: string }
         Returns: {
           battle_count: number
           deck_name: string
           share_pct: number
+        }[]
+      }
+      get_team_deck_trend_range: {
+        Args: {
+          p_end_date?: string
+          p_format?: string
+          p_start_date?: string
+          p_team_id: string
+          p_user_id?: string
+        }
+        Returns: {
+          battle_count: number
+          deck_name: string
+          period_start: string
+          share_pct: number
+        }[]
+      }
+      get_team_members: {
+        Args: { p_team_id: string }
+        Returns: {
+          discord_username: string
+          user_id: string
+        }[]
+      }
+      get_team_my_deck_stats_range: {
+        Args: {
+          p_end_date?: string
+          p_format?: string
+          p_start_date?: string
+          p_team_id: string
+          p_user_id?: string
+        }
+        Returns: {
+          deck_name: string
+          losses: number
+          total: number
+          win_rate: number
+          wins: number
+        }[]
+      }
+      get_team_opponent_deck_stats_range: {
+        Args: {
+          p_end_date?: string
+          p_format?: string
+          p_start_date?: string
+          p_team_id: string
+          p_user_id?: string
+        }
+        Returns: {
+          deck_name: string
+          losses: number
+          total: number
+          win_rate: number
+          wins: number
         }[]
       }
       submit_normalization_vote: {
         Args: { p_candidate_id: string; p_vote: string }
         Returns: Json
       }
-      get_personal_environment_shares_range: {
-        Args: { p_start_date: string; p_end_date: string; p_format?: string }
-        Returns: {
-          battle_count: number
-          deck_name: string
-          share_pct: number
-        }[]
+      sync_team_membership: {
+        Args: { p_discord_username: string; p_guilds: Json; p_user_id: string }
+        Returns: undefined
       }
-      get_global_my_deck_stats_range: {
-        Args: { p_start_date: string; p_end_date: string; p_format?: string }
-        Returns: {
-          deck_name: string
-          wins: number
-          losses: number
-          total: number
-          win_rate: number
-        }[]
-      }
-      get_global_opponent_deck_stats_range: {
-        Args: { p_start_date: string; p_end_date: string; p_format?: string }
-        Returns: {
-          deck_name: string
-          wins: number
-          losses: number
-          total: number
-          win_rate: number
-        }[]
-      }
-      get_global_deck_detail_stats: {
-        Args: { p_deck_name: string; p_format?: string; p_start_date?: string | null; p_end_date?: string | null }
-        Returns: {
-          opponent_name: string
-          wins: number
-          losses: number
-          total: number
-          first_wins: number
-          first_losses: number
-          first_total: number
-          second_wins: number
-          second_losses: number
-          second_total: number
-          unknown_wins: number
-          unknown_losses: number
-          unknown_total: number
-        }[]
-      }
-      get_global_opponent_deck_detail_stats: {
-        Args: { p_opponent_deck_name: string; p_format?: string; p_start_date?: string | null; p_end_date?: string | null }
-        Returns: {
-          my_deck_name: string
-          wins: number
-          losses: number
-          total: number
-          first_wins: number
-          first_losses: number
-          first_total: number
-          second_wins: number
-          second_losses: number
-          second_total: number
-          unknown_wins: number
-          unknown_losses: number
-          unknown_total: number
-        }[]
-      }
-      get_deck_trend_range: {
-        Args: { p_start_date: string; p_end_date: string; p_format?: string; p_user_id?: string | null }
-        Returns: {
-          period_start: string
-          deck_name: string
-          battle_count: number
-          share_pct: number
-        }[]
-      }
-
     }
     Enums: {
       [_ in never]: never
