@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   createDeck,
   updateDeck,
@@ -38,22 +38,30 @@ const XIcon = () => (
   </svg>
 );
 
+const SearchIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#666688" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="11" cy="11" r="8" />
+    <path d="m21 21-4.3-4.3" />
+  </svg>
+);
+
 export function DeckList({
   initialDecks,
   format,
-  suggestions = [],
+  suggestions = { major: [], other: [] },
 }: {
   initialDecks: Deck[];
   format: string;
-  suggestions?: string[];
+  suggestions?: { major: string[]; other: string[] };
 }) {
   const [decks, setDecks] = useState(initialDecks);
-  const [newName, setNewName] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [loading, setLoading] = useState(false);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const blurTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [freeInput, setFreeInput] = useState("");
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const [toastVisible, setToastVisible] = useState(false);
 
   const [deckError, setDeckError] = useState<string | null>(null);
   const [tuningError, setTuningError] = useState<string | null>(null);
@@ -63,6 +71,15 @@ export function DeckList({
   const [newTuningName, setNewTuningName] = useState("");
   const [editingTuningId, setEditingTuningId] = useState<string | null>(null);
   const [editTuningName, setEditTuningName] = useState("");
+
+  const registeredNames = new Set(decks.map(d => d.name));
+
+  const showToast = useCallback((msg: string) => {
+    setToastMsg(msg);
+    setToastVisible(true);
+    setTimeout(() => setToastVisible(false), 1700);
+    setTimeout(() => setToastMsg(null), 2000);
+  }, []);
 
   const toggleExpanded = (deckId: string) => {
     setExpandedDecks((prev) => {
@@ -76,27 +93,58 @@ export function DeckList({
     });
   };
 
-  const filteredSuggestions =
-    newName.length >= 1
-      ? suggestions.filter((s) =>
-          s.toLowerCase().includes(newName.toLowerCase())
-        )
-      : [];
+  // Filter chips by search query
+  const filterByQuery = (items: string[]) => {
+    if (!searchQuery) return items;
+    const q = searchQuery.toLowerCase();
+    return items.filter(s => s.toLowerCase().includes(q));
+  };
 
-  const handleCreate = async () => {
-    if (!newName.trim()) return;
+  const filteredMajor = filterByQuery(suggestions.major);
+  const filteredOther = filterByQuery(suggestions.other);
+  const noResults = searchQuery && filteredMajor.length === 0 && filteredOther.length === 0;
+
+  // Chip create handler
+  const handleChipCreate = async (deckName: string) => {
+    if (registeredNames.has(deckName)) return;
     setLoading(true);
-    setShowSuggestions(false);
     setDeckError(null);
     try {
-      const newDeck = await createDeck(newName.trim(), format);
-      setNewName("");
+      const newDeck = await createDeck(deckName, format);
       if (newDeck) {
         setDecks((prev) => [...prev, { ...newDeck, deck_tunings: newDeck.deck_tunings ?? [] }]);
       } else {
         const updated = await getDecks(format);
         setDecks(updated);
       }
+      showToast(`${deckName}を追加しました`);
+    } catch (e) {
+      setDeckError(e instanceof Error ? e.message : "エラーが発生しました");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Free input create handler
+  const handleFreeCreate = async () => {
+    const name = freeInput.trim();
+    if (!name) return;
+    if (registeredNames.has(name)) {
+      setDeckError("同名のデッキが既に登録されています");
+      return;
+    }
+    setLoading(true);
+    setDeckError(null);
+    try {
+      const newDeck = await createDeck(name, format);
+      setFreeInput("");
+      if (newDeck) {
+        setDecks((prev) => [...prev, { ...newDeck, deck_tunings: newDeck.deck_tunings ?? [] }]);
+      } else {
+        const updated = await getDecks(format);
+        setDecks(updated);
+      }
+      showToast(`${name}を追加しました`);
     } catch (e) {
       setDeckError(e instanceof Error ? e.message : "エラーが発生しました");
     } finally {
@@ -130,27 +178,6 @@ export function DeckList({
       // handle error
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleSuggestionSelect = (name: string) => {
-    setNewName(name);
-    setShowSuggestions(false);
-  };
-
-  const handleInputBlur = () => {
-    blurTimeoutRef.current = setTimeout(() => {
-      setShowSuggestions(false);
-    }, 150);
-  };
-
-  const handleInputFocus = () => {
-    if (blurTimeoutRef.current) {
-      clearTimeout(blurTimeoutRef.current);
-      blurTimeoutRef.current = null;
-    }
-    if (newName.length >= 1 && filteredSuggestions.length > 0) {
-      setShowSuggestions(true);
     }
   };
 
@@ -200,57 +227,14 @@ export function DeckList({
   const isExpanded = (deckId: string) => expandedDecks.has(deckId);
 
   return (
-    <div className="space-y-3">
-      {/* Add new deck */}
-      <div className="relative">
-        <div className="flex gap-2">
-          <input
-            type="text"
-            placeholder="デッキ名を入力"
-            value={newName}
-            onChange={(e) => {
-              setNewName(e.target.value);
-              setShowSuggestions(e.target.value.length >= 1);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.nativeEvent.isComposing) handleCreate();
-            }}
-            onFocus={handleInputFocus}
-            onBlur={handleInputBlur}
-            className="flex-1 rounded-lg bg-[#232640] border-[0.5px] border-[#333355] px-4 py-3 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#5b8def]"
-          />
-          <button
-            onClick={handleCreate}
-            disabled={loading || !newName.trim()}
-            className="rounded-lg bg-[#3d4070] text-white px-4 py-3 text-sm font-medium hover:opacity-90 disabled:opacity-50"
-          >
-            追加
-          </button>
-        </div>
-        {showSuggestions && filteredSuggestions.length > 0 && (
-          <ul className="absolute z-10 left-0 right-16 mt-1 max-h-48 overflow-y-auto rounded-lg border border-[#333355] bg-[#232640] shadow-lg">
-            {filteredSuggestions.map((s) => (
-              <li key={s}>
-                <button
-                  type="button"
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => handleSuggestionSelect(s)}
-                  className="w-full text-left px-4 py-2 text-sm text-white hover:bg-[#2a2d50] transition-colors"
-                >
-                  {s}
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-        {deckError && (
-          <p className="text-sm text-[#e85d75] mt-1">{deckError}</p>
-        )}
+    <div>
+      {/* Upper area: registered decks */}
+      <div style={{ fontSize: 13, fontWeight: 500, color: "#ccccdd", marginBottom: 10 }}>
+        登録済みデッキ
       </div>
 
-      {/* Deck list */}
       {decks.length === 0 ? (
-        <p className="text-center text-gray-500 py-8 text-sm">
+        <p className="text-center text-gray-500 py-6 text-sm">
           デッキを追加してください
         </p>
       ) : (
@@ -292,12 +276,10 @@ export function DeckList({
                   </div>
                 ) : (
                   <>
-                    {/* Left: deck name + tuning count */}
                     <div className="flex-1 min-w-0">
                       <div className="text-[14px] font-medium text-white truncate">{deck.name}</div>
                       <div className="text-[11px] text-gray-500">チューニング {deck.deck_tunings.length}件</div>
                     </div>
-                    {/* Right: edit, delete, arrow */}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -330,7 +312,6 @@ export function DeckList({
               {/* Expanded tuning section */}
               {isExpanded(deck.id) && (
                 <div className="bg-[#1e2138] border-t border-[#333355]">
-                  {/* Tuning list */}
                   {deck.deck_tunings.map((tuning, idx) => (
                     <div
                       key={tuning.id}
@@ -373,7 +354,6 @@ export function DeckList({
                     </div>
                   ))}
 
-                  {/* Add tuning form */}
                   <div className="flex gap-2 px-4 py-3 border-t border-[#333355]">
                     <input
                       type="text"
@@ -401,6 +381,216 @@ export function DeckList({
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {deckError && (
+        <p className="text-sm text-[#e85d75] mt-2">{deckError}</p>
+      )}
+
+      {/* Border separator */}
+      <div style={{ borderTop: "0.5px solid #2a2d48", margin: "20px 0" }} />
+
+      {/* Lower area: add deck */}
+      <div style={{ fontSize: 13, fontWeight: 500, color: "#ccccdd", marginBottom: 4 }}>
+        デッキを追加
+      </div>
+      <div style={{ fontSize: 10, color: "#666688", marginBottom: 14 }}>
+        タップしてデッキを登録できます
+      </div>
+
+      {/* Search filter */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          background: "#1e2138",
+          borderRadius: 8,
+          border: "0.5px solid #333355",
+          padding: "8px 12px",
+          marginBottom: 14,
+        }}
+      >
+        <SearchIcon />
+        <input
+          type="text"
+          placeholder="デッキを検索..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          style={{
+            flex: 1,
+            background: "transparent",
+            border: "none",
+            outline: "none",
+            color: "#e8e8ec",
+            fontSize: 13,
+          }}
+        />
+        {searchQuery && (
+          <button
+            onClick={() => setSearchQuery("")}
+            style={{ color: "#666688", fontSize: 14, lineHeight: 1 }}
+          >
+            ✕
+          </button>
+        )}
+      </div>
+
+      {noResults ? (
+        <p style={{ fontSize: 12, color: "#666688", textAlign: "center", padding: "12px 0" }}>
+          該当するデッキがありません。自由入力で追加してください。
+        </p>
+      ) : (
+        <>
+          {/* Major decks */}
+          {filteredMajor.length > 0 && (
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 10, color: "#666688", fontWeight: 500, marginBottom: 8 }}>
+                よく使われているデッキ
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {filteredMajor.map((name) => {
+                  const isRegistered = registeredNames.has(name);
+                  return (
+                    <button
+                      key={name}
+                      onClick={() => handleChipCreate(name)}
+                      disabled={loading || isRegistered}
+                      style={{
+                        padding: "7px 14px",
+                        fontSize: 12,
+                        background: isRegistered ? "#232640" : "#232640",
+                        border: isRegistered ? "0.5px solid #333355" : "0.5px solid #333355",
+                        borderRadius: 8,
+                        color: isRegistered ? "#ccccdd" : "#ccccdd",
+                        opacity: isRegistered ? 0.35 : 1,
+                        pointerEvents: isRegistered ? "none" : "auto",
+                        cursor: isRegistered ? "default" : "pointer",
+                        transition: "all 0.15s",
+                      }}
+                      onMouseDown={(e) => e.preventDefault()}
+                    >
+                      {name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Other decks */}
+          {filteredOther.length > 0 && (
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 10, color: "#666688", fontWeight: 500, marginBottom: 8 }}>
+                その他のデッキ
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 6,
+                  maxHeight: 120,
+                  overflowY: "auto",
+                }}
+              >
+                {filteredOther.map((name) => {
+                  const isRegistered = registeredNames.has(name);
+                  return (
+                    <button
+                      key={name}
+                      onClick={() => handleChipCreate(name)}
+                      disabled={loading || isRegistered}
+                      style={{
+                        padding: "6px 12px",
+                        fontSize: 11,
+                        background: "#232640",
+                        border: "0.5px solid #333355",
+                        borderRadius: 8,
+                        color: "#ccccdd",
+                        opacity: isRegistered ? 0.35 : 1,
+                        pointerEvents: isRegistered ? "none" : "auto",
+                        cursor: isRegistered ? "default" : "pointer",
+                        transition: "all 0.15s",
+                      }}
+                      onMouseDown={(e) => e.preventDefault()}
+                    >
+                      {name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Free input section */}
+      <div style={{ borderTop: "0.5px solid #2a2d48", margin: "16px 0", paddingTop: 16 }}>
+        <div style={{ display: "flex", gap: 8 }}>
+          <input
+            type="text"
+            placeholder="リストにないデッキ名を入力..."
+            value={freeInput}
+            onChange={(e) => { setFreeInput(e.target.value); setDeckError(null); }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.nativeEvent.isComposing) handleFreeCreate();
+            }}
+            style={{
+              flex: 1,
+              background: "#1e2138",
+              borderRadius: 8,
+              border: "0.5px solid #333355",
+              padding: "10px 14px",
+              color: "#e8e8ec",
+              fontSize: 13,
+              outline: "none",
+            }}
+          />
+          <button
+            onClick={handleFreeCreate}
+            disabled={loading || !freeInput.trim()}
+            style={{
+              background: "#3d4070",
+              borderRadius: 8,
+              color: "#e8e8ec",
+              padding: "10px 18px",
+              fontSize: 13,
+              fontWeight: 500,
+              border: "none",
+              cursor: freeInput.trim() ? "pointer" : "default",
+              opacity: freeInput.trim() ? 1 : 0.5,
+            }}
+          >
+            追加
+          </button>
+        </div>
+        <div style={{ fontSize: 9, color: "#555577", marginTop: 8 }}>
+          ※同じデッキの型違いは、デッキ登録後にチューニングで追加してください
+        </div>
+      </div>
+
+      {/* Toast notification */}
+      {toastMsg && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: 80,
+            left: "50%",
+            transform: "translateX(-50%)",
+            background: "rgba(35,38,64,0.95)",
+            border: "1px solid #333355",
+            borderRadius: 10,
+            padding: "10px 20px",
+            fontSize: 13,
+            color: "#e8e8ec",
+            zIndex: 9999,
+            opacity: toastVisible ? 1 : 0,
+            transition: "opacity 0.3s",
+            pointerEvents: "none",
+          }}
+        >
+          {toastMsg}
         </div>
       )}
     </div>
