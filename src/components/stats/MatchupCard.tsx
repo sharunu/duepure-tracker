@@ -13,8 +13,8 @@ function TurnOrderBar({ label, wins, losses, total, winRate }: { label: string; 
       <div className="flex-1 bg-muted rounded h-1.5 overflow-hidden">
         <div className="h-full rounded" style={{ width: `${winRate}%`, backgroundColor: color }} />
       </div>
-      <span className="shrink-0 font-medium" style={{ color }}>{winRate}%</span>
-      <span className="text-muted-foreground shrink-0">{wins}-{losses} ({total})</span>
+      <span className="shrink-0 font-medium" style={{ color, width: 36, textAlign: "right" }}>{winRate}%</span>
+      <span className="text-muted-foreground shrink-0" style={{ width: 80, textAlign: "right" }}>{wins}-{losses} ({total})</span>
     </div>
   );
 }
@@ -31,7 +31,10 @@ export function MatchupCard({ name, namePrefix, detail }: { name: string; namePr
             <BattleCountBadge count={detail.total} />
           </span>
           <div className="flex items-center gap-2">
-            <span className="text-lg font-bold" style={{ color }}>{detail.winRate}%</span>
+            <span className="flex items-baseline">
+              <span className="text-xs text-muted-foreground" style={{ width: 24, flexShrink: 0 }}>勝率</span>
+              <span className="text-lg font-bold" style={{ color, width: 46, textAlign: "right", flexShrink: 0 }}>{detail.winRate}%</span>
+            </span>
             <span className="text-muted-foreground text-xs">{detail.wins}勝{detail.losses}敗</span>
           </div>
         </div>

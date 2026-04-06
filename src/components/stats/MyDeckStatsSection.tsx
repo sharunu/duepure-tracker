@@ -44,8 +44,9 @@ export function MyDeckStatsSection({ stats, startDate, endDate, scope }: { stats
                   <BattleCountBadge count={deck.total} />
                 </span>
                 <span className="flex items-center gap-2">
-                  <span className="text-base font-bold" style={{ color }}>
-                    {deck.winRate}%
+                  <span className="flex items-baseline">
+                    <span className="text-xs text-muted-foreground" style={{ width: 24, flexShrink: 0 }}>勝率</span>
+                    <span className="text-base font-bold" style={{ color, width: 40, textAlign: "right", flexShrink: 0 }}>{deck.winRate}%</span>
                   </span>
                   <span className="text-muted-foreground text-xs">
                     {deck.wins}勝 {deck.losses}敗

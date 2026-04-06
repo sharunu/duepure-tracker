@@ -44,8 +44,9 @@ export function OpponentDeckStatsSection({ stats, startDate, endDate, scope }: {
                   <BattleCountBadge count={row.total} />
                 </span>
                 <span className="flex items-center gap-2">
-                  <span className="text-base font-bold" style={{ color }}>
-                    {row.winRate}%
+                  <span className="flex items-baseline">
+                    <span className="text-xs text-muted-foreground" style={{ width: 24, flexShrink: 0 }}>勝率</span>
+                    <span className="text-base font-bold" style={{ color, width: 40, textAlign: "right", flexShrink: 0 }}>{row.winRate}%</span>
                   </span>
                   <span className="text-muted-foreground text-xs">
                     {row.wins}勝 {row.losses}敗
