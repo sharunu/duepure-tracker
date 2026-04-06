@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
-import { getDetailedPersonalStats, getEnvironmentSharesByRange, getPersonalEnvironmentSharesByRange, getGlobalStatsByRange, getDeckTrendByRange } from "@/lib/actions/stats-actions";
+import { getDetailedPersonalStats, getGlobalStatsByRange, getDeckTrendByRange } from "@/lib/actions/stats-actions";
 import type { DetailedPersonalStats, TrendRow } from "@/lib/actions/stats-actions";
 import { getDailyBattleCounts } from "@/lib/actions/battle-actions";
 import { useFormat } from "@/hooks/use-format";
@@ -14,7 +14,6 @@ import type { View } from "@/components/ui/ViewSelector";
 import { DateRangeCalendar } from "@/components/battle/DateRangeCalendar";
 import { MyDeckStatsSection } from "@/components/stats/MyDeckStatsSection";
 import { OpponentDeckStatsSection } from "@/components/stats/OpponentDeckStatsSection";
-import { EnvironmentChart } from "@/components/stats/EnvironmentChart";
 import { EncounterDonutChart } from "@/components/stats/EncounterDonutChart";
 import { TrendChart } from "@/components/stats/TrendChart";
 import { BottomNav } from "@/components/layout/BottomNav";
@@ -45,7 +44,6 @@ function StatsPageInner() {
   // Data states
   const [personalStats, setPersonalStats] = useState<DetailedPersonalStats>({ myDeckStats: [], opponentDeckStats: [] });
   const [globalStats, setGlobalStats] = useState<DetailedPersonalStats>({ myDeckStats: [], opponentDeckStats: [] });
-  const [distributionData, setDistributionData] = useState<{ deck_name: string; battle_count: number; share_pct: number }[]>([]);
   const [trendData, setTrendData] = useState<TrendRow[]>([]);
 
   const loadData = useCallback(async () => {
@@ -58,18 +56,12 @@ function StatsPageInner() {
     if (scope === "personal" && view === "stats") {
       const s = await getDetailedPersonalStats(format, startDate, endDate);
       setPersonalStats(s);
-    } else if (scope === "personal" && view === "distribution") {
-      const d = await getPersonalEnvironmentSharesByRange(startDate, endDate, format);
-      setDistributionData(d);
     } else if (scope === "personal" && view === "trend") {
       const t = await getDeckTrendByRange(startDate, endDate, format, true);
       setTrendData(t);
     } else if (scope === "global" && view === "stats") {
       const s = await getGlobalStatsByRange(startDate, endDate, format);
       setGlobalStats(s);
-    } else if (scope === "global" && view === "distribution") {
-      const d = await getEnvironmentSharesByRange(startDate, endDate, format);
-      setDistributionData(d);
     } else if (scope === "global" && view === "trend") {
       const t = await getDeckTrendByRange(startDate, endDate, format, false);
       setTrendData(t);
@@ -147,10 +139,6 @@ function StatsPageInner() {
           </div>
         </>
       );
-    }
-
-    if (view === "distribution") {
-      return <EnvironmentChart data={distributionData} />;
     }
 
     if (view === "trend") {

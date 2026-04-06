@@ -1,6 +1,6 @@
 "use client";
 
-export type View = "stats" | "distribution" | "trend";
+export type View = "stats" | "trend";
 
 type Props = {
   view: View;
@@ -9,14 +9,13 @@ type Props = {
 
 const labels: Record<View, string> = {
   stats: "統計",
-  distribution: "分布",
   trend: "推移",
 };
 
 export function ViewSelector({ view, setView }: Props) {
   return (
     <div className="flex border-b border-border">
-      {(["stats", "distribution", "trend"] as const).map((v) => (
+      {(["stats", "trend"] as const).map((v) => (
         <button
           key={v}
           type="button"

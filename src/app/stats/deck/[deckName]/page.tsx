@@ -103,7 +103,7 @@ export default function DeckDetailPage() {
         </button>
 
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold">{isGlobal ? `${deckName}（全体）` : deckName}</h1>
+          <h1 className="text-xl font-bold">{`${deckName}（${isGlobal ? "全体" : "個人"}）`}</h1>
           <div className={!ready ? "invisible" : ""}>
             <FormatSelector format={format} setFormat={setFormat} />
           </div>
