@@ -1,0 +1,81 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
+
+export default function AuthConfirmPage() {
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const supabase = createClient();
+
+    // Handle code in query params (PKCE flow from email verification)
+    const url = new URL(window.location.href);
+    const code = url.searchParams.get("code");
+    if (code) {
+      supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
+        if (error) {
+          setError("リンクが無効または期限切れです。もう一度パスワードリセットをお試しください。");
+        }
+      });
+    }
+
+    // Handle hash fragment tokens (implicit flow)
+    // supabase-js auto-detects hash fragment tokens via detectSessionInUrl
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (event === "PASSWORD_RECOVERY" && session) {
+          window.location.href = "/account?recovery=true";
+        }
+        if (event === "SIGNED_IN" && session) {
+          window.location.href = "/account";
+        }
+      }
+    );
+
+    // Check for error in hash fragment
+    const hash = window.location.hash;
+    if (hash.includes("error=")) {
+      const params = new URLSearchParams(hash.substring(1));
+      const errorDesc = params.get("error_description");
+      setError(errorDesc
+        ? "リンクが無効または期限切れです。もう一度パスワードリセットをお試しください。"
+        : "エラーが発生しました。");
+    }
+
+    // Fallback timeout
+    const timeout = setTimeout(async () => {
+      if (error) return; // Already showing error
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        window.location.href = "/account";
+      } else {
+        setError("リンクが無効または期限切れです。もう一度パスワードリセットをお試しください。");
+      }
+    }, 5000);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeout);
+    };
+  }, []);
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="text-center space-y-4">
+          <p className="text-red-500 text-sm">{error}</p>
+          <a href="/auth" className="text-primary underline text-sm">
+            ログイン画面に戻る
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <p className="text-muted-foreground">認証処理中...</p>
+    </div>
+  );
+}

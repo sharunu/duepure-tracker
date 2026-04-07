@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { getDisplayName, updateDisplayName, changePassword, getAuthProvider, getEmail, deleteAccount } from "@/lib/actions/account-actions";
+import { submitFeedback } from "@/lib/actions/feedback-actions";
 import { BottomNav } from "@/components/layout/BottomNav";
 
 export default function AccountPage() {
@@ -20,15 +22,23 @@ export default function AccountPage() {
   const [newPassword, setNewPassword] = useState("");
   const [passwordMessage, setPasswordMessage] = useState("");
   const [passwordLoading, setPasswordLoading] = useState(false);
+  const [isRecovery, setIsRecovery] = useState(false);
 
   const [provider, setProvider] = useState("");
   const [switchMessage, setSwitchMessage] = useState("");
 
   // 削除関連
-  const [deleteStep, setDeleteStep] = useState(0); // 0: none, 1: first confirm, 2: second confirm (SNS), or password input (email)
+  const [deleteStep, setDeleteStep] = useState(0);
   const [deletePassword, setDeletePassword] = useState("");
   const [deleteMessage, setDeleteMessage] = useState("");
   const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // フィードバック関連
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [feedbackCategory, setFeedbackCategory] = useState<"bug" | "feature" | "other">("bug");
+  const [feedbackMessage, setFeedbackMessage] = useState("");
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
+  const [feedbackToast, setFeedbackToast] = useState("");
 
   useEffect(() => {
     const load = async () => {
@@ -39,7 +49,20 @@ export default function AccountPage() {
       setPageLoading(false);
     };
     load();
-  }, []);
+
+    // URLパラメータからリカバリー状態を検知
+    if (new URLSearchParams(window.location.search).get("recovery") === "true") {
+      setIsRecovery(true);
+    }
+
+    // リカバリーセッション検知
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setIsRecovery(true);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [supabase]);
 
   const handleUpdateName = async () => {
     if (!displayName.trim()) return;
@@ -55,7 +78,8 @@ export default function AccountPage() {
   };
 
   const handleChangePassword = async () => {
-    if (!currentPassword || !newPassword) return;
+    if (!isRecovery && !currentPassword) return;
+    if (!newPassword) return;
     if (newPassword.length < 8) {
       setPasswordMessage("新しいパスワードは8文字以上にしてください");
       return;
@@ -63,8 +87,15 @@ export default function AccountPage() {
     setPasswordLoading(true);
     setPasswordMessage("");
     try {
-      await changePassword(currentPassword, newPassword);
-      setPasswordMessage("パスワードを変更しました");
+      if (isRecovery) {
+        const { error } = await supabase.auth.updateUser({ password: newPassword });
+        if (error) throw error;
+        setPasswordMessage("パスワードを設定しました");
+        setIsRecovery(false);
+      } else {
+        await changePassword(currentPassword, newPassword);
+        setPasswordMessage("パスワードを変更しました");
+      }
       setCurrentPassword("");
       setNewPassword("");
     } catch (e: any) {
@@ -102,7 +133,6 @@ export default function AccountPage() {
     setDeleteLoading(true);
     setDeleteMessage("");
     try {
-      // メールログインの場合はパスワード検証
       if (isEmailLogin) {
         const { error: signInError } = await supabase.auth.signInWithPassword({
           email,
@@ -121,6 +151,23 @@ export default function AccountPage() {
       setDeleteMessage(e.message || "削除に失敗しました");
     }
     setDeleteLoading(false);
+  };
+
+  const handleSubmitFeedback = async () => {
+    if (!feedbackMessage.trim()) return;
+    setFeedbackLoading(true);
+    try {
+      await submitFeedback(feedbackCategory, feedbackMessage.trim());
+      setFeedbackOpen(false);
+      setFeedbackMessage("");
+      setFeedbackCategory("bug");
+      setFeedbackToast("送信しました。ご意見ありがとうございます！");
+      setTimeout(() => setFeedbackToast(""), 3000);
+    } catch (e: any) {
+      setFeedbackToast(e.message || "送信に失敗しました");
+      setTimeout(() => setFeedbackToast(""), 3000);
+    }
+    setFeedbackLoading(false);
   };
 
   const isSnsLogin = provider === "google" || provider === "twitter";
@@ -225,16 +272,25 @@ export default function AccountPage() {
                 </div>
               ) : (
                 <div>
-                  <p className="text-[14px] mb-3">パスワード変更</p>
+                  <p className="text-[14px] mb-3">
+                    {isRecovery ? "新しいパスワードを設定" : "パスワード変更"}
+                  </p>
+                  {isRecovery && (
+                    <p className="text-[11px] text-[#818cf8] mb-3">
+                      パスワードリセットメールからのアクセスです。新しいパスワードを設定してください。
+                    </p>
+                  )}
                   <div className="space-y-2">
-                    <input
-                      type="password"
-                      value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
-                      className="w-full bg-[#1a1d2e] rounded-[6px] px-3 py-2 text-[14px] focus:outline-none"
-                      style={{ border: "0.5px solid #333355" }}
-                      placeholder="現在のパスワード"
-                    />
+                    {!isRecovery && (
+                      <input
+                        type="password"
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        className="w-full bg-[#1a1d2e] rounded-[6px] px-3 py-2 text-[14px] focus:outline-none"
+                        style={{ border: "0.5px solid #333355" }}
+                        placeholder="現在のパスワード"
+                      />
+                    )}
                     <input
                       type="password"
                       value={newPassword}
@@ -245,10 +301,10 @@ export default function AccountPage() {
                     />
                     <button
                       onClick={handleChangePassword}
-                      disabled={passwordLoading || !currentPassword || !newPassword}
+                      disabled={passwordLoading || (!isRecovery && !currentPassword) || !newPassword}
                       className="w-full bg-[#3d4070] text-white rounded-[6px] px-3 py-2 text-[13px] font-medium hover:opacity-90 disabled:opacity-50"
                     >
-                      パスワードを変更
+                      {isRecovery ? "パスワードを設定" : "パスワードを変更"}
                     </button>
                   </div>
                   {passwordMessage && (
@@ -286,9 +342,34 @@ export default function AccountPage() {
         <div className="mt-5">
           <p className="text-[12px] text-gray-500 mb-2">その他</p>
           <div className="space-y-3">
-            {/* ログアウト */}
+            {/* ご意見・バグ報告 */}
             <div
               className="bg-[#232640] rounded-[10px] px-4 py-[14px] flex items-center justify-between cursor-pointer"
+              onClick={() => setFeedbackOpen(true)}
+            >
+              <p className="text-[14px]">ご意見・バグ報告</p>
+              <span className="text-gray-500 text-[18px]">&rsaquo;</span>
+            </div>
+
+            {/* 利用規約 */}
+            <Link href="/terms">
+              <div className="bg-[#232640] rounded-[10px] px-4 py-[14px] flex items-center justify-between cursor-pointer">
+                <p className="text-[14px]">利用規約</p>
+                <span className="text-gray-500 text-[18px]">&rsaquo;</span>
+              </div>
+            </Link>
+
+            {/* プライバシーポリシー */}
+            <Link href="/privacy">
+              <div className="bg-[#232640] rounded-[10px] px-4 py-[14px] flex items-center justify-between cursor-pointer mt-3">
+                <p className="text-[14px]">プライバシーポリシー</p>
+                <span className="text-gray-500 text-[18px]">&rsaquo;</span>
+              </div>
+            </Link>
+
+            {/* ログアウト */}
+            <div
+              className="bg-[#232640] rounded-[10px] px-4 py-[14px] flex items-center justify-between cursor-pointer mt-3"
               onClick={handleLogout}
             >
               <p className="text-[14px]">ログアウト</p>
@@ -346,13 +427,93 @@ export default function AccountPage() {
                 </div>
               </div>
             )}
-
-
-
-
           </div>
         </div>
       </div>
+
+      {/* フィードバックモーダル */}
+      {feedbackOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center"
+          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+          onClick={(e) => { if (e.target === e.currentTarget) setFeedbackOpen(false); }}
+        >
+          <div
+            className="w-full max-w-lg rounded-t-[16px] px-5 pt-5 pb-8"
+            style={{ backgroundColor: "#1a1d2e" }}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-[16px] font-medium">ご意見・バグ報告</h2>
+              <button
+                onClick={() => setFeedbackOpen(false)}
+                className="text-gray-500 text-[20px] leading-none"
+              >
+                &times;
+              </button>
+            </div>
+
+            <p className="text-[12px] text-gray-500 mb-3">カテゴリ</p>
+            <div className="flex gap-2 mb-4">
+              {([
+                { value: "bug" as const, label: "バグ報告" },
+                { value: "feature" as const, label: "機能要望" },
+                { value: "other" as const, label: "その他" },
+              ]).map((item) => (
+                <button
+                  key={item.value}
+                  onClick={() => setFeedbackCategory(item.value)}
+                  className={"flex-1 rounded-[6px] py-2 text-[13px] font-medium transition-colors " + (
+                    feedbackCategory === item.value
+                      ? "bg-[#6366f1] text-white"
+                      : "bg-[#232640] text-gray-400"
+                  )}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+
+            <p className="text-[12px] text-gray-500 mb-2">メッセージ</p>
+            <textarea
+              value={feedbackMessage}
+              onChange={(e) => setFeedbackMessage(e.target.value)}
+              className="w-full bg-[#232640] rounded-[6px] px-3 py-2 text-[14px] focus:outline-none resize-none"
+              style={{ border: "0.5px solid #333355", minHeight: 120 }}
+              placeholder="内容を入力してください"
+            />
+
+            <button
+              onClick={handleSubmitFeedback}
+              disabled={feedbackLoading || !feedbackMessage.trim()}
+              className="w-full mt-4 bg-[#6366f1] text-white rounded-[10px] px-4 py-3 text-[14px] font-medium hover:opacity-90 disabled:opacity-50"
+            >
+              {feedbackLoading ? "送信中..." : "送信"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* フィードバックトースト */}
+      {feedbackToast && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: 80,
+            left: "50%",
+            transform: "translateX(-50%)",
+            backgroundColor: "#232640",
+            color: "#fff",
+            padding: "10px 20px",
+            borderRadius: 10,
+            fontSize: 13,
+            zIndex: 9999,
+            border: "0.5px solid rgba(100,100,150,0.3)",
+          }}
+        >
+          {feedbackToast}
+        </div>
+      )}
+
       <BottomNav />
     </>
   );
