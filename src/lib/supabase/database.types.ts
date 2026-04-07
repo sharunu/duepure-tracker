@@ -375,6 +375,30 @@ export type Database = {
           },
         ]
       }
+      feedback: {
+        Row: {
+          id: string
+          user_id: string | null
+          category: string
+          message: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id?: string | null
+          category: string
+          message: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string | null
+          category?: string
+          message?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
       teams: {
         Row: {
           created_at: string

@@ -16,6 +16,9 @@ export default function AuthCallbackPage() {
         if (event === "SIGNED_IN" && session) {
           window.location.href = "/battle";
         }
+        if (event === "PASSWORD_RECOVERY" && session) {
+          window.location.href = "/account";
+        }
       }
     );
 

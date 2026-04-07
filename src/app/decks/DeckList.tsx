@@ -565,7 +565,7 @@ export function DeckList({
             追加
           </button>
         </div>
-        <div style={{ fontSize: 9, color: "#555577", marginTop: 8 }}>
+        <div style={{ fontSize: 10, color: "#666688", marginTop: 8 }}>
           ※同じデッキの型違いは、デッキ登録後にチューニングで追加してください
         </div>
       </div>

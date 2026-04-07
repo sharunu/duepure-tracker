@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 type Props = {
   majorSuggestions: string[];
@@ -9,109 +9,182 @@ type Props = {
   onChange: (name: string) => void;
 };
 
+const SearchIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#666688" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="11" cy="11" r="8" />
+    <path d="m21 21-4.3-4.3" />
+  </svg>
+);
+
 export function OpponentDeckSelector({
   majorSuggestions,
   otherSuggestions,
   value,
   onChange,
 }: Props) {
-  const [mode, setMode] = useState<"major" | "other">("major");
+  const [showOther, setShowOther] = useState(false);
   const [searchText, setSearchText] = useState("");
 
-  if (mode === "other") {
-    const filtered = searchText
-      ? otherSuggestions.filter((name) =>
-          name.toLowerCase().includes(searchText.toLowerCase())
-        )
-      : otherSuggestions;
+  // value が空になったら内部stateをリセット
+  useEffect(() => {
+    if (value === "") {
+      setShowOther(false);
+      setSearchText("");
+    }
+  }, [value]);
 
-    return (
-      <div className="space-y-2">
-        <p className="text-[12px] text-gray-500 mb-2">対面デッキ</p>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              setMode("major");
-              setSearchText("");
-              onChange("");
-            }}
-            className="text-[13px] text-gray-400 hover:text-white min-h-[44px] px-3 py-1 rounded-[6px] transition-colors"
-            style={{ backgroundColor: "#1a1d2e", border: "0.5px solid #333355" }}
-          >
-            ← 戻る
-          </button>
-        </div>
-        <input
-          type="text"
-          placeholder="対面デッキ名を入力"
-          value={searchText}
-          onChange={(e) => {
-            setSearchText(e.target.value);
-            onChange(e.target.value);
-          }}
-          className="w-full rounded-[6px] px-4 py-3 text-[14px] placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          style={{ backgroundColor: "#1a1d2e", border: "0.5px solid #333355" }}
-          autoFocus
-        />
-        {filtered.length > 0 && (
-          <div className="grid grid-cols-2 gap-2">
-            {filtered.map((name) => (
-              <button
-                key={name}
-                type="button"
-                onClick={() => {
-                  onChange(name);
-                  setSearchText(name);
-                }}
-                className="rounded-[10px] px-3 py-3 text-[13px] text-left transition-colors min-h-[44px]"
-                style={
-                  value === name
-                    ? { backgroundColor: "rgba(99,102,241,0.1)", border: "1px solid #6366f1" }
-                    : { backgroundColor: "#232640", border: "0.5px solid rgba(100,100,150,0.2)" }
-                }
-              >
-                {name}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  }
+  const filterByQuery = (items: string[]) => {
+    if (!searchText) return items;
+    const q = searchText.toLowerCase();
+    return items.filter((s) => s.toLowerCase().includes(q));
+  };
+
+  const filteredMajor = filterByQuery(majorSuggestions);
+  const filteredOther = filterByQuery(otherSuggestions);
+  const hasSearchText = searchText.trim().length > 0;
+  const noMatch =
+    hasSearchText && filteredMajor.length === 0 && filteredOther.length === 0;
+
+  const handleSelect = (name: string) => {
+    onChange(name);
+  };
+
+  const chipStyle = (name: string, size: "major" | "other") => {
+    const isSelected = value === name;
+    return {
+      padding: size === "major" ? "7px 14px" : "6px 12px",
+      fontSize: size === "major" ? 12 : 11,
+      borderRadius: 8,
+      background: isSelected ? "rgba(99,102,241,0.1)" : "#232640",
+      border: isSelected ? "1px solid #6366f1" : "0.5px solid #333355",
+      color: "#ccccdd",
+      cursor: "pointer",
+      transition: "all 0.15s",
+    } as React.CSSProperties;
+  };
+
+  // Determine if "その他" button should look selected
+  const otherSelected = value && !majorSuggestions.includes(value);
 
   return (
-    <div className="space-y-2">
-      <p className="text-[12px] text-gray-500 mb-2">対面デッキ</p>
-      <div className="grid grid-cols-2 gap-2">
-        {majorSuggestions.map((name) => (
+    <div>
+      <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 8 }}>対面デッキ</p>
+
+      {/* Major deck chips (always visible) */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+        {(hasSearchText ? filteredMajor : majorSuggestions).map((name) => (
           <button
             key={name}
             type="button"
-            onClick={() => onChange(name)}
-            className="rounded-[10px] px-3 py-3 text-[13px] text-left transition-colors min-h-[44px]"
-            style={
-              value === name
-                ? { backgroundColor: "rgba(99,102,241,0.1)", border: "1px solid #6366f1" }
-                : { backgroundColor: "#232640", border: "0.5px solid rgba(100,100,150,0.2)" }
-            }
+            onClick={() => handleSelect(name)}
+            style={chipStyle(name, "major")}
           >
             {name}
           </button>
         ))}
-        <button
-          type="button"
-          onClick={() => setMode("other")}
-          className="rounded-[10px] px-3 py-3 text-[13px] text-gray-400 hover:text-white transition-colors min-h-[44px]"
-          style={
-            value && !majorSuggestions.includes(value)
-              ? { backgroundColor: "rgba(99,102,241,0.1)", border: "1px solid #6366f1" }
-              : { backgroundColor: "#232640", border: "1px dashed rgba(100,100,150,0.4)" }
-          }
-        >
-          その他...
-        </button>
+
+        {/* 「その他」toggle button */}
+        {!hasSearchText && (
+          <button
+            type="button"
+            onClick={() => setShowOther((prev) => !prev)}
+            style={{
+              padding: "7px 14px",
+              fontSize: 12,
+              borderRadius: 8,
+              background: otherSelected
+                ? "rgba(99,102,241,0.1)"
+                : "#232640",
+              border: otherSelected
+                ? "1px solid #6366f1"
+                : "1px dashed rgba(100,100,150,0.4)",
+              color: "#999",
+              cursor: "pointer",
+              transition: "all 0.15s",
+            }}
+          >
+            その他{showOther ? " ▴" : "..."}
+          </button>
+        )}
       </div>
+
+      {/* Expanded other section */}
+      {(showOther || hasSearchText) && (
+        <div style={{ marginTop: 12 }}>
+          {/* Search input */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              background: "#1e2138",
+              borderRadius: 8,
+              border: "0.5px solid #333355",
+              padding: "8px 12px",
+              marginBottom: 12,
+            }}
+          >
+            <SearchIcon />
+            <input
+              type="text"
+              placeholder="デッキ名を検索・入力..."
+              value={searchText}
+              onChange={(e) => {
+                setSearchText(e.target.value);
+                // If typing freely, pass the text as onChange so it can be used as custom deck name
+                if (e.target.value.trim()) {
+                  onChange(e.target.value);
+                }
+              }}
+              style={{
+                flex: 1,
+                background: "transparent",
+                border: "none",
+                outline: "none",
+                color: "#e8e8ec",
+                fontSize: 13,
+              }}
+              autoFocus
+            />
+            {searchText && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchText("");
+                  onChange("");
+                }}
+                style={{ color: "#666688", fontSize: 14, lineHeight: 1 }}
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
+          {noMatch ? (
+            <p style={{ fontSize: 11, color: "#666688", textAlign: "center", padding: "8px 0" }}>
+              該当するデッキがありません。入力テキストがそのまま使用されます。
+            </p>
+          ) : (
+            <>
+              {/* Other deck chips */}
+              {(hasSearchText ? filteredOther : otherSuggestions).length > 0 && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {(hasSearchText ? filteredOther : otherSuggestions).map((name) => (
+                    <button
+                      key={name}
+                      type="button"
+                      onClick={() => handleSelect(name)}
+                      style={chipStyle(name, "other")}
+                    >
+                      {name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }
