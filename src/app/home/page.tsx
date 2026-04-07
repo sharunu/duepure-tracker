@@ -4,8 +4,8 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { getDiscordConnection, getMyTeams, getTeamMembers, disconnectDiscord } from "@/lib/actions/team-actions";
-import type { DiscordConnection, Team, TeamMember } from "@/lib/actions/team-actions";
+import { getDiscordConnection, getMyTeamsWithVisibility, getTeamMembers, disconnectDiscord, toggleTeamVisibility, refreshGuilds } from "@/lib/actions/team-actions";
+import type { DiscordConnection, TeamWithVisibility } from "@/lib/actions/team-actions";
 import { useActiveTeam } from "@/hooks/use-active-team";
 import { BottomNav } from "@/components/layout/BottomNav";
 
@@ -15,10 +15,16 @@ function HomePageInner() {
   const { activeTeamId, setActiveTeamId, ready: teamReady } = useActiveTeam();
 
   const [loading, setLoading] = useState(true);
+  const [isGuest, setIsGuest] = useState(false);
   const [connection, setConnection] = useState<DiscordConnection | null>(null);
-  const [teams, setTeams] = useState<Team[]>([]);
+  const [teams, setTeams] = useState<TeamWithVisibility[]>([]);
   const [memberCount, setMemberCount] = useState<number | null>(null);
   const [disconnecting, setDisconnecting] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [hiddenExpanded, setHiddenExpanded] = useState(false);
+
+  const visibleTeams = teams.filter((t) => !t.hidden);
+  const hiddenTeams = teams.filter((t) => t.hidden);
 
   const loadData = useCallback(async () => {
     const supabase = createClient();
@@ -28,11 +34,13 @@ function HomePageInner() {
       return;
     }
 
+    setIsGuest(!!user.is_anonymous);
+
     const conn = await getDiscordConnection();
     setConnection(conn);
 
     if (conn) {
-      const myTeams = await getMyTeams();
+      const myTeams = await getMyTeamsWithVisibility();
       setTeams(myTeams);
     }
 
@@ -42,6 +50,18 @@ function HomePageInner() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Auto-refresh guilds on load when connected
+  useEffect(() => {
+    if (!loading && connection) {
+      refreshGuilds().then((ok) => {
+        if (ok) {
+          getMyTeamsWithVisibility().then(setTeams);
+        }
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, !!connection]);
 
   // Load member count when active team changes
   useEffect(() => {
@@ -54,19 +74,26 @@ function HomePageInner() {
     });
   }, [activeTeamId]);
 
-  // Auto-select first team if none selected
+  // Auto-select first visible team if none selected
   useEffect(() => {
-    if (teamReady && !activeTeamId && teams.length > 0) {
-      setActiveTeamId(teams[0].id);
+    if (!loading && teamReady && !activeTeamId && visibleTeams.length > 0) {
+      setActiveTeamId(visibleTeams[0].id);
     }
-  }, [teamReady, activeTeamId, teams, setActiveTeamId]);
+  }, [loading, teamReady, activeTeamId, visibleTeams, setActiveTeamId]);
 
-  // Clear active team if it is not in the list
+  // Clear active team if it is not in visible list
   useEffect(() => {
-    if (teamReady && activeTeamId && teams.length > 0 && !teams.find((t) => t.id === activeTeamId)) {
-      setActiveTeamId(teams[0].id);
+    if (!loading && teamReady && activeTeamId && visibleTeams.length > 0 && !visibleTeams.find((t) => t.id === activeTeamId)) {
+      setActiveTeamId(visibleTeams[0].id);
     }
-  }, [teamReady, activeTeamId, teams, setActiveTeamId]);
+  }, [loading, teamReady, activeTeamId, visibleTeams, setActiveTeamId]);
+
+  // Clear active team if all teams hidden
+  useEffect(() => {
+    if (!loading && teamReady && activeTeamId && visibleTeams.length === 0) {
+      setActiveTeamId(null);
+    }
+  }, [loading, teamReady, activeTeamId, visibleTeams, setActiveTeamId]);
 
   const handleDiscordConnect = async () => {
     const supabase = createClient();
@@ -102,6 +129,28 @@ function HomePageInner() {
     setDisconnecting(false);
   };
 
+  const handleToggleVisibility = async (teamId: string, currentlyHidden: boolean) => {
+    if (!currentlyHidden) {
+      if (!confirm("このサーバーを非表示にすると、戦績の共有も停止されます。")) return;
+    }
+    const ok = await toggleTeamVisibility(teamId, !currentlyHidden);
+    if (ok) {
+      setTeams((prev) =>
+        prev.map((t) => (t.id === teamId ? { ...t, hidden: !currentlyHidden } : t))
+      );
+    }
+  };
+
+  const handleManualRefresh = async () => {
+    setRefreshing(true);
+    const ok = await refreshGuilds();
+    if (ok) {
+      const myTeams = await getMyTeamsWithVisibility();
+      setTeams(myTeams);
+    }
+    setRefreshing(false);
+  };
+
   const discordStatus = searchParams.get("discord");
 
   if (loading) {
@@ -116,6 +165,60 @@ function HomePageInner() {
       </>
     );
   }
+
+  const renderTeamCard = (team: TeamWithVisibility, isHiddenSection: boolean) => {
+    const isActive = activeTeamId === team.id;
+    return (
+      <div key={team.id} className="flex items-center gap-2">
+        <button
+          onClick={() => !isHiddenSection && setActiveTeamId(team.id)}
+          className={`flex-1 flex items-center gap-3 rounded-xl border p-3 transition-colors text-left ${
+            isHiddenSection
+              ? "border-muted/20 opacity-50"
+              : isActive
+              ? "border-primary/50 bg-primary/10"
+              : "border-muted/30 hover:border-muted/50"
+          }`}
+          disabled={isHiddenSection}
+        >
+          {team.icon_url ? (
+            <img
+              src={team.icon_url}
+              alt=""
+              className="w-10 h-10 rounded-full object-cover"
+            />
+          ) : (
+            <div className="w-10 h-10 rounded-full bg-muted/30 flex items-center justify-center text-sm font-medium text-muted-foreground">
+              {team.name.charAt(0)}
+            </div>
+          )}
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium truncate">{team.name}</p>
+          </div>
+          {isActive && !isHiddenSection && (
+            <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
+          )}
+        </button>
+        <button
+          onClick={() => handleToggleVisibility(team.id, team.hidden)}
+          className="p-2 rounded-lg hover:bg-muted/30 transition-colors text-muted-foreground hover:text-foreground flex-shrink-0"
+          title={team.hidden ? "再表示" : "非表示にする"}
+        >
+          {team.hidden ? (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+              <line x1="1" y1="1" x2="23" y2="23" />
+            </svg>
+          ) : (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+          )}
+        </button>
+      </div>
+    );
+  };
 
   return (
     <>
@@ -142,13 +245,19 @@ function HomePageInner() {
                 Discordと連携すると、同じサーバーのメンバーとチームとして戦績を共有できます。
               </p>
             </div>
-            <button
-              onClick={handleDiscordConnect}
-              className="w-full rounded-lg px-4 py-3 text-sm font-medium text-white transition-colors"
-              style={{ backgroundColor: "#5865F2" }}
-            >
-              Discordと連携する
-            </button>
+            {isGuest ? (
+              <p className="text-sm text-muted-foreground bg-muted/20 rounded-lg px-4 py-3">
+                Discord連携にはアカウント登録が必要です
+              </p>
+            ) : (
+              <button
+                onClick={handleDiscordConnect}
+                className="w-full rounded-lg px-4 py-3 text-sm font-medium text-white transition-colors"
+                style={{ backgroundColor: "#5865F2" }}
+              >
+                Discordと連携する
+              </button>
+            )}
           </div>
         ) : (
           // Discord連携済み
@@ -180,9 +289,33 @@ function HomePageInner() {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <h2 className="text-base font-bold">チーム一覧</h2>
-                {memberCount !== null && activeTeamId && (
-                  <span className="text-xs text-muted-foreground">メンバー {memberCount}人</span>
-                )}
+                <div className="flex items-center gap-2">
+                  {memberCount !== null && activeTeamId && (
+                    <span className="text-xs text-muted-foreground">メンバー {memberCount}人</span>
+                  )}
+                  <button
+                    onClick={handleManualRefresh}
+                    disabled={refreshing}
+                    className="text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                    title="サーバー情報を更新"
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className={refreshing ? "animate-spin" : ""}
+                    >
+                      <polyline points="23 4 23 10 17 10" />
+                      <polyline points="1 20 1 14 7 14" />
+                      <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+                    </svg>
+                  </button>
+                </div>
               </div>
 
               {teams.length === 0 ? (
@@ -191,38 +324,36 @@ function HomePageInner() {
                 </p>
               ) : (
                 <div className="space-y-2">
-                  {teams.map((team) => {
-                    const isActive = activeTeamId === team.id;
-                    return (
+                  {/* Visible teams */}
+                  {visibleTeams.map((team) => renderTeamCard(team, false))}
+
+                  {/* Hidden teams */}
+                  {hiddenTeams.length > 0 && (
+                    <div className="pt-2">
                       <button
-                        key={team.id}
-                        onClick={() => setActiveTeamId(team.id)}
-                        className={`w-full flex items-center gap-3 rounded-xl border p-3 transition-colors text-left ${
-                          isActive
-                            ? "border-primary/50 bg-primary/10"
-                            : "border-muted/30 hover:border-muted/50"
-                        }`}
+                        onClick={() => setHiddenExpanded(!hiddenExpanded)}
+                        className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
                       >
-                        {team.icon_url ? (
-                          <img
-                            src={team.icon_url}
-                            alt=""
-                            className="w-10 h-10 rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-10 h-10 rounded-full bg-muted/30 flex items-center justify-center text-sm font-medium text-muted-foreground">
-                            {team.name.charAt(0)}
-                          </div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{team.name}</p>
-                        </div>
-                        {isActive && (
-                          <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
-                        )}
+                        <svg
+                          width="12"
+                          height="12"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          className={`transition-transform ${hiddenExpanded ? "rotate-90" : ""}`}
+                        >
+                          <polyline points="9 18 15 12 9 6" />
+                        </svg>
+                        非表示サーバー（{hiddenTeams.length}件）
                       </button>
-                    );
-                  })}
+                      {hiddenExpanded && (
+                        <div className="space-y-2 mt-2">
+                          {hiddenTeams.map((team) => renderTeamCard(team, true))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
