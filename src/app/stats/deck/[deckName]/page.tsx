@@ -13,6 +13,7 @@ import { MatchupCard } from "@/components/stats/MatchupCard";
 import { MatchupTable } from "@/components/stats/MatchupTable";
 import { EncounterDonutChart } from "@/components/stats/EncounterDonutChart";
 import { BottomNav } from "@/components/layout/BottomNav";
+import { TurnOrderCards } from "@/components/stats/TurnOrderCards";
 
 export default function DeckDetailPage() {
   const params = useParams();
@@ -158,6 +159,25 @@ export default function DeckDetailPage() {
                     overallLosses={stats.overallLosses}
                     overallTotal={stats.overallTotal}
                   />
+
+                  {(() => {
+                    const fw = stats.overall.reduce((s, o) => s + o.firstWins, 0);
+                    const fl = stats.overall.reduce((s, o) => s + o.firstLosses, 0);
+                    const sw = stats.overall.reduce((s, o) => s + o.secondWins, 0);
+                    const sl = stats.overall.reduce((s, o) => s + o.secondLosses, 0);
+                    const uw = stats.overall.reduce((s, o) => s + o.unknownWins, 0);
+                    const ul = stats.overall.reduce((s, o) => s + o.unknownLosses, 0);
+                    return (
+                      <div>
+                        <h2 className="text-base font-bold mb-2">先攻/後攻別</h2>
+                        <TurnOrderCards
+                          firstWins={fw} firstLosses={fl} firstTotal={fw + fl}
+                          secondWins={sw} secondLosses={sl} secondTotal={sw + sl}
+                          unknownWins={uw} unknownLosses={ul} unknownTotal={uw + ul}
+                        />
+                      </div>
+                    );
+                  })()}
 
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">

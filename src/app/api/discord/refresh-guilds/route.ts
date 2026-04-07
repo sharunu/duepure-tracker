@@ -3,11 +3,6 @@ import { createClient } from "@supabase/supabase-js";
 
 export async function POST(request: NextRequest) {
   try {
-    const { accessToken } = await request.json();
-    if (!accessToken) {
-      return NextResponse.json({ error: "missing accessToken" }, { status: 400 });
-    }
-
     // Verify user via Supabase JWT in Authorization header
     const authHeader = request.headers.get("authorization");
     const jwt = authHeader?.replace("Bearer ", "");
@@ -25,10 +20,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "unauthorized" }, { status: 401 });
     }
 
-    // Get discord connection to retrieve discord username
+    // Get discord connection with token info
     const { data: conn } = await supabaseAdmin
       .from("discord_connections")
-      .select("discord_username, access_token")
+      .select("discord_username, access_token, refresh_token, token_expires_at")
       .eq("user_id", user.id)
       .single();
 
@@ -36,9 +31,68 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "no discord connection" }, { status: 404 });
     }
 
+    let accessToken = conn.access_token;
+
+    // Check if token is expired and refresh if needed
+    if (conn.token_expires_at && new Date(conn.token_expires_at) < new Date()) {
+      if (!conn.refresh_token) {
+        return NextResponse.json({ error: "token expired, no refresh token" }, { status: 401 });
+      }
+
+      const refreshRes = await fetch("https://discord.com/api/v10/oauth2/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          client_id: process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID ?? "",
+          client_secret: process.env.DISCORD_CLIENT_SECRET ?? "",
+          grant_type: "refresh_token",
+          refresh_token: conn.refresh_token,
+        }),
+      });
+
+      if (!refreshRes.ok) {
+        console.error("Discord token refresh failed:", await refreshRes.text());
+        return NextResponse.json({ error: "token refresh failed" }, { status: 502 });
+      }
+
+      const tokens = await refreshRes.json();
+      accessToken = tokens.access_token;
+      const newRefreshToken = tokens.refresh_token ?? conn.refresh_token;
+      const tokenExpiresAt = new Date(Date.now() + tokens.expires_in * 1000).toISOString();
+
+      // Update tokens in discord_connections
+      await supabaseAdmin
+        .from("discord_connections")
+        .update({
+          access_token: accessToken,
+          refresh_token: newRefreshToken,
+          token_expires_at: tokenExpiresAt,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("user_id", user.id);
+    }
+
+    // Fetch Discord user info to update username
+    let discordUsername = conn.discord_username;
+    const userRes = await fetch("https://discord.com/api/v10/users/@me", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    if (userRes.ok) {
+      const discordUser = await userRes.json();
+      discordUsername = discordUser.global_name ?? discordUser.username;
+
+      if (discordUsername !== conn.discord_username) {
+        await supabaseAdmin
+          .from("discord_connections")
+          .update({ discord_username: discordUsername, updated_at: new Date().toISOString() })
+          .eq("user_id", user.id);
+      }
+    }
+
     // Fetch guilds from Discord
     const guildsRes = await fetch("https://discord.com/api/v10/users/@me/guilds", {
-      headers: { Authorization: `Bearer ${conn.access_token}` },
+      headers: { Authorization: `Bearer ${accessToken}` },
     });
 
     if (!guildsRes.ok) {
@@ -55,7 +109,7 @@ export async function POST(request: NextRequest) {
     // Sync
     const { error: syncError } = await supabaseAdmin.rpc("sync_team_membership", {
       p_user_id: user.id,
-      p_discord_username: conn.discord_username,
+      p_discord_username: discordUsername,
       p_guilds: guildData,
     });
 

@@ -5,8 +5,8 @@ import { useSearchParams } from "next/navigation";
 import { getDetailedPersonalStats, getGlobalStatsByRange, getDeckTrendByRange, getTeamStatsByRange, getTeamDeckTrendByRange } from "@/lib/actions/stats-actions";
 import type { DetailedPersonalStats, TrendRow } from "@/lib/actions/stats-actions";
 import { getDailyBattleCounts } from "@/lib/actions/battle-actions";
-import { getTeamMembers } from "@/lib/actions/team-actions";
-import type { TeamMember } from "@/lib/actions/team-actions";
+import { getTeamMembers, getMyTeamsWithVisibility } from "@/lib/actions/team-actions";
+import type { TeamMember, TeamWithVisibility } from "@/lib/actions/team-actions";
 import { useFormat } from "@/hooks/use-format";
 import { useActiveTeam } from "@/hooks/use-active-team";
 import { FormatSelector } from "@/components/ui/FormatSelector";
@@ -20,13 +20,15 @@ import { OpponentDeckStatsSection } from "@/components/stats/OpponentDeckStatsSe
 import { EncounterDonutChart } from "@/components/stats/EncounterDonutChart";
 import { TrendChart } from "@/components/stats/TrendChart";
 import { TeamMemberSelector } from "@/components/stats/TeamMemberSelector";
+import { TeamSelector } from "@/components/stats/TeamSelector";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { getWinRateColor } from "@/lib/stats-utils";
+import { TurnOrderCards } from "@/components/stats/TurnOrderCards";
 
 function StatsPageInner() {
   const searchParams = useSearchParams();
   const { format, setFormat, ready } = useFormat();
-  const { activeTeamId, ready: teamReady } = useActiveTeam();
+  const { activeTeamId, setActiveTeamId, ready: teamReady } = useActiveTeam();
   const [scope, setScope] = useState<Scope>(() => {
     const sp = searchParams.get("scope");
     return (sp === "personal" || sp === "global" || sp === "team") ? sp : "personal";
@@ -47,14 +49,22 @@ function StatsPageInner() {
   });
 
   // Data states
-  const [personalStats, setPersonalStats] = useState<DetailedPersonalStats>({ myDeckStats: [], opponentDeckStats: [] });
-  const [globalStats, setGlobalStats] = useState<DetailedPersonalStats>({ myDeckStats: [], opponentDeckStats: [] });
-  const [teamStats, setTeamStats] = useState<DetailedPersonalStats>({ myDeckStats: [], opponentDeckStats: [] });
+  const [personalStats, setPersonalStats] = useState<DetailedPersonalStats>({ myDeckStats: [], opponentDeckStats: [], turnOrder: { firstWins: 0, firstLosses: 0, secondWins: 0, secondLosses: 0, unknownWins: 0, unknownLosses: 0 } });
+  const [globalStats, setGlobalStats] = useState<DetailedPersonalStats>({ myDeckStats: [], opponentDeckStats: [], turnOrder: { firstWins: 0, firstLosses: 0, secondWins: 0, secondLosses: 0, unknownWins: 0, unknownLosses: 0 } });
+  const [teamStats, setTeamStats] = useState<DetailedPersonalStats>({ myDeckStats: [], opponentDeckStats: [], turnOrder: { firstWins: 0, firstLosses: 0, secondWins: 0, secondLosses: 0, unknownWins: 0, unknownLosses: 0 } });
   const [trendData, setTrendData] = useState<TrendRow[]>([]);
 
-  // Team member states
+  // Team states
+  const [visibleTeams, setVisibleTeams] = useState<TeamWithVisibility[]>([]);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
+
+  // Load visible teams
+  useEffect(() => {
+    getMyTeamsWithVisibility().then((teams) => {
+      setVisibleTeams(teams.filter((t) => !t.hidden));
+    });
+  }, []);
 
   // Load team members when activeTeamId changes
   useEffect(() => {
@@ -167,6 +177,14 @@ function StatsPageInner() {
             )}
           </div>
           <div>
+            <h2 className="text-base font-bold mb-2">先攻/後攻別</h2>
+            <TurnOrderCards
+              firstWins={stats.turnOrder.firstWins} firstLosses={stats.turnOrder.firstLosses} firstTotal={stats.turnOrder.firstWins + stats.turnOrder.firstLosses}
+              secondWins={stats.turnOrder.secondWins} secondLosses={stats.turnOrder.secondLosses} secondTotal={stats.turnOrder.secondWins + stats.turnOrder.secondLosses}
+              unknownWins={stats.turnOrder.unknownWins} unknownLosses={stats.turnOrder.unknownLosses} unknownTotal={stats.turnOrder.unknownWins + stats.turnOrder.unknownLosses}
+            />
+          </div>
+          <div>
             <h2 className="text-base font-bold mb-2">使用デッキ別</h2>
             <MyDeckStatsSection stats={stats.myDeckStats} startDate={startDate} endDate={endDate} scope={scope} teamId={activeTeamId ?? undefined} memberId={selectedMemberId} memberName={selectedMemberId ? (teamMembers.find(m => m.user_id === selectedMemberId)?.discord_username ?? null) : null} />
           </div>
@@ -207,7 +225,14 @@ function StatsPageInner() {
               battleCounts={battleCounts}
               onMonthChange={loadCounts}
             />
-            <ScopeSelector scope={scope} setScope={setScope} teamEnabled={!!activeTeamId} />
+            <ScopeSelector scope={scope} setScope={setScope} teamEnabled={visibleTeams.length > 0} />
+            {scope === "team" && visibleTeams.length > 1 && (
+              <TeamSelector
+                teams={visibleTeams}
+                activeTeamId={activeTeamId}
+                onSelect={setActiveTeamId}
+              />
+            )}
             {scope === "team" && activeTeamId && teamMembers.length > 0 && (
               <TeamMemberSelector
                 members={teamMembers}

@@ -96,9 +96,16 @@ export type OpponentDeckStats = {
   winRate: number;
 };
 
+export type TurnOrderSummary = {
+  firstWins: number; firstLosses: number;
+  secondWins: number; secondLosses: number;
+  unknownWins: number; unknownLosses: number;
+};
+
 export type DetailedPersonalStats = {
   myDeckStats: Array<{ deckName: string } & Omit<MyDeckStats, "opponents"> & { opponents: Array<{ opponentName: string } & OpponentDetail> }>;
   opponentDeckStats: Array<{ deckName: string } & OpponentDeckStats>;
+  turnOrder: TurnOrderSummary;
 };
 
 export async function getDetailedPersonalStats(
@@ -108,7 +115,7 @@ export async function getDetailedPersonalStats(
 ): Promise<DetailedPersonalStats> {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { myDeckStats: [], opponentDeckStats: [] };
+  if (!user) return { myDeckStats: [], opponentDeckStats: [], turnOrder: { firstWins: 0, firstLosses: 0, secondWins: 0, secondLosses: 0, unknownWins: 0, unknownLosses: 0 } };
 
   let query = supabase
     .from("battles")
@@ -126,11 +133,12 @@ export async function getDetailedPersonalStats(
   }
 
   const { data: battles } = await query;
-  if (!battles || battles.length === 0) return { myDeckStats: [], opponentDeckStats: [] };
+  if (!battles || battles.length === 0) return { myDeckStats: [], opponentDeckStats: [], turnOrder: { firstWins: 0, firstLosses: 0, secondWins: 0, secondLosses: 0, unknownWins: 0, unknownLosses: 0 } };
 
   // Aggregate my deck stats
   const myDeckMap = new Map<string, { wins: number; losses: number; total: number; opponents: Map<string, OpponentDetail> }>();
   const oppDeckMap = new Map<string, { wins: number; losses: number; total: number }>();
+  const turnOrder: TurnOrderSummary = { firstWins: 0, firstLosses: 0, secondWins: 0, secondLosses: 0, unknownWins: 0, unknownLosses: 0 };
 
   for (const b of battles) {
     const myDeckName = b.decks?.name ?? "不明";
@@ -161,12 +169,15 @@ export async function getDetailedPersonalStats(
     if (b.turn_order === "first") {
       oppDetail.firstTotal++;
       if (isWin) oppDetail.firstWins++; else oppDetail.firstLosses++;
+      if (isWin) turnOrder.firstWins++; else turnOrder.firstLosses++;
     } else if (b.turn_order === "second") {
       oppDetail.secondTotal++;
       if (isWin) oppDetail.secondWins++; else oppDetail.secondLosses++;
+      if (isWin) turnOrder.secondWins++; else turnOrder.secondLosses++;
     } else {
       oppDetail.unknownTotal++;
       if (isWin) oppDetail.unknownWins++; else oppDetail.unknownLosses++;
+      if (isWin) turnOrder.unknownWins++; else turnOrder.unknownLosses++;
     }
 
     // Opponent deck global stats
@@ -208,7 +219,7 @@ export async function getDetailedPersonalStats(
     }))
     .sort((a, b) => b.total - a.total);
 
-  return { myDeckStats, opponentDeckStats };
+  return { myDeckStats, opponentDeckStats, turnOrder };
 }
 
 export type TuningOpponentDetail = OpponentDetail;
@@ -496,7 +507,25 @@ export async function getGlobalStatsByRange(
     winRate: Number(r.win_rate),
   }));
 
-  return { myDeckStats, opponentDeckStats };
+  // Turn order aggregation
+  const endPlusOne = new Date(endDate);
+  endPlusOne.setDate(endPlusOne.getDate() + 1);
+  const { data: turnBattles } = await supabase
+    .from("battles")
+    .select("turn_order, result")
+    .gte("fought_at", startDate)
+    .lt("fought_at", endPlusOne.toISOString().split("T")[0])
+    .eq("format", format);
+
+  const turnOrder: TurnOrderSummary = { firstWins: 0, firstLosses: 0, secondWins: 0, secondLosses: 0, unknownWins: 0, unknownLosses: 0 };
+  for (const b of turnBattles ?? []) {
+    const isWin = b.result === "win";
+    if (b.turn_order === "first") { if (isWin) turnOrder.firstWins++; else turnOrder.firstLosses++; }
+    else if (b.turn_order === "second") { if (isWin) turnOrder.secondWins++; else turnOrder.secondLosses++; }
+    else { if (isWin) turnOrder.unknownWins++; else turnOrder.unknownLosses++; }
+  }
+
+  return { myDeckStats, opponentDeckStats, turnOrder };
 }
 
 export type TrendRow = {
@@ -673,7 +702,41 @@ export async function getTeamStatsByRange(
     winRate: Number(r.win_rate),
   }));
 
-  return { myDeckStats, opponentDeckStats };
+  // Turn order aggregation
+  const endPlusOne = new Date(endDate);
+  endPlusOne.setDate(endPlusOne.getDate() + 1);
+
+  let turnQuery = supabase
+    .from("battles")
+    .select("turn_order, result, user_id")
+    .gte("fought_at", startDate)
+    .lt("fought_at", endPlusOne.toISOString().split("T")[0])
+    .eq("format", format);
+
+  // Get team member IDs
+  const { data: members } = await supabase
+    .from("team_members")
+    .select("user_id")
+    .eq("team_id", teamId);
+  const memberIds = (members ?? []).map((m: { user_id: string }) => m.user_id);
+
+  if (memberId) {
+    turnQuery = turnQuery.eq("user_id", memberId);
+  } else if (memberIds.length > 0) {
+    turnQuery = turnQuery.in("user_id", memberIds);
+  }
+
+  const { data: turnBattles } = await turnQuery;
+
+  const turnOrder: TurnOrderSummary = { firstWins: 0, firstLosses: 0, secondWins: 0, secondLosses: 0, unknownWins: 0, unknownLosses: 0 };
+  for (const b of turnBattles ?? []) {
+    const isWin = b.result === "win";
+    if (b.turn_order === "first") { if (isWin) turnOrder.firstWins++; else turnOrder.firstLosses++; }
+    else if (b.turn_order === "second") { if (isWin) turnOrder.secondWins++; else turnOrder.secondLosses++; }
+    else { if (isWin) turnOrder.unknownWins++; else turnOrder.unknownLosses++; }
+  }
+
+  return { myDeckStats, opponentDeckStats, turnOrder };
 }
 
 export async function getTeamDeckTrendByRange(

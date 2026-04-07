@@ -336,6 +336,7 @@ export type Database = {
       team_members: {
         Row: {
           discord_username: string
+          hidden_at: string | null
           id: string
           joined_at: string
           team_id: string
@@ -343,6 +344,7 @@ export type Database = {
         }
         Insert: {
           discord_username: string
+          hidden_at?: string | null
           id?: string
           joined_at?: string
           team_id: string
@@ -350,6 +352,7 @@ export type Database = {
         }
         Update: {
           discord_username?: string
+          hidden_at?: string | null
           id?: string
           joined_at?: string
           team_id?: string
