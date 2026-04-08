@@ -21,7 +21,6 @@ export type Database = {
           id: string
           my_deck_id: string
           opponent_deck_name: string
-          opponent_deck_normalized: string | null
           result: string
           tuning_id: string | null
           turn_order: string | null
@@ -33,7 +32,6 @@ export type Database = {
           id?: string
           my_deck_id: string
           opponent_deck_name: string
-          opponent_deck_normalized?: string | null
           result: string
           tuning_id?: string | null
           turn_order?: string | null
@@ -45,7 +43,6 @@ export type Database = {
           id?: string
           my_deck_id?: string
           opponent_deck_name?: string
-          opponent_deck_normalized?: string | null
           result?: string
           tuning_id?: string | null
           turn_order?: string | null
@@ -74,36 +71,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      deck_name_candidates: {
-        Row: {
-          compare_to: string
-          created_at: string
-          diff_count: number
-          id: string
-          raw_name: string
-          same_count: number
-          status: string
-        }
-        Insert: {
-          compare_to: string
-          created_at?: string
-          diff_count?: number
-          id?: string
-          raw_name: string
-          same_count?: number
-          status?: string
-        }
-        Update: {
-          compare_to?: string
-          created_at?: string
-          diff_count?: number
-          id?: string
-          raw_name?: string
-          same_count?: number
-          status?: string
-        }
-        Relationships: []
       }
       deck_tunings: {
         Row: {
@@ -144,7 +111,6 @@ export type Database = {
           id: string
           is_archived: boolean
           name: string
-          normalized_name: string | null
           sort_order: number
           user_id: string
         }
@@ -154,7 +120,6 @@ export type Database = {
           id?: string
           is_archived?: boolean
           name: string
-          normalized_name?: string | null
           sort_order?: number
           user_id: string
         }
@@ -164,7 +129,6 @@ export type Database = {
           id?: string
           is_archived?: boolean
           name?: string
-          normalized_name?: string | null
           sort_order?: number
           user_id?: string
         }
@@ -217,63 +181,6 @@ export type Database = {
             foreignKeyName: "discord_connections_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: true
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      normalization_results: {
-        Row: {
-          canonical_name: string
-          created_at: string
-          raw_name: string
-        }
-        Insert: {
-          canonical_name: string
-          created_at?: string
-          raw_name: string
-        }
-        Update: {
-          canonical_name?: string
-          created_at?: string
-          raw_name?: string
-        }
-        Relationships: []
-      }
-      normalization_votes: {
-        Row: {
-          candidate_id: string
-          created_at: string
-          id: string
-          user_id: string
-          vote: string
-        }
-        Insert: {
-          candidate_id: string
-          created_at?: string
-          id?: string
-          user_id: string
-          vote: string
-        }
-        Update: {
-          candidate_id?: string
-          created_at?: string
-          id?: string
-          user_id?: string
-          vote?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "normalization_votes_candidate_id_fkey"
-            columns: ["candidate_id"]
-            isOneToOne: false
-            referencedRelation: "deck_name_candidates"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "normalization_votes_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -551,16 +458,6 @@ export type Database = {
               deck_name: string
             }[]
           }
-      get_pending_vote_for_user: {
-        Args: never
-        Returns: {
-          candidate_id: string
-          compare_to: string
-          diff_count: number
-          raw_name: string
-          same_count: number
-        }[]
-      }
       get_personal_environment_shares_range: {
         Args: { p_end_date: string; p_format?: string; p_start_date: string }
         Returns: {
@@ -677,10 +574,6 @@ export type Database = {
       is_team_member: {
         Args: { p_team_id: string; p_user_id: string }
         Returns: boolean
-      }
-      submit_normalization_vote: {
-        Args: { p_candidate_id: string; p_vote: string }
-        Returns: Json
       }
       sync_team_membership: {
         Args: { p_discord_username: string; p_guilds: Json; p_user_id: string }

@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { recordBattle, getMiniStats, getAllBattles } from "@/lib/actions/battle-actions";
 import { OpponentDeckSelector } from "./OpponentDeckSelector";
-import { NormalizationBanner } from "./NormalizationBanner";
 import { BattleIntervalModal } from "./BattleIntervalModal";
 import { MiniStats } from "../stats/MiniStats";
 
@@ -23,14 +22,6 @@ type MiniStatsData = {
   streak: number;
 };
 
-type PendingVote = {
-  candidate_id: string;
-  raw_name: string;
-  compare_to: string;
-  same_count: number;
-  diff_count: number;
-} | null;
-
 type BattleForModal = {
   id: string;
   opponent_deck_name: string;
@@ -43,7 +34,6 @@ type Props = {
   decks: Deck[];
   suggestions: { major: string[]; other: string[] };
   miniStats: MiniStatsData | null;
-  pendingVote: PendingVote;
   format: Format;
   setFormat: (f: Format) => void;
 };
@@ -57,7 +47,6 @@ export function BattleRecordForm({
   decks,
   suggestions,
   miniStats: initialMiniStats,
-  pendingVote,
   format,
   setFormat,
 }: Props) {
@@ -227,9 +216,6 @@ export function BattleRecordForm({
               </option>
             ))}
           </select>
-
-          {/* Normalization vote */}
-          {pendingVote && <NormalizationBanner vote={pendingVote} />}
 
           {/* Opponent deck */}
           <OpponentDeckSelector

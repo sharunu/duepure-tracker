@@ -9,7 +9,7 @@ export async function getPersonalStats(format: string = "ND") {
 
   const { data: battles } = await supabase
     .from("battles")
-    .select("opponent_deck_name, opponent_deck_normalized, result")
+    .select("opponent_deck_name, result")
     .eq("user_id", user.id)
     .eq("format", format);
 
@@ -22,7 +22,7 @@ export async function getPersonalStats(format: string = "ND") {
   >();
 
   for (const b of battles) {
-    const deckName = b.opponent_deck_normalized ?? b.opponent_deck_name;
+    const deckName = b.opponent_deck_name;
     const entry = deckMap.get(deckName) ?? { wins: 0, losses: 0, total: 0 };
     entry.total++;
     if (b.result === "win") entry.wins++;
@@ -119,7 +119,7 @@ export async function getDetailedPersonalStats(
 
   let query = supabase
     .from("battles")
-    .select("my_deck_id, opponent_deck_name, opponent_deck_normalized, result, turn_order, fought_at, decks(name)")
+    .select("my_deck_id, opponent_deck_name, result, turn_order, fought_at, decks(name)")
     .eq("user_id", user.id)
     .eq("format", format);
 
@@ -142,7 +142,7 @@ export async function getDetailedPersonalStats(
 
   for (const b of battles) {
     const myDeckName = b.decks?.name ?? "不明";
-    const oppName = b.opponent_deck_normalized ?? b.opponent_deck_name;
+    const oppName = b.opponent_deck_name;
     const isWin = b.result === "win";
 
     // My deck stats
@@ -254,7 +254,7 @@ export async function getDeckDetailStats(
 
   let query = supabase
     .from("battles")
-    .select("opponent_deck_name, opponent_deck_normalized, result, turn_order, tuning_id, decks(name), deck_tunings(id, name)")
+    .select("opponent_deck_name, result, turn_order, tuning_id, decks(name), deck_tunings(id, name)")
     .eq("user_id", user.id)
     .eq("format", format);
 
@@ -307,7 +307,7 @@ export async function getDeckDetailStats(
   let overallLosses = 0;
 
   for (const b of filtered) {
-    const oppName = b.opponent_deck_normalized ?? b.opponent_deck_name;
+    const oppName = b.opponent_deck_name;
     const isWin = b.result === "win";
 
     // Overall
@@ -378,7 +378,7 @@ export async function getOpponentDeckDetailStats(
 
   let query = supabase
     .from("battles")
-    .select("opponent_deck_name, opponent_deck_normalized, result, turn_order, decks(name)")
+    .select("opponent_deck_name, result, turn_order, decks(name)")
     .eq("user_id", user.id)
     .eq("format", format);
 
@@ -395,7 +395,7 @@ export async function getOpponentDeckDetailStats(
   if (!battles || battles.length === 0) return { overall: [], overallWins: 0, overallLosses: 0, overallTotal: 0, overallWinRate: 0 };
 
   // Filter to only battles against this opponent deck
-  const filtered = battles.filter(b => (b.opponent_deck_normalized ?? b.opponent_deck_name) === opponentDeckName);
+  const filtered = battles.filter(b => (b.opponent_deck_name) === opponentDeckName);
   if (filtered.length === 0) return { overall: [], overallWins: 0, overallLosses: 0, overallTotal: 0, overallWinRate: 0 };
 
   const safeRate = (w: number, t: number) => t === 0 ? 0 : Math.round((w / t) * 100);

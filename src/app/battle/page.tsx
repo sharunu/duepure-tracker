@@ -6,7 +6,6 @@ import {
   getOpponentDeckSuggestions,
   getMiniStats,
 } from "@/lib/actions/battle-actions";
-import { getPendingVoteForUser } from "@/lib/actions/vote-actions";
 import { checkIsAdmin } from "@/lib/actions/admin-actions";
 import { useFormat } from "@/hooks/use-format";
 import { FormatSelector } from "@/components/ui/FormatSelector";
@@ -19,7 +18,6 @@ export default function BattlePage() {
     decks: Awaited<ReturnType<typeof getDecks>>;
     suggestions: { major: string[]; other: string[] };
     miniStats: Awaited<ReturnType<typeof getMiniStats>>;
-    pendingVote: Awaited<ReturnType<typeof getPendingVoteForUser>>;
     isAdmin: boolean;
   } | null>(null);
   const [pageLoading, setPageLoading] = useState(true);
@@ -30,10 +28,9 @@ export default function BattlePage() {
       getDecks(format),
       getOpponentDeckSuggestions(format),
       getMiniStats(format, localStorage.getItem(`measureSince_${format}`) ?? undefined),
-      getPendingVoteForUser(),
       checkIsAdmin(),
-    ]).then(([decks, suggestions, miniStats, pendingVote, isAdmin]) => {
-      setData({ decks, suggestions, miniStats, pendingVote, isAdmin });
+    ]).then(([decks, suggestions, miniStats, isAdmin]) => {
+      setData({ decks, suggestions, miniStats, isAdmin });
       setPageLoading(false);
     });
   }, [format, ready]);
@@ -76,7 +73,6 @@ export default function BattlePage() {
           decks={data.decks}
           suggestions={data.suggestions}
           miniStats={data.miniStats}
-          pendingVote={data.pendingVote}
           format={format}
           setFormat={setFormat}
         />

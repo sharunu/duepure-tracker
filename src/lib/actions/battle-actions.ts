@@ -14,18 +14,10 @@ export async function recordBattle(formData: {
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
 
-  // Check normalization cache
-  const { data: normResult } = await supabase
-    .from("normalization_results")
-    .select("canonical_name")
-    .eq("raw_name", formData.opponentDeckName)
-    .single();
-
   const { error } = await supabase.from("battles").insert({
     user_id: user.id,
     my_deck_id: formData.myDeckId,
     opponent_deck_name: formData.opponentDeckName,
-    opponent_deck_normalized: normResult?.canonical_name ?? null,
     result: formData.result,
     turn_order: formData.turnOrder,
     format: formData.format,
@@ -33,83 +25,6 @@ export async function recordBattle(formData: {
   });
 
   if (error) throw new Error(error.message);
-
-  // Auto-create normalization candidate for new deck names
-  await maybeCreateNormalizationCandidate(supabase, formData.opponentDeckName);
-}
-
-async function maybeCreateNormalizationCandidate(
-  supabase: ReturnType<typeof createClient>,
-  rawName: string
-) {
-  // Check if already normalized
-  const { data: existing } = await supabase
-    .from("normalization_results")
-    .select("raw_name")
-    .eq("raw_name", rawName)
-    .single();
-
-  if (existing) return;
-
-  // Get top deck suggestions to compare against
-  const { data: suggestions } = await supabase.rpc(
-    "get_opponent_deck_suggestions"
-  );
-  if (!suggestions || suggestions.length === 0) return;
-
-  // Check if this name is already a top deck
-  const topNames = suggestions.map(
-    (s: { deck_name: string }) => s.deck_name
-  );
-  if (topNames.includes(rawName)) return;
-
-  // Find the most similar deck name (simple substring match)
-  for (const topName of topNames) {
-    // Check if already a candidate
-    const { data: candidateExists } = await supabase
-      .from("deck_name_candidates")
-      .select("id")
-      .eq("raw_name", rawName)
-      .eq("compare_to", topName)
-      .single();
-
-    if (candidateExists) continue;
-
-    // Simple similarity: check if names share significant characters
-    const rawLower = rawName.toLowerCase();
-    const topLower = topName.toLowerCase();
-    if (
-      rawLower.includes(topLower) ||
-      topLower.includes(rawLower) ||
-      levenshteinDistance(rawLower, topLower) <= 3
-    ) {
-      await supabase.from("deck_name_candidates").insert({
-        raw_name: rawName,
-        compare_to: topName,
-      });
-      break;
-    }
-  }
-}
-
-function levenshteinDistance(a: string, b: string): number {
-  const matrix: number[][] = [];
-  for (let i = 0; i <= b.length; i++) matrix[i] = [i];
-  for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
-  for (let i = 1; i <= b.length; i++) {
-    for (let j = 1; j <= a.length; j++) {
-      if (b[i - 1] === a[j - 1]) {
-        matrix[i][j] = matrix[i - 1][j - 1];
-      } else {
-        matrix[i][j] = Math.min(
-          matrix[i - 1][j - 1] + 1,
-          matrix[i][j - 1] + 1,
-          matrix[i - 1][j] + 1
-        );
-      }
-    }
-  }
-  return matrix[b.length][a.length];
 }
 
 export async function updateBattle(
@@ -133,12 +48,6 @@ export async function updateBattle(
   if (fields.turnOrder !== undefined) updateData.turn_order = fields.turnOrder;
   if (fields.opponentDeckName !== undefined) {
     updateData.opponent_deck_name = fields.opponentDeckName;
-    const { data: normResult } = await supabase
-      .from("normalization_results")
-      .select("canonical_name")
-      .eq("raw_name", fields.opponentDeckName)
-      .single();
-    updateData.opponent_deck_normalized = normResult?.canonical_name ?? null;
   }
 
   if (fields.myDeckId !== undefined) updateData.my_deck_id = fields.myDeckId;
