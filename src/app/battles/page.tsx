@@ -29,7 +29,7 @@ export default function BattlesPage() {
   const [pageLoading, setPageLoading] = useState(true);
   const [battles, setBattles] = useState<Battle[]>([]);
   const [decks, setDecks] = useState<Deck[]>([]);
-  const [suggestions, setSuggestions] = useState<{ major: string[]; other: string[] }>({ major: [], other: [] });
+  const [suggestions, setSuggestions] = useState<{ major: string[]; minor: string[]; other: string[] }>({ major: [], minor: [], other: [] });
   const [selectedDeck, setSelectedDeck] = useState<string | null>(null);
   const [battleCounts, setBattleCounts] = useState<Record<string, number>>({});
 

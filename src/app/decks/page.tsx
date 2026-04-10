@@ -12,7 +12,7 @@ export default function DecksPage() {
   const router = useRouter();
   const { format, setFormat, ready } = useFormat();
   const [decks, setDecks] = useState<Awaited<ReturnType<typeof getDecks>>>([]);
-  const [suggestions, setSuggestions] = useState<{ major: string[]; other: string[] }>({ major: [], other: [] });
+  const [suggestions, setSuggestions] = useState<{ major: string[]; minor: string[]; other: string[] }>({ major: [], minor: [], other: [] });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -21,7 +21,7 @@ export default function DecksPage() {
     Promise.all([getDecks(format), getOpponentDeckSuggestions(format)]).then(
       ([d, s]) => {
         setDecks(d);
-        setSuggestions({ major: s.major, other: s.other });
+        setSuggestions(s);
         setLoading(false);
       }
     );

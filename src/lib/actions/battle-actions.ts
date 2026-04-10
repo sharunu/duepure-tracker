@@ -96,6 +96,8 @@ export async function getRecentBattles(limit = 50, format: string = "ND") {
   return data ?? [];
 }
 
+export type DeckSuggestions = { major: string[]; minor: string[]; other: string[] };
+
 export async function getOpponentDeckSuggestions(format: string = "ND") {
   const supabase = createClient();
   const { data } = await supabase.rpc("get_opponent_deck_suggestions", {
@@ -104,6 +106,7 @@ export async function getOpponentDeckSuggestions(format: string = "ND") {
   const rows = (data as { deck_name: string; deck_category: string }[] | null) ?? [];
   return {
     major: rows.filter(r => r.deck_category === "major").map(r => r.deck_name),
+    minor: rows.filter(r => r.deck_category === "minor").map(r => r.deck_name),
     other: rows.filter(r => r.deck_category === "other").map(r => r.deck_name),
   };
 }

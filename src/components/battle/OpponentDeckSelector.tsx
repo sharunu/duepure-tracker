@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 
 type Props = {
   majorSuggestions: string[];
+  minorSuggestions: string[];
   otherSuggestions: string[];
   value: string;
   onChange: (name: string) => void;
@@ -18,17 +19,19 @@ const SearchIcon = () => (
 
 export function OpponentDeckSelector({
   majorSuggestions,
+  minorSuggestions,
   otherSuggestions,
   value,
   onChange,
 }: Props) {
   const [showOther, setShowOther] = useState(false);
+  const [showMore, setShowMore] = useState(false);
   const [searchText, setSearchText] = useState("");
 
-  // value が空になったら内部stateをリセット
   useEffect(() => {
     if (value === "") {
       setShowOther(false);
+      setShowMore(false);
       setSearchText("");
     }
   }, [value]);
@@ -40,10 +43,11 @@ export function OpponentDeckSelector({
   };
 
   const filteredMajor = filterByQuery(majorSuggestions);
+  const filteredMinor = filterByQuery(minorSuggestions);
   const filteredOther = filterByQuery(otherSuggestions);
   const hasSearchText = searchText.trim().length > 0;
   const noMatch =
-    hasSearchText && filteredMajor.length === 0 && filteredOther.length === 0;
+    hasSearchText && filteredMajor.length === 0 && filteredMinor.length === 0 && filteredOther.length === 0;
 
   const handleSelect = (name: string) => {
     onChange(name);
@@ -63,14 +67,12 @@ export function OpponentDeckSelector({
     } as React.CSSProperties;
   };
 
-  // Determine if "その他" button should look selected
   const otherSelected = value && !majorSuggestions.includes(value);
 
   return (
     <div>
       <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 8 }}>対面デッキ</p>
 
-      {/* Major deck chips (always visible) */}
       <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
         {(hasSearchText ? filteredMajor : majorSuggestions).map((name) => (
           <button
@@ -83,7 +85,6 @@ export function OpponentDeckSelector({
           </button>
         ))}
 
-        {/* 「その他」toggle button */}
         {!hasSearchText && (
           <button
             type="button"
@@ -108,10 +109,8 @@ export function OpponentDeckSelector({
         )}
       </div>
 
-      {/* Expanded other section */}
       {(showOther || hasSearchText) && (
         <div style={{ marginTop: 12 }}>
-          {/* Search input */}
           <div
             style={{
               display: "flex",
@@ -131,7 +130,6 @@ export function OpponentDeckSelector({
               value={searchText}
               onChange={(e) => {
                 setSearchText(e.target.value);
-                // If typing freely, pass the text as onChange so it can be used as custom deck name
                 if (e.target.value.trim()) {
                   onChange(e.target.value);
                 }
@@ -166,9 +164,42 @@ export function OpponentDeckSelector({
             </p>
           ) : (
             <>
-              {/* Other deck chips */}
-              {(hasSearchText ? filteredOther : otherSuggestions).length > 0 && (
+              {(hasSearchText ? filteredMinor : minorSuggestions).length > 0 && (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {(hasSearchText ? filteredMinor : minorSuggestions).map((name) => (
+                    <button
+                      key={name}
+                      type="button"
+                      onClick={() => handleSelect(name)}
+                      style={chipStyle(name, "other")}
+                    >
+                      {name}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {!hasSearchText && otherSuggestions.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setShowMore((prev) => !prev)}
+                  style={{
+                    marginTop: 8,
+                    padding: "6px 14px",
+                    fontSize: 11,
+                    borderRadius: 8,
+                    background: "#232640",
+                    border: "1px dashed rgba(100,100,150,0.4)",
+                    color: "#999",
+                    cursor: "pointer",
+                  }}
+                >
+                  さらに表示{showMore ? " ▴" : "..."}
+                </button>
+              )}
+
+              {(hasSearchText || showMore) && (hasSearchText ? filteredOther : otherSuggestions).length > 0 && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
                   {(hasSearchText ? filteredOther : otherSuggestions).map((name) => (
                     <button
                       key={name}

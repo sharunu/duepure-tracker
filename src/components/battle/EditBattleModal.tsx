@@ -18,7 +18,7 @@ type Battle = {
 type Props = {
   battle: Battle;
   decks: Deck[];
-  suggestions: { major: string[]; other: string[] };
+  suggestions: { major: string[]; minor: string[]; other: string[] };
   onSave: (fields: {
     opponentDeckName: string;
     result: "win" | "loss";
@@ -94,6 +94,7 @@ export function EditBattleModal({ battle, decks, suggestions, onSave, onClose }:
         <div className="space-y-1">
           <OpponentDeckSelector
             majorSuggestions={suggestions.major}
+            minorSuggestions={suggestions.minor}
             otherSuggestions={suggestions.other}
             value={opponentDeckName}
             onChange={setOpponentDeckName}

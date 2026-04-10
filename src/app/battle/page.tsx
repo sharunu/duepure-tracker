@@ -16,7 +16,7 @@ export default function BattlePage() {
   const { format, setFormat, ready } = useFormat();
   const [data, setData] = useState<{
     decks: Awaited<ReturnType<typeof getDecks>>;
-    suggestions: { major: string[]; other: string[] };
+    suggestions: { major: string[]; minor: string[]; other: string[] };
     miniStats: Awaited<ReturnType<typeof getMiniStats>>;
     isAdmin: boolean;
   } | null>(null);

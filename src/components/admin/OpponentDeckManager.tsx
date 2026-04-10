@@ -15,6 +15,8 @@ type Deck = {
   category: string;
 };
 
+const categoryCycle: Record<string, string> = { major: "minor", minor: "other", other: "major" };
+
 export function OpponentDeckManager({
   initialDecks,
   format,
@@ -24,12 +26,13 @@ export function OpponentDeckManager({
 }) {
   const [decks, setDecks] = useState(initialDecks);
   const [newName, setNewName] = useState("");
-  const [newCategory, setNewCategory] = useState<"major" | "other">("major");
+  const [newCategory, setNewCategory] = useState<"major" | "minor" | "other">("major");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [loading, setLoading] = useState(false);
 
   const majorDecks = decks.filter((d) => d.category === "major");
+  const minorDecks = decks.filter((d) => d.category === "minor");
   const otherDecks = decks.filter((d) => d.category === "other");
 
   const handleAdd = async () => {
@@ -79,7 +82,7 @@ export function OpponentDeckManager({
   };
 
   const handleToggleCategory = async (id: string, currentCategory: string) => {
-    const newCat = currentCategory === "major" ? "other" : "major";
+    const newCat = categoryCycle[currentCategory] ?? "major";
     setLoading(true);
     try {
       await updateOpponentDeck(id, { category: newCat });
@@ -146,9 +149,9 @@ export function OpponentDeckManager({
           <button
             onClick={() => handleToggleCategory(deck.id, deck.category)}
             className="text-[12px] px-2 py-1 rounded min-h-[44px] text-gray-500 hover:text-gray-300"
-            title={deck.category === "major" ? "その他に移動" : "主要に移動"}
+            title={`${categoryCycle[deck.category]}に移動`}
           >
-            {deck.category === "major" ? "→その他" : "→主要"}
+            →{categoryCycle[deck.category]}
           </button>
           <button
             onClick={() => handleToggleActive(deck.id, deck.is_active)}
@@ -185,28 +188,20 @@ export function OpponentDeckManager({
       {/* Add form */}
       <div className="bg-[#232640] rounded-[10px] px-4 py-4 space-y-2">
         <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => setNewCategory("major")}
-            className={`rounded-[6px] px-3 py-2 text-[13px] transition-colors ${
-              newCategory === "major"
-                ? "bg-[#3d4070] text-white"
-                : "bg-[#232640] text-gray-400 border border-gray-600"
-            }`}
-          >
-            主要
-          </button>
-          <button
-            type="button"
-            onClick={() => setNewCategory("other")}
-            className={`rounded-[6px] px-3 py-2 text-[13px] transition-colors ${
-              newCategory === "other"
-                ? "bg-[#3d4070] text-white"
-                : "bg-[#232640] text-gray-400 border border-gray-600"
-            }`}
-          >
-            その他
-          </button>
+          {(["major", "minor", "other"] as const).map((cat) => (
+            <button
+              key={cat}
+              type="button"
+              onClick={() => setNewCategory(cat)}
+              className={`rounded-[6px] px-3 py-2 text-[13px] transition-colors ${
+                newCategory === cat
+                  ? "bg-[#3d4070] text-white"
+                  : "bg-[#232640] text-gray-400 border border-gray-600"
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
         </div>
         <div className="flex gap-2">
           <input
@@ -229,22 +224,34 @@ export function OpponentDeckManager({
 
       {/* Major decks */}
       <div className="bg-[#232640] rounded-[10px] px-4 py-4">
-        <h3 className="text-[13px] font-medium text-gray-400 mb-2">主要デッキ</h3>
+        <h3 className="text-[13px] font-medium text-gray-400 mb-2">major</h3>
         {majorDecks.length === 0 ? (
           <p className="text-center text-gray-500 py-4 text-sm">
-            主要デッキなし
+            majorデッキなし
           </p>
         ) : (
           <ul className="space-y-2">{majorDecks.map(renderDeckItem)}</ul>
         )}
       </div>
 
+      {/* Minor decks */}
+      <div className="bg-[#232640] rounded-[10px] px-4 py-4">
+        <h3 className="text-[13px] font-medium text-gray-400 mb-2">minor</h3>
+        {minorDecks.length === 0 ? (
+          <p className="text-center text-gray-500 py-4 text-sm">
+            minorデッキなし
+          </p>
+        ) : (
+          <ul className="space-y-2">{minorDecks.map(renderDeckItem)}</ul>
+        )}
+      </div>
+
       {/* Other decks */}
       <div className="bg-[#232640] rounded-[10px] px-4 py-4">
-        <h3 className="text-[13px] font-medium text-gray-400 mb-2">その他デッキ</h3>
+        <h3 className="text-[13px] font-medium text-gray-400 mb-2">other</h3>
         {otherDecks.length === 0 ? (
           <p className="text-center text-gray-500 py-4 text-sm">
-            その他デッキなし
+            otherデッキなし
           </p>
         ) : (
           <ul className="space-y-2">{otherDecks.map(renderDeckItem)}</ul>

@@ -48,11 +48,11 @@ const SearchIcon = () => (
 export function DeckList({
   initialDecks,
   format,
-  suggestions = { major: [], other: [] },
+  suggestions = { major: [], minor: [], other: [] },
 }: {
   initialDecks: Deck[];
   format: string;
-  suggestions?: { major: string[]; other: string[] };
+  suggestions?: { major: string[]; minor: string[]; other: string[] };
 }) {
   const [decks, setDecks] = useState(initialDecks);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -60,6 +60,7 @@ export function DeckList({
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [freeInput, setFreeInput] = useState("");
+  const [showMoreOther, setShowMoreOther] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [toastVisible, setToastVisible] = useState(false);
 
@@ -101,8 +102,9 @@ export function DeckList({
   };
 
   const filteredMajor = filterByQuery(suggestions.major);
+  const filteredMinor = filterByQuery(suggestions.minor);
   const filteredOther = filterByQuery(suggestions.other);
-  const noResults = searchQuery && filteredMajor.length === 0 && filteredOther.length === 0;
+  const noResults = searchQuery && filteredMajor.length === 0 && filteredMinor.length === 0 && filteredOther.length === 0;
 
   // Chip create handler
   const handleChipCreate = async (deckName: string) => {
@@ -479,8 +481,8 @@ export function DeckList({
             </div>
           )}
 
-          {/* Other decks */}
-          {filteredOther.length > 0 && (
+          {/* Minor decks */}
+          {filteredMinor.length > 0 && (
             <div style={{ marginBottom: 14 }}>
               <div style={{ fontSize: 10, color: "#666688", fontWeight: 500, marginBottom: 8 }}>
                 その他のデッキ
@@ -494,7 +496,65 @@ export function DeckList({
                   overflowY: "auto",
                 }}
               >
-                {filteredOther.map((name) => {
+                {filteredMinor.map((name) => {
+                  const isRegistered = registeredNames.has(name);
+                  return (
+                    <button
+                      key={name}
+                      onClick={() => handleChipCreate(name)}
+                      disabled={loading || isRegistered}
+                      style={{
+                        padding: "6px 12px",
+                        fontSize: 11,
+                        background: "#232640",
+                        border: "0.5px solid #333355",
+                        borderRadius: 8,
+                        color: "#ccccdd",
+                        opacity: isRegistered ? 0.35 : 1,
+                        pointerEvents: isRegistered ? "none" : "auto",
+                        cursor: isRegistered ? "default" : "pointer",
+                        transition: "all 0.15s",
+                      }}
+                      onMouseDown={(e) => e.preventDefault()}
+                    >
+                      {name}
+                    </button>
+                  );
+                })}
+              </div>
+              {!searchQuery && suggestions.other.length > 0 && (
+                <button
+                  onClick={() => setShowMoreOther((prev) => !prev)}
+                  style={{
+                    marginTop: 8,
+                    padding: "6px 14px",
+                    fontSize: 11,
+                    borderRadius: 8,
+                    background: "#232640",
+                    border: "1px dashed rgba(100,100,150,0.4)",
+                    color: "#999",
+                    cursor: "pointer",
+                  }}
+                >
+                  さらに表示{showMoreOther ? " ▴" : "..."}
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Other decks (shown when searching or showMoreOther) */}
+          {(searchQuery ? filteredOther.length > 0 : showMoreOther && suggestions.other.length > 0) && (
+            <div style={{ marginBottom: 14 }}>
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 6,
+                  maxHeight: 120,
+                  overflowY: "auto",
+                }}
+              >
+                {(searchQuery ? filteredOther : suggestions.other).map((name) => {
                   const isRegistered = registeredNames.has(name);
                   return (
                     <button
