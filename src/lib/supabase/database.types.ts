@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.4"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       battles: {
@@ -186,33 +211,96 @@ export type Database = {
           },
         ]
       }
+      feedback: {
+        Row: {
+          category: string
+          created_at: string | null
+          id: string
+          message: string
+          user_id: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          id?: string
+          message: string
+          user_id?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          id?: string
+          message?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       opponent_deck_master: {
         Row: {
+          admin_bonus_count: number
           category: string
           created_at: string
           format: string
           id: string
           is_active: boolean
+          last_used_at: string | null
           name: string
           sort_order: number
         }
         Insert: {
+          admin_bonus_count?: number
           category?: string
           created_at?: string
           format?: string
           id?: string
           is_active?: boolean
+          last_used_at?: string | null
           name: string
           sort_order?: number
         }
         Update: {
+          admin_bonus_count?: number
           category?: string
           created_at?: string
           format?: string
           id?: string
           is_active?: boolean
+          last_used_at?: string | null
           name?: string
           sort_order?: number
+        }
+        Relationships: []
+      }
+      opponent_deck_settings: {
+        Row: {
+          disable_period_days: number
+          format: string
+          id: string
+          major_threshold: number
+          management_mode: string
+          minor_threshold: number
+          updated_at: string
+          usage_period_days: number
+        }
+        Insert: {
+          disable_period_days?: number
+          format: string
+          id?: string
+          major_threshold?: number
+          management_mode?: string
+          minor_threshold?: number
+          updated_at?: string
+          usage_period_days?: number
+        }
+        Update: {
+          disable_period_days?: number
+          format?: string
+          id?: string
+          major_threshold?: number
+          management_mode?: string
+          minor_threshold?: number
+          updated_at?: string
+          usage_period_days?: number
         }
         Relationships: []
       }
@@ -282,30 +370,6 @@ export type Database = {
           },
         ]
       }
-      feedback: {
-        Row: {
-          id: string
-          user_id: string | null
-          category: string
-          message: string
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          user_id?: string | null
-          category: string
-          message: string
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string | null
-          category?: string
-          message?: string
-          created_at?: string
-        }
-        Relationships: []
-      }
       teams: {
         Row: {
           created_at: string
@@ -338,6 +402,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      auto_add_opponent_deck: {
+        Args: { p_deck_name: string; p_format: string }
+        Returns: undefined
+      }
       delete_own_account: { Args: never; Returns: undefined }
       get_deck_trend_range: {
         Args: {
@@ -575,6 +643,11 @@ export type Database = {
         Args: { p_team_id: string; p_user_id: string }
         Returns: boolean
       }
+      recalculate_opponent_decks: {
+        Args: { p_format: string }
+        Returns: undefined
+      }
+      run_daily_opponent_deck_batch: { Args: never; Returns: undefined }
       sync_team_membership: {
         Args: { p_discord_username: string; p_guilds: Json; p_user_id: string }
         Returns: undefined
@@ -707,6 +780,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {},
   },

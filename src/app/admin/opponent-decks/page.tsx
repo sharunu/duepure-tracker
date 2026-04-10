@@ -5,15 +5,25 @@ import { useRouter } from "next/navigation";
 import {
   checkIsAdmin,
   getOpponentDeckMasterList,
+  getOpponentDeckSettings,
 } from "@/lib/actions/admin-actions";
 import { useFormat } from "@/hooks/use-format";
 import { FormatSelector } from "@/components/ui/FormatSelector";
 import { OpponentDeckManager } from "@/components/admin/OpponentDeckManager";
 
+type Settings = {
+  management_mode: string;
+  major_threshold: number;
+  minor_threshold: number;
+  usage_period_days: number;
+  disable_period_days: number;
+};
+
 export default function AdminOpponentDecksPage() {
   const router = useRouter();
   const { format, setFormat } = useFormat();
   const [decks, setDecks] = useState<Awaited<ReturnType<typeof getOpponentDeckMasterList>>>([]);
+  const [settings, setSettings] = useState<Settings | null>(null);
   const [loading, setLoading] = useState(true);
 
   const loadDecks = useCallback(() => {
@@ -23,8 +33,12 @@ export default function AdminOpponentDecksPage() {
         router.replace("/battle");
         return;
       }
-      getOpponentDeckMasterList(format).then((d) => {
+      Promise.all([
+        getOpponentDeckMasterList(format),
+        getOpponentDeckSettings(format),
+      ]).then(([d, s]) => {
         setDecks(d);
+        setSettings(s as Settings | null);
         setLoading(false);
       });
     });
@@ -56,7 +70,11 @@ export default function AdminOpponentDecksPage() {
       <div className="bg-[#232640] rounded-[10px] px-4 py-3 mb-4">
         <FormatSelector format={format} setFormat={setFormat} />
       </div>
-      <OpponentDeckManager initialDecks={decks} format={format} />
+      <OpponentDeckManager
+        initialDecks={decks}
+        format={format}
+        initialSettings={settings}
+      />
     </div>
   );
 }

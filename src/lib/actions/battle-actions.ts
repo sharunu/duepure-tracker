@@ -25,6 +25,12 @@ export async function recordBattle(formData: {
   });
 
   if (error) throw new Error(error.message);
+
+  // 未登録デッキ自動追加 / last_used_at更新
+  await supabase.rpc('auto_add_opponent_deck', {
+    p_deck_name: formData.opponentDeckName,
+    p_format: formData.format,
+  });
 }
 
 export async function updateBattle(
