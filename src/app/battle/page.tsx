@@ -21,6 +21,7 @@ export default function BattlePage() {
     isAdmin: boolean;
   } | null>(null);
   const [pageLoading, setPageLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const loadData = useCallback(() => {
     if (!ready) return;
@@ -32,12 +33,26 @@ export default function BattlePage() {
     ]).then(([decks, suggestions, miniStats, isAdmin]) => {
       setData({ decks, suggestions, miniStats, isAdmin });
       setPageLoading(false);
+    }).catch(() => {
+      setError("データの読み込みに失敗しました");
+      setPageLoading(false);
     });
   }, [format, ready]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  if (error) {
+    return (
+      <>
+        <div className="min-h-screen pb-20 px-4 pt-6 max-w-lg mx-auto">
+          <p className="text-center text-red-400 py-12 text-sm">{error}</p>
+        </div>
+        <BottomNav />
+      </>
+    );
+  }
 
   if (!data || !ready) {
     return (

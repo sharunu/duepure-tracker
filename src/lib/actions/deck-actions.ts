@@ -75,16 +75,20 @@ export async function updateDeck(id: string, name: string) {
     throw new Error("同じ名前のデッキが既に登録されています");
   }
 
-  const { error } = await supabase.from("decks").update({ name }).eq("id", id);
+  const { error } = await supabase.from("decks").update({ name }).eq("id", id).eq("user_id", user.id);
   if (error) throw new Error(error.message);
 }
 
 export async function archiveDeck(id: string) {
   const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
   const { error } = await supabase
     .from("decks")
     .update({ is_archived: true })
-    .eq("id", id);
+    .eq("id", id)
+    .eq("user_id", user.id);
 
   if (error) throw new Error(error.message);
 }

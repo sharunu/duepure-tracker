@@ -43,7 +43,7 @@ export default function AuthPage() {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) {
-      setMessage(error.message);
+      setMessage("ログインに失敗しました。メールアドレスまたはパスワードを確認してください。");
     } else {
       window.location.href = "/battle";
     }
@@ -66,7 +66,7 @@ export default function AuthPage() {
     });
     setLoading(false);
     if (error) {
-      setMessage(error.message);
+      setMessage("アカウント作成に失敗しました。もう一度お試しください。");
     } else if (data.user?.identities?.length === 0) {
       setMessage("このメールアドレスは既に登録されています");
     } else {
@@ -79,7 +79,7 @@ export default function AuthPage() {
     const { error } = await supabase.auth.signInAnonymously();
     setLoading(false);
     if (error) {
-      setMessage(error.message);
+      setMessage("認証に失敗しました。もう一度お試しください。");
     } else {
       window.location.href = "/battle";
     }
@@ -97,7 +97,7 @@ export default function AuthPage() {
     });
     setLoading(false);
     if (error) {
-      setMessage(error.message);
+      setMessage("リセットメールの送信に失敗しました。もう一度お試しください。");
     } else {
       setMessage("リセットメールを送信しました。メールを確認してください。");
     }

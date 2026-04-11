@@ -176,8 +176,9 @@ export function DeckList({
     try {
       await archiveDeck(id);
       setDecks(decks.filter((d) => d.id !== id));
-    } catch {
-      // handle error
+    } catch (e) {
+      console.error(e);
+      alert("デッキの削除に失敗しました");
     } finally {
       setLoading(false);
     }
@@ -221,8 +222,9 @@ export function DeckList({
         ...d,
         deck_tunings: d.deck_tunings.filter(t => t.id !== tuningId),
       } : d));
-    } catch {
-      // handle error
+    } catch (e) {
+      console.error(e);
+      alert("チューニングの削除に失敗しました");
     }
   };
 

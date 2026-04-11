@@ -94,6 +94,7 @@ function StatsPageInner() {
 
     setLoading(true);
 
+    try {
     if (scope === "personal" && view === "stats") {
       const s = await getDetailedPersonalStats(format, startDate, endDate);
       setPersonalStats(s);
@@ -114,7 +115,11 @@ function StatsPageInner() {
       setTrendData(t);
     }
 
-    setLoading(false);
+    } catch {
+      console.error("Failed to load stats data");
+    } finally {
+      setLoading(false);
+    }
   }, [format, startDate, endDate, ready, teamReady, scope, view, activeTeamId, selectedMemberId]);
 
   const loadCounts = useCallback((year: number, month: number) => {

@@ -14,6 +14,7 @@ export default function DecksPage() {
   const [decks, setDecks] = useState<Awaited<ReturnType<typeof getDecks>>>([]);
   const [suggestions, setSuggestions] = useState<{ major: string[]; minor: string[]; other: string[] }>({ major: [], minor: [], other: [] });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!ready) return;
@@ -24,7 +25,10 @@ export default function DecksPage() {
         setSuggestions(s);
         setLoading(false);
       }
-    );
+    ).catch(() => {
+      setError("データの読み込みに失敗しました");
+      setLoading(false);
+    });
   }, [format, ready]);
 
   return (
@@ -45,7 +49,9 @@ export default function DecksPage() {
             <FormatSelector format={format} setFormat={setFormat} />
           </div>
         </div>
-        {(!ready || loading) ? (
+        {error ? (
+          <p className="text-center text-red-400 py-12 text-sm">{error}</p>
+        ) : (!ready || loading) ? (
           <div className="flex justify-center py-12">
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
           </div>

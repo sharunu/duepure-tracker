@@ -309,8 +309,9 @@ export function OpponentDeckManager({
       const result = await getOpponentDeckStatsForAdmin(format);
       setStatsDecks(result.decks as DeckWithStats[]);
       setStatsLoaded(true);
-    } catch {
-      // handle error
+    } catch (e) {
+      console.error(e);
+      alert("操作に失敗しました");
     }
   };
 
@@ -333,8 +334,9 @@ export function OpponentDeckManager({
       if (newMode === "auto") {
         setStatsLoaded(false);
       }
-    } catch {
-      // handle error
+    } catch (e) {
+      console.error(e);
+      alert("操作に失敗しました");
     } finally {
       setLoading(false);
     }
@@ -352,8 +354,9 @@ export function OpponentDeckManager({
         setStatsLoaded(false);
         await loadStats();
       }
-    } catch {
-      // handle error
+    } catch (e) {
+      console.error(e);
+      alert("操作に失敗しました");
     } finally {
       setLoading(false);
     }
@@ -367,8 +370,9 @@ export function OpponentDeckManager({
       setDecks(decks.map((d) => (d.id === id ? { ...d, name: editName.trim() } : d)));
       setStatsDecks(statsDecks.map((d) => (d.id === id ? { ...d, name: editName.trim() } : d)));
       setEditingId(null);
-    } catch {
-      // handle error
+    } catch (e) {
+      console.error(e);
+      alert("操作に失敗しました");
     } finally {
       setLoading(false);
     }
@@ -380,8 +384,9 @@ export function OpponentDeckManager({
       await updateOpponentDeck(id, { is_active: !currentActive });
       setDecks(decks.map((d) => (d.id === id ? { ...d, is_active: !currentActive } : d)));
       setStatsDecks(statsDecks.map((d) => (d.id === id ? { ...d, is_active: !currentActive } : d)));
-    } catch {
-      // handle error
+    } catch (e) {
+      console.error(e);
+      alert("操作に失敗しました");
     } finally {
       setLoading(false);
     }
@@ -393,8 +398,9 @@ export function OpponentDeckManager({
     try {
       await updateOpponentDeck(id, { category: newCat });
       setDecks(decks.map((d) => (d.id === id ? { ...d, category: newCat } : d)));
-    } catch {
-      // handle error
+    } catch (e) {
+      console.error(e);
+      alert("操作に失敗しました");
     } finally {
       setLoading(false);
     }
@@ -407,8 +413,9 @@ export function OpponentDeckManager({
       await deleteOpponentDeck(id);
       setDecks(decks.filter((d) => d.id !== id));
       setStatsDecks(statsDecks.filter((d) => d.id !== id));
-    } catch {
-      // handle error
+    } catch (e) {
+      console.error(e);
+      alert("操作に失敗しました");
     } finally {
       setLoading(false);
     }
@@ -423,8 +430,9 @@ export function OpponentDeckManager({
         usage_period_days: usagePeriod,
         disable_period_days: disablePeriod,
       });
-    } catch {
-      // handle error
+    } catch (e) {
+      console.error(e);
+      alert("操作に失敗しました");
     } finally {
       setSavingSettings(false);
     }
@@ -436,8 +444,9 @@ export function OpponentDeckManager({
       await recalculateOpponentDecks(format);
       await loadStats();
       await reloadAdminDecks();
-    } catch {
-      // handle error
+    } catch (e) {
+      console.error(e);
+      alert("操作に失敗しました");
     } finally {
       setRecalculating(false);
     }
@@ -459,8 +468,9 @@ export function OpponentDeckManager({
       const newEditing = { ...bonusEditing };
       delete newEditing[id];
       setBonusEditing(newEditing);
-    } catch {
-      // handle error
+    } catch (e) {
+      console.error(e);
+      alert("操作に失敗しました");
     } finally {
       setLoading(false);
     }

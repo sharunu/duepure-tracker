@@ -131,8 +131,9 @@ export function BattleRecordForm({
       setTimeout(() => setLastResult(null), 1500);
       const updatedStats = await getMiniStats(format, measureSince ?? undefined);
       setMiniStats(updatedStats);
-    } catch {
-      // handle error
+    } catch (e) {
+      console.error(e);
+      alert("記録の保存に失敗しました");
     } finally {
       setSubmitting(false);
     }

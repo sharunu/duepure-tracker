@@ -161,15 +161,15 @@ export function BattleHistoryList({ battles, decks, suggestions, onRefresh }: Pr
                         <div className="ml-auto flex gap-1.5">
                           <button
                             onClick={() => setEditingBattle(b)}
-                            className="w-[28px] h-[28px] flex items-center justify-center rounded-[6px] bg-[rgba(91,141,239,0.08)]"
+                            className="relative p-2 -m-2 flex items-center justify-center"
                           >
-                            <Pencil size={13} color="#5b8def" />
+                            <span className="w-[28px] h-[28px] flex items-center justify-center rounded-[6px] bg-[rgba(91,141,239,0.08)]"><Pencil size={13} color="#5b8def" /></span>
                           </button>
                           <button
                             onClick={() => handleDelete(b.id)}
-                            className="w-[28px] h-[28px] flex items-center justify-center rounded-[6px] bg-[rgba(232,93,117,0.08)]"
+                            className="relative p-2 -m-2 flex items-center justify-center"
                           >
-                            <X size={13} color="#e85d75" />
+                            <span className="w-[28px] h-[28px] flex items-center justify-center rounded-[6px] bg-[rgba(232,93,117,0.08)]"><X size={13} color="#e85d75" /></span>
                           </button>
                         </div>
                       </div>

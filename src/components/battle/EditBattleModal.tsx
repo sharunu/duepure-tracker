@@ -64,6 +64,9 @@ export function EditBattleModal({ battle, decks, suggestions, onSave, onClose }:
     try {
       const { deckId, tuningId } = parseDeckSelection(selectedValue);
       await onSave({ opponentDeckName: opponentDeckName.trim(), result, turnOrder, myDeckId: deckId, tuningId });
+    } catch (e) {
+      console.error(e);
+      alert("保存に失敗しました");
     } finally {
       setSaving(false);
     }

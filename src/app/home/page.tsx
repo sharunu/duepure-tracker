@@ -26,7 +26,10 @@ function HomePageInner() {
   const visibleTeams = teams.filter((t) => !t.hidden);
   const hiddenTeams = teams.filter((t) => t.hidden);
 
+  const [error, setError] = useState<string | null>(null);
+
   const loadData = useCallback(async () => {
+    try {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
@@ -45,6 +48,10 @@ function HomePageInner() {
     }
 
     setLoading(false);
+    } catch {
+      setError("データの読み込みに失敗しました");
+      setLoading(false);
+    }
   }, [router]);
 
   useEffect(() => {
@@ -152,6 +159,17 @@ function HomePageInner() {
   };
 
   const discordStatus = searchParams.get("discord");
+
+  if (error) {
+    return (
+      <>
+        <div className="min-h-screen pb-20 px-4 pt-6 max-w-lg mx-auto">
+          <p className="text-center text-red-400 py-12 text-sm">{error}</p>
+        </div>
+        <BottomNav />
+      </>
+    );
+  }
 
   if (loading) {
     return (

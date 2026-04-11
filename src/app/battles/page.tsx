@@ -27,6 +27,7 @@ type Battle = {
 export default function BattlesPage() {
   const { format, setFormat, ready } = useFormat();
   const [pageLoading, setPageLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [battles, setBattles] = useState<Battle[]>([]);
   const [decks, setDecks] = useState<Deck[]>([]);
   const [suggestions, setSuggestions] = useState<{ major: string[]; minor: string[]; other: string[] }>({ major: [], minor: [], other: [] });
@@ -50,6 +51,9 @@ export default function BattlesPage() {
       setBattles(battlesData as Battle[]);
       setDecks(decksData as Deck[]);
       setSuggestions(suggestionsData);
+      setPageLoading(false);
+    }).catch(() => {
+      setError("データの読み込みに失敗しました");
       setPageLoading(false);
     });
   }, [format, startDate, endDate, ready]);
@@ -101,7 +105,9 @@ export default function BattlesPage() {
             <FormatSelector format={format} setFormat={setFormat} />
           </div>
         </div>
-        {(!ready || pageLoading) ? (
+        {error ? (
+          <p className="text-center text-red-400 py-12 text-sm">{error}</p>
+        ) : (!ready || pageLoading) ? (
           <div className="flex justify-center py-12">
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
           </div>

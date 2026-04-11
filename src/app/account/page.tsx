@@ -42,11 +42,16 @@ export default function AccountPage() {
 
   useEffect(() => {
     const load = async () => {
-      const [name, prov, mail] = await Promise.all([getDisplayName(), getAuthProvider(), getEmail()]);
-      setDisplayName(name);
-      setProvider(prov);
-      setEmail(mail);
-      setPageLoading(false);
+      try {
+        const [name, prov, mail] = await Promise.all([getDisplayName(), getAuthProvider(), getEmail()]);
+        setDisplayName(name);
+        setProvider(prov);
+        setEmail(mail);
+      } catch {
+        console.error("Failed to load account data");
+      } finally {
+        setPageLoading(false);
+      }
     };
     load();
 
@@ -71,8 +76,8 @@ export default function AccountPage() {
     try {
       await updateDisplayName(displayName.trim());
       setNameMessage("ユーザー名を更新しました");
-    } catch (e: any) {
-      setNameMessage(e.message || "更新に失敗しました");
+    } catch {
+      setNameMessage("ユーザー名の更新に失敗しました");
     }
     setNameLoading(false);
   };
@@ -98,8 +103,8 @@ export default function AccountPage() {
       }
       setCurrentPassword("");
       setNewPassword("");
-    } catch (e: any) {
-      setPasswordMessage(e.message || "変更に失敗しました");
+    } catch {
+      setPasswordMessage("パスワードの変更に失敗しました");
     }
     setPasswordLoading(false);
   };
@@ -147,8 +152,8 @@ export default function AccountPage() {
       await deleteAccount();
       await supabase.auth.signOut();
       router.push("/auth");
-    } catch (e: any) {
-      setDeleteMessage(e.message || "削除に失敗しました");
+    } catch {
+      setDeleteMessage("アカウントの削除に失敗しました");
     }
     setDeleteLoading(false);
   };
@@ -163,8 +168,8 @@ export default function AccountPage() {
       setFeedbackCategory("bug");
       setFeedbackToast("送信しました。ご意見ありがとうございます！");
       setTimeout(() => setFeedbackToast(""), 3000);
-    } catch (e: any) {
-      setFeedbackToast(e.message || "送信に失敗しました");
+    } catch {
+      setFeedbackToast("送信に失敗しました");
       setTimeout(() => setFeedbackToast(""), 3000);
     }
     setFeedbackLoading(false);
