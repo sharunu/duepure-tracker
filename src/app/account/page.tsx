@@ -322,14 +322,14 @@ export default function AccountPage() {
             <div className="mx-4 border-t" style={{ borderColor: "rgba(100,100,150,0.2)", borderWidth: "0.5px" }} />
             {/* アカウント切替行 */}
             <div
-              className={"px-4 py-[14px] flex items-center justify-between" + (isSnsLogin ? " cursor-pointer" : "")}
-              onClick={isSnsLogin ? handleSwitchAccount : undefined}
+              className={"px-4 py-[14px] flex items-center justify-between" + (provider === "google" ? " cursor-pointer" : "")}
+              onClick={provider === "google" ? handleSwitchAccount : undefined}
             >
               <div>
                 <p className="text-[14px]">アカウント切替</p>
                 <p className="text-[11px] text-gray-500 mt-0.5">
                   {isSnsLogin
-                    ? (provider === "google" ? "別のGoogleアカウントに切り替え" : "別のXアカウントに切り替え")
+                    ? (provider === "google" ? "別のGoogleアカウントに切り替え" : "Xでは別アカウントへの直接切替ができません。x.comでアカウントを切り替えた後、ログアウトして再ログインしてください")
                     : isGuest
                       ? "ゲストアカウントでは切替できません"
                       : "ログアウトして別のアカウントでログインしてください"}
