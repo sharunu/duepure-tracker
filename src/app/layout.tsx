@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import { ServiceWorkerRegistration } from "@/components/pwa/ServiceWorkerRegistration";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { BanGuard } from "@/components/providers/BanGuard";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -40,7 +41,7 @@ export default function RootLayout({
       >
         <ServiceWorkerRegistration />
         <InstallPrompt />
-        <ErrorBoundary>{children}</ErrorBoundary>
+        <ErrorBoundary><BanGuard>{children}</BanGuard></ErrorBoundary>
       </body>
     </html>
   );

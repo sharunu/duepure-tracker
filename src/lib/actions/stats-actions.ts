@@ -471,21 +471,21 @@ export async function getPersonalEnvironmentSharesByRange(
 export async function getGlobalStatsByRange(
   startDate: string,
   endDate: string,
-  format: string = "ND"
+  format: string = "ND",
+  maxStage?: number
 ): Promise<DetailedPersonalStats> {
   const supabase = createClient();
 
+  const rpcParams = {
+    p_start_date: startDate,
+    p_end_date: endDate,
+    p_format: format,
+    ...(maxStage !== undefined ? { p_max_stage: maxStage } : {}),
+  };
+
   const [{ data: myDeckData }, { data: oppDeckData }] = await Promise.all([
-    supabase.rpc("get_global_my_deck_stats_range", {
-      p_start_date: startDate,
-      p_end_date: endDate,
-      p_format: format,
-    }),
-    supabase.rpc("get_global_opponent_deck_stats_range", {
-      p_start_date: startDate,
-      p_end_date: endDate,
-      p_format: format,
-    }),
+    supabase.rpc("get_global_my_deck_stats_range", rpcParams),
+    supabase.rpc("get_global_opponent_deck_stats_range", rpcParams),
   ]);
 
   type RpcRow = { deck_name: string; wins: number; losses: number; total: number; win_rate: number };
@@ -507,23 +507,23 @@ export async function getGlobalStatsByRange(
     winRate: Number(r.win_rate),
   }));
 
-  // Turn order aggregation
-  const endPlusOne = new Date(endDate);
-  endPlusOne.setDate(endPlusOne.getDate() + 1);
-  const { data: turnBattles } = await supabase
-    .from("battles")
-    .select("turn_order, result")
-    .gte("fought_at", startDate)
-    .lt("fought_at", endPlusOne.toISOString().split("T")[0])
-    .eq("format", format);
+  // Turn order aggregation via RPC (stage filter対応)
+  const { data: turnData } = await supabase.rpc("get_global_turn_order_stats_range", {
+    p_start_date: startDate,
+    p_end_date: endDate,
+    p_format: format,
+    ...(maxStage !== undefined ? { p_max_stage: maxStage } : {}),
+  });
 
-  const turnOrder: TurnOrderSummary = { firstWins: 0, firstLosses: 0, secondWins: 0, secondLosses: 0, unknownWins: 0, unknownLosses: 0 };
-  for (const b of turnBattles ?? []) {
-    const isWin = b.result === "win";
-    if (b.turn_order === "first") { if (isWin) turnOrder.firstWins++; else turnOrder.firstLosses++; }
-    else if (b.turn_order === "second") { if (isWin) turnOrder.secondWins++; else turnOrder.secondLosses++; }
-    else { if (isWin) turnOrder.unknownWins++; else turnOrder.unknownLosses++; }
-  }
+  const turnRow = (turnData as { first_wins: number; first_losses: number; second_wins: number; second_losses: number; unknown_wins: number; unknown_losses: number }[] | null)?.[0];
+  const turnOrder: TurnOrderSummary = turnRow ? {
+    firstWins: Number(turnRow.first_wins),
+    firstLosses: Number(turnRow.first_losses),
+    secondWins: Number(turnRow.second_wins),
+    secondLosses: Number(turnRow.second_losses),
+    unknownWins: Number(turnRow.unknown_wins),
+    unknownLosses: Number(turnRow.unknown_losses),
+  } : { firstWins: 0, firstLosses: 0, secondWins: 0, secondLosses: 0, unknownWins: 0, unknownLosses: 0 };
 
   return { myDeckStats, opponentDeckStats, turnOrder };
 }
@@ -539,7 +539,8 @@ export async function getDeckTrendByRange(
   startDate: string,
   endDate: string,
   format: string = "ND",
-  isPersonal: boolean = false
+  isPersonal: boolean = false,
+  maxStage?: number
 ): Promise<TrendRow[]> {
   const supabase = createClient();
   let userId: string | undefined = undefined;
@@ -554,6 +555,7 @@ export async function getDeckTrendByRange(
     p_end_date: endDate,
     p_format: format,
     p_user_id: userId ?? undefined,
+    ...(maxStage !== undefined ? { p_max_stage: maxStage } : {}),
   });
 
   if (error) return [];
@@ -569,7 +571,8 @@ export async function getGlobalDeckDetailStats(
   deckName: string,
   format: string,
   startDate?: string,
-  endDate?: string
+  endDate?: string,
+  maxStage?: number
 ): Promise<DeckDetailStats> {
   const supabase = createClient();
   const { data, error } = await supabase.rpc("get_global_deck_detail_stats", {
@@ -577,6 +580,7 @@ export async function getGlobalDeckDetailStats(
     p_format: format,
     p_start_date: startDate ?? undefined,
     p_end_date: endDate ?? undefined,
+    ...(maxStage !== undefined ? { p_max_stage: maxStage } : {}),
   });
 
   if (error || !data || data.length === 0) {
@@ -614,12 +618,13 @@ export async function getGlobalDeckDetailStatsMulti(
   deckNames: string[],
   format: string,
   startDate?: string,
-  endDate?: string
+  endDate?: string,
+  maxStage?: number
 ): Promise<DeckDetailStats> {
   if (deckNames.length === 0) return { overall: [], overallWins: 0, overallLosses: 0, overallTotal: 0, overallWinRate: 0, tuningStats: [] };
 
   const results = await Promise.all(
-    deckNames.map(name => getGlobalDeckDetailStats(name, format, startDate, endDate))
+    deckNames.map(name => getGlobalDeckDetailStats(name, format, startDate, endDate, maxStage))
   );
 
   const safeRate = (w: number, t: number) => t === 0 ? 0 : Math.round((w / t) * 100);
@@ -658,7 +663,8 @@ export async function getGlobalOpponentDeckDetailStats(
   opponentDeckName: string,
   format: string,
   startDate?: string,
-  endDate?: string
+  endDate?: string,
+  maxStage?: number
 ): Promise<OpponentDeckDetailStats> {
   const supabase = createClient();
   const { data, error } = await supabase.rpc("get_global_opponent_deck_detail_stats", {
@@ -666,6 +672,7 @@ export async function getGlobalOpponentDeckDetailStats(
     p_format: format,
     p_start_date: startDate ?? undefined,
     p_end_date: endDate ?? undefined,
+    ...(maxStage !== undefined ? { p_max_stage: maxStage } : {}),
   });
 
   if (error || !data || data.length === 0) {

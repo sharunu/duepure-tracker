@@ -448,3 +448,115 @@ export async function getAdminFeedbackList() {
     .order("created_at", { ascending: false });
   return data ?? [];
 }
+
+// =============================================
+// ステージ管理
+// =============================================
+
+export async function updateUserStage(
+  userId: string, newStage: number, reason: string
+): Promise<void> {
+  const supabase = await requireAdmin();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const { data: profile } = await supabase
+    .from("profiles").select("stage").eq("id", userId).single();
+  const fromStage = profile?.stage ?? 2;
+
+  await supabase.from("profiles").update({ stage: newStage }).eq("id", userId);
+
+  await supabase.from("user_stage_history").insert({
+    user_id: userId,
+    from_stage: fromStage,
+    to_stage: newStage,
+    reason,
+    changed_by: user!.id,
+  });
+}
+
+export async function getUserStageHistory(userId: string) {
+  await requireAdmin();
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("user_stage_history")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+  return data ?? [];
+}
+
+// =============================================
+// 検知ルール管理
+// =============================================
+
+export async function getDetectionRules() {
+  await requireAdmin();
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("detection_rules")
+    .select("*")
+    .order("rule_key");
+  return data ?? [];
+}
+
+export async function updateDetectionRule(
+  ruleKey: string, params: Record<string, unknown>, isEnabled: boolean
+) {
+  const supabase = await requireAdmin();
+  const { error } = await supabase
+    .from("detection_rules")
+    .update({ params: params as Record<string, number>, is_enabled: isEnabled, updated_at: new Date().toISOString() })
+    .eq("rule_key", ruleKey);
+  if (error) throw new Error(error.message);
+}
+
+// =============================================
+// 検知アラート管理
+// =============================================
+
+export async function getDetectionAlerts(resolvedOnly: boolean = false) {
+  await requireAdmin();
+  const supabase = createClient();
+  let query = supabase
+    .from("detection_alerts")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (!resolvedOnly) {
+    query = query.eq("is_resolved", false);
+  }
+
+  const { data } = await query;
+  return data ?? [];
+}
+
+export async function getDetectionAlertCount(): Promise<number> {
+  await requireAdmin();
+  const supabase = createClient();
+  const { count } = await supabase
+    .from("detection_alerts")
+    .select("*", { count: "exact", head: true })
+    .eq("is_resolved", false);
+  return count ?? 0;
+}
+
+export async function resolveDetectionAlert(alertId: string) {
+  const supabase = await requireAdmin();
+  const { data: { user } } = await supabase.auth.getUser();
+  const { error } = await supabase
+    .from("detection_alerts")
+    .update({
+      is_resolved: true,
+      resolved_by: user!.id,
+      resolved_at: new Date().toISOString(),
+    })
+    .eq("id", alertId);
+  if (error) throw new Error(error.message);
+}
+
+export async function runDetectionScan(): Promise<number> {
+  const supabase = await requireAdmin();
+  const { data, error } = await supabase.rpc("run_detection_scan");
+  if (error) throw new Error(error.message);
+  return (data as number) ?? 0;
+}

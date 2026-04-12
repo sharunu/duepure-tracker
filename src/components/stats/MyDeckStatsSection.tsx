@@ -7,7 +7,7 @@ import { BattleCountBadge } from "@/components/ui/BattleCountBadge";
 
 type MyDeckRow = DetailedPersonalStats["myDeckStats"][number];
 
-export function MyDeckStatsSection({ stats, startDate, endDate, scope, teamId, memberId, memberName, otherDeckNames, disableLinks }: { stats: MyDeckRow[]; startDate?: string; endDate?: string; scope?: "personal" | "global" | "team"; teamId?: string; memberId?: string | null; memberName?: string | null; otherDeckNames?: string[]; disableLinks?: boolean }) {
+export function MyDeckStatsSection({ stats, startDate, endDate, scope, teamId, memberId, memberName, otherDeckNames, premiumFilter, disableLinks }: { stats: MyDeckRow[]; startDate?: string; endDate?: string; scope?: "personal" | "global" | "team"; teamId?: string; memberId?: string | null; memberName?: string | null; otherDeckNames?: string[]; premiumFilter?: boolean; disableLinks?: boolean }) {
   const router = useRouter();
 
   if (stats.length === 0) {
@@ -33,6 +33,7 @@ export function MyDeckStatsSection({ stats, startDate, endDate, scope, teamId, m
     if (deckName === "\u305d\u306e\u4ed6" && otherDeckNames && otherDeckNames.length > 0) {
       params.set("otherDecks", otherDeckNames.join(","));
     }
+    if (premiumFilter) params.set("premium", "1");
     const qs = params.toString();
     router.push(`/stats/deck/${encodeURIComponent(deckName)}${qs ? "?" + qs : ""}`);
   };

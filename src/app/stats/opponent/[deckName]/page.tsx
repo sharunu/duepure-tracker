@@ -29,6 +29,7 @@ export default function OpponentDeckDetailPage() {
   const teamId = searchParams.get("teamId");
   const memberId = searchParams.get("memberId");
   const memberName = searchParams.get("memberName");
+  const premiumFilter = searchParams.get("premium") === "1";
 
   const [stats, setStats] = useState<OpponentDeckDetailStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -51,10 +52,11 @@ export default function OpponentDeckDetailPage() {
     if (!ready) return;
     setLoading(true);
     let promise: Promise<OpponentDeckDetailStats>;
+    const maxStage = premiumFilter ? 1 : undefined;
     if (isTeam && teamId) {
       promise = getTeamOpponentDeckDetailStats(teamId, memberId, deckName, format, startDate, endDate);
     } else if (isGlobal) {
-      promise = getGlobalOpponentDeckDetailStats(deckName, format, startDate, endDate);
+      promise = getGlobalOpponentDeckDetailStats(deckName, format, startDate, endDate, maxStage);
     } else {
       promise = getOpponentDeckDetailStats(deckName, format, startDate, endDate);
     }
@@ -62,7 +64,7 @@ export default function OpponentDeckDetailPage() {
       setStats(s);
       setLoading(false);
     });
-  }, [deckName, format, startDate, endDate, ready, isGlobal, isTeam, teamId, memberId]);
+  }, [deckName, format, startDate, endDate, ready, isGlobal, isTeam, teamId, memberId, premiumFilter]);
 
   const loadCounts = useCallback((year: number, month: number) => {
     if (!ready) return;

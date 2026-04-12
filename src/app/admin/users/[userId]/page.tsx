@@ -9,13 +9,16 @@ import { FormatSelector } from "@/components/ui/FormatSelector";
 import { AdminUserDecks } from "@/components/admin/AdminUserDecks";
 import { AdminUserBattles } from "@/components/admin/AdminUserBattles";
 import { AdminUserStats } from "@/components/admin/AdminUserStats";
+import { AdminUserStageControl } from "@/components/admin/AdminUserStageControl";
+import { AdminUserStageHistory } from "@/components/admin/AdminUserStageHistory";
 
-type Tab = "decks" | "battles" | "stats";
+type Tab = "decks" | "battles" | "stats" | "manage";
 
 const tabs: { value: Tab; label: string }[] = [
   { value: "decks", label: "デッキ" },
   { value: "battles", label: "履歴" },
   { value: "stats", label: "分析" },
+  { value: "manage", label: "管理" },
 ];
 
 export default function AdminUserDetailPage() {
@@ -56,6 +59,8 @@ export default function AdminUserDetailPage() {
         )}
       </div>
 
+      <AdminUserStageControl userId={userId} />
+
       <div className="flex items-center gap-3 mb-4">
         <div className={!ready ? "invisible" : ""}>
           <FormatSelector format={format} setFormat={setFormat} />
@@ -81,6 +86,7 @@ export default function AdminUserDetailPage() {
       {ready && tab === "decks" && <AdminUserDecks userId={userId} format={format} />}
       {ready && tab === "battles" && <AdminUserBattles userId={userId} format={format} />}
       {ready && tab === "stats" && <AdminUserStats userId={userId} format={format} />}
+      {tab === "manage" && <AdminUserStageHistory userId={userId} />}
     </div>
   );
 }

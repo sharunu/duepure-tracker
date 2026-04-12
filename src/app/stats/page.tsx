@@ -27,6 +27,7 @@ import { getWinRateColor } from "@/lib/stats-utils";
 import { TurnOrderCards } from "@/components/stats/TurnOrderCards";
 import { ShareButton } from "@/components/share/ShareButton";
 import type { StatsShareData } from "@/components/share/ShareButton";
+import { getUserStage } from "@/lib/actions/account-actions";
 
 function StatsPageInner() {
   const searchParams = useSearchParams();
@@ -39,6 +40,8 @@ function StatsPageInner() {
   const [view, setView] = useState<View>("stats");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [userStage, setUserStage] = useState<number>(2);
+  const [premiumFilter, setPremiumFilter] = useState(false);
   const [battleCounts, setBattleCounts] = useState<Record<string, number>>({});
 
   const [startDate, setStartDate] = useState(() => {
@@ -71,6 +74,7 @@ function StatsPageInner() {
     getMyTeamsWithVisibility().then((teams) => {
       setVisibleTeams(teams.filter((t) => !t.hidden));
     });
+    getUserStage().then(setUserStage);
   }, []);
 
   // Load team members when activeTeamId changes
@@ -166,10 +170,12 @@ function StatsPageInner() {
       const t = await getDeckTrendByRange(startDate, endDate, format, true);
       setTrendData(t);
     } else if (scope === "global" && view === "stats") {
-      const s = await getGlobalStatsByRange(startDate, endDate, format);
+      const maxStage = premiumFilter ? 1 : undefined;
+      const s = await getGlobalStatsByRange(startDate, endDate, format, maxStage);
       setGlobalStats(s);
     } else if (scope === "global" && view === "trend") {
-      const t = await getDeckTrendByRange(startDate, endDate, format, false);
+      const maxStage = premiumFilter ? 1 : undefined;
+      const t = await getDeckTrendByRange(startDate, endDate, format, false, maxStage);
       setTrendData(t);
     } else if (scope === "team" && activeTeamId && view === "stats") {
       const s = await getTeamStatsByRange(activeTeamId, selectedMemberId, format, startDate, endDate);
@@ -185,7 +191,7 @@ function StatsPageInner() {
     } finally {
       setLoading(false);
     }
-  }, [format, startDate, endDate, ready, teamReady, scope, view, activeTeamId, selectedMemberId]);
+  }, [format, startDate, endDate, ready, teamReady, scope, view, activeTeamId, selectedMemberId, premiumFilter]);
 
   const loadCounts = useCallback((year: number, month: number) => {
     if (!ready) return;
@@ -305,11 +311,11 @@ function StatsPageInner() {
             {scope === "global" && categoryMap.size > 0 && (
               <p className="text-xs text-muted-foreground">※ 使用率の低いデッキは「その他」に集約されています</p>
             )}
-            <MyDeckStatsSection stats={myDeckData} startDate={startDate} endDate={endDate} scope={scope} teamId={activeTeamId ?? undefined} memberId={selectedMemberId} memberName={selectedMemberId ? (teamMembers.find(m => m.user_id === selectedMemberId)?.discord_username ?? null) : null} otherDeckNames={otherMyDeckNames} />
+            <MyDeckStatsSection stats={myDeckData} startDate={startDate} endDate={endDate} scope={scope} teamId={activeTeamId ?? undefined} memberId={selectedMemberId} memberName={selectedMemberId ? (teamMembers.find(m => m.user_id === selectedMemberId)?.discord_username ?? null) : null} otherDeckNames={otherMyDeckNames} premiumFilter={premiumFilter} />
           </div>
           <div>
             <h2 className="text-base font-bold mb-2">対面デッキ別</h2>
-            <OpponentDeckStatsSection stats={stats.opponentDeckStats} startDate={startDate} endDate={endDate} scope={scope} teamId={activeTeamId ?? undefined} memberId={selectedMemberId} memberName={selectedMemberId ? (teamMembers.find(m => m.user_id === selectedMemberId)?.discord_username ?? null) : null} />
+            <OpponentDeckStatsSection stats={stats.opponentDeckStats} startDate={startDate} endDate={endDate} scope={scope} teamId={activeTeamId ?? undefined} memberId={selectedMemberId} memberName={selectedMemberId ? (teamMembers.find(m => m.user_id === selectedMemberId)?.discord_username ?? null) : null} premiumFilter={premiumFilter} />
           </div>
         </>
       );
@@ -408,6 +414,29 @@ function StatsPageInner() {
               onMonthChange={loadCounts}
             />
             <ScopeSelector scope={scope} setScope={setScope} teamEnabled={visibleTeams.length > 0} />
+            {scope === "global" && (
+              <div className="flex items-center justify-between bg-[#232640] rounded-[8px] px-3 py-2.5" style={{ border: "0.5px solid rgba(100,100,150,0.2)" }}>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[12px] font-medium text-gray-300">優良ユーザーのみ</p>
+                  <p className="text-[10px] text-gray-500 mt-0.5">
+                    {userStage === 1
+                      ? "信頼性の高いユーザーの戦績のみで集計します"
+                      : "優良ユーザーに認定されると利用できます"}
+                  </p>
+                </div>
+                <button
+                  onClick={() => userStage === 1 && setPremiumFilter(!premiumFilter)}
+                  disabled={userStage !== 1}
+                  className={`relative w-10 h-5 rounded-full transition-colors flex-shrink-0 ml-3 ${
+                    premiumFilter ? "bg-[#6366f1]" : "bg-[#333355]"
+                  } ${userStage !== 1 ? "opacity-40 cursor-not-allowed" : "cursor-pointer"}`}
+                >
+                  <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${
+                    premiumFilter ? "translate-x-5" : "translate-x-0.5"
+                  }`} />
+                </button>
+              </div>
+            )}
             {scope === "team" && visibleTeams.length > 1 && (
               <TeamSelector
                 teams={visibleTeams}

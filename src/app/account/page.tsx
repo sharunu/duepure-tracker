@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { getDisplayName, updateDisplayName, changePassword, getAuthProvider, getEmail, deleteAccount, getXConnectionStatus, syncXAccountFromAuth, unlinkXAccount } from "@/lib/actions/account-actions";
+import { getDisplayName, updateDisplayName, changePassword, getAuthProvider, getEmail, deleteAccount, getXConnectionStatus, syncXAccountFromAuth, unlinkXAccount, getUserStage } from "@/lib/actions/account-actions";
 import { submitFeedback } from "@/lib/actions/feedback-actions";
 import { checkIsAdmin } from "@/lib/actions/admin-actions";
 import { BottomNav } from "@/components/layout/BottomNav";
@@ -41,6 +41,7 @@ export default function AccountPage() {
   const [feedbackLoading, setFeedbackLoading] = useState(false);
   const [feedbackToast, setFeedbackToast] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
+  const [userStage, setUserStage] = useState<number>(2);
 
   // X連携関連
   const [xConnected, setXConnected] = useState(false);
@@ -52,11 +53,12 @@ export default function AccountPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const [name, prov, mail, admin, xStatus] = await Promise.all([getDisplayName(), getAuthProvider(), getEmail(), checkIsAdmin(), getXConnectionStatus()]);
+        const [name, prov, mail, admin, xStatus, stage] = await Promise.all([getDisplayName(), getAuthProvider(), getEmail(), checkIsAdmin(), getXConnectionStatus(), getUserStage()]);
         setDisplayName(name);
         setProvider(prov);
         setEmail(mail);
         setIsAdmin(admin);
+        setUserStage(stage);
         setXConnected(xStatus.isConnected);
         setXUsername(xStatus.xUsername);
         setXSource(xStatus.source);
@@ -279,13 +281,20 @@ export default function AccountPage() {
           <div className="min-w-0 flex-1">
             <p className="text-[15px] font-medium truncate">{displayName || "未設定"}</p>
             <p className="text-[12px] text-gray-500 truncate">{isGuest ? "ゲストアカウント" : (email || "未設定")}</p>
-            <span className={"inline-block mt-1 text-[10px] px-2 py-0.5 rounded-full font-medium " + (
-              isSnsLogin
-                ? "bg-[#1a2744] text-[#5b8def]"
-                : "bg-[#2a1f44] text-[#9b7bef]"
-            )}>
-              {provider === "google" ? "Google" : provider === "twitter" ? "X" : isGuest ? "ゲスト" : "メール"}
-            </span>
+            <div className="flex items-center gap-1.5 mt-1">
+              <span className={"inline-block text-[10px] px-2 py-0.5 rounded-full font-medium " + (
+                isSnsLogin
+                  ? "bg-[#1a2744] text-[#5b8def]"
+                  : "bg-[#2a1f44] text-[#9b7bef]"
+              )}>
+                {provider === "google" ? "Google" : provider === "twitter" ? "X" : isGuest ? "ゲスト" : "メール"}
+              </span>
+              {userStage === 1 && (
+                <span className="inline-block text-[10px] px-2 py-0.5 rounded-full font-medium bg-yellow-600/20 text-yellow-400">
+                  優良ユーザー
+                </span>
+              )}
+            </div>
           </div>
         </div>
 

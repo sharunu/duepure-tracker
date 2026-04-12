@@ -151,6 +151,87 @@ export type Database = {
           },
         ]
       }
+      detection_alerts: {
+        Row: {
+          created_at: string
+          details: Json | null
+          id: string
+          is_resolved: boolean
+          resolved_at: string | null
+          resolved_by: string | null
+          rule_key: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          details?: Json | null
+          id?: string
+          is_resolved?: boolean
+          resolved_at?: string | null
+          resolved_by?: string | null
+          rule_key: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          details?: Json | null
+          id?: string
+          is_resolved?: boolean
+          resolved_at?: string | null
+          resolved_by?: string | null
+          rule_key?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "detection_alerts_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "detection_alerts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      detection_rules: {
+        Row: {
+          created_at: string
+          description: string | null
+          display_name: string
+          id: string
+          is_enabled: boolean
+          params: Json
+          rule_key: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          display_name: string
+          id?: string
+          is_enabled?: boolean
+          params?: Json
+          rule_key: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          display_name?: string
+          id?: string
+          is_enabled?: boolean
+          params?: Json
+          rule_key?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       discord_connections: {
         Row: {
           access_token: string
@@ -295,6 +376,7 @@ export type Database = {
           id: string
           is_admin: boolean
           is_guest: boolean
+          stage: number
           x_user_id: string | null
           x_username: string | null
         }
@@ -304,6 +386,7 @@ export type Database = {
           id: string
           is_admin?: boolean
           is_guest?: boolean
+          stage?: number
           x_user_id?: string | null
           x_username?: string | null
         }
@@ -313,6 +396,7 @@ export type Database = {
           id?: string
           is_admin?: boolean
           is_guest?: boolean
+          stage?: number
           x_user_id?: string | null
           x_username?: string | null
         }
@@ -387,6 +471,51 @@ export type Database = {
         }
         Relationships: []
       }
+      user_stage_history: {
+        Row: {
+          changed_by: string
+          created_at: string
+          from_stage: number
+          id: string
+          reason: string
+          to_stage: number
+          user_id: string
+        }
+        Insert: {
+          changed_by: string
+          created_at?: string
+          from_stage: number
+          id?: string
+          reason: string
+          to_stage: number
+          user_id: string
+        }
+        Update: {
+          changed_by?: string
+          created_at?: string
+          from_stage?: number
+          id?: string
+          reason?: string
+          to_stage?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_stage_history_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_stage_history_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -397,10 +526,35 @@ export type Database = {
         Returns: undefined
       }
       delete_own_account: { Args: never; Returns: undefined }
+      detect_extreme_winrate: {
+        Args: { p_params: Json }
+        Returns: {
+          details: Json
+          rule_key: string
+          user_id: string
+        }[]
+      }
+      detect_rapid_input: {
+        Args: { p_params: Json }
+        Returns: {
+          details: Json
+          rule_key: string
+          user_id: string
+        }[]
+      }
+      detect_repetitive_pattern: {
+        Args: { p_params: Json }
+        Returns: {
+          details: Json
+          rule_key: string
+          user_id: string
+        }[]
+      }
       get_deck_trend_range: {
         Args: {
           p_end_date: string
           p_format?: string
+          p_max_stage?: number
           p_start_date: string
           p_user_id?: string
         }
@@ -441,6 +595,7 @@ export type Database = {
           p_deck_name: string
           p_end_date?: string
           p_format?: string
+          p_max_stage?: number
           p_start_date?: string
         }
         Returns: {
@@ -460,7 +615,12 @@ export type Database = {
         }[]
       }
       get_global_my_deck_stats_range: {
-        Args: { p_end_date: string; p_format?: string; p_start_date: string }
+        Args: {
+          p_end_date: string
+          p_format?: string
+          p_max_stage?: number
+          p_start_date: string
+        }
         Returns: {
           deck_name: string
           losses: number
@@ -473,6 +633,7 @@ export type Database = {
         Args: {
           p_end_date?: string
           p_format?: string
+          p_max_stage?: number
           p_opponent_deck_name: string
           p_start_date?: string
         }
@@ -493,13 +654,34 @@ export type Database = {
         }[]
       }
       get_global_opponent_deck_stats_range: {
-        Args: { p_end_date: string; p_format?: string; p_start_date: string }
+        Args: {
+          p_end_date: string
+          p_format?: string
+          p_max_stage?: number
+          p_start_date: string
+        }
         Returns: {
           deck_name: string
           losses: number
           total: number
           win_rate: number
           wins: number
+        }[]
+      }
+      get_global_turn_order_stats_range: {
+        Args: {
+          p_end_date: string
+          p_format?: string
+          p_max_stage?: number
+          p_start_date: string
+        }
+        Returns: {
+          first_losses: number
+          first_wins: number
+          second_losses: number
+          second_wins: number
+          unknown_losses: number
+          unknown_wins: number
         }[]
       }
       get_opponent_deck_suggestions:
@@ -667,6 +849,7 @@ export type Database = {
         Returns: undefined
       }
       run_daily_opponent_deck_batch: { Args: never; Returns: undefined }
+      run_detection_scan: { Args: never; Returns: number }
       sync_team_membership: {
         Args: { p_discord_username: string; p_guilds: Json; p_user_id: string }
         Returns: undefined

@@ -37,6 +37,8 @@ export default function DeckDetailPage() {
     return param ? param.split(",") : [];
   }, [searchParams]);
 
+  const premiumFilter = searchParams.get("premium") === "1";
+
   const [stats, setStats] = useState<DeckDetailStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [battleCounts, setBattleCounts] = useState<Record<string, number>>({});
@@ -75,12 +77,13 @@ export default function DeckDetailPage() {
 
     setLoading(true);
     let promise: Promise<DeckDetailStats>;
+    const maxStage = premiumFilter ? 1 : undefined;
     if (isOtherAggregate && isGlobal && otherDeckNamesFromUrl.length > 0) {
-      promise = getGlobalDeckDetailStatsMulti(otherDeckNamesFromUrl, format, startDate, endDate);
+      promise = getGlobalDeckDetailStatsMulti(otherDeckNamesFromUrl, format, startDate, endDate, maxStage);
     } else if (isTeam && teamId) {
       promise = getTeamDeckDetailStats(teamId, memberId, deckName, format, startDate, endDate);
     } else if (isGlobal) {
-      promise = getGlobalDeckDetailStats(deckName, format, startDate, endDate);
+      promise = getGlobalDeckDetailStats(deckName, format, startDate, endDate, maxStage);
     } else {
       promise = getDeckDetailStats(deckName, format, startDate, endDate);
     }
@@ -88,7 +91,7 @@ export default function DeckDetailPage() {
       setStats(s);
       setLoading(false);
     });
-  }, [deckName, format, startDate, endDate, ready, isGlobal, isTeam, teamId, memberId, isOtherAggregate, otherDeckNamesFromUrl]);
+  }, [deckName, format, startDate, endDate, ready, isGlobal, isTeam, teamId, memberId, isOtherAggregate, otherDeckNamesFromUrl, premiumFilter]);
 
   const loadCounts = useCallback((year: number, month: number) => {
     if (!ready) return;

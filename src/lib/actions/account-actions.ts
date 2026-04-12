@@ -141,3 +141,12 @@ export async function unlinkXAccount(): Promise<void> {
     .update({ x_user_id: null, x_username: null })
     .eq("id", user.id);
 }
+
+export async function getUserStage(): Promise<number> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return 2;
+  const { data } = await supabase
+    .from("profiles").select("stage").eq("id", user.id).single();
+  return data?.stage ?? 2;
+}

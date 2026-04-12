@@ -1,7 +1,9 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, Users, MessageSquare, Swords } from "lucide-react";
+import { ChevronLeft, Users, MessageSquare, Swords, ShieldAlert } from "lucide-react";
+import { getDetectionAlertCount } from "@/lib/actions/admin-actions";
 
 const cards = [
   { title: "対面デッキ管理", description: "対面デッキの追加・編集・並べ替え", href: "/admin/opponent-decks", icon: Swords },
@@ -11,6 +13,11 @@ const cards = [
 
 export default function AdminDashboardPage() {
   const router = useRouter();
+  const [alertCount, setAlertCount] = useState<number>(0);
+
+  useEffect(() => {
+    getDetectionAlertCount().then(setAlertCount).catch(() => {});
+  }, []);
 
   return (
     <div className="min-h-screen px-4 pt-6 pb-8 max-w-lg mx-auto">
@@ -22,6 +29,28 @@ export default function AdminDashboardPage() {
       </div>
 
       <div className="space-y-3">
+        {/* 検知アラート */}
+        <button
+          onClick={() => router.push("/admin/detection")}
+          className="w-full bg-[#232640] rounded-[10px] px-4 py-4 flex items-center gap-4 text-left hover:bg-[#2a2d4a] transition-colors"
+        >
+          <div className="w-10 h-10 rounded-[8px] bg-[rgba(232,93,117,0.1)] flex items-center justify-center shrink-0 relative">
+            <ShieldAlert size={20} className="text-[#e85d75]" />
+            {alertCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-[#e85d75] text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                {alertCount > 9 ? "9+" : alertCount}
+              </span>
+            )}
+          </div>
+          <div className="min-w-0">
+            <p className="text-[14px] font-medium">検知アラート</p>
+            <p className="text-[12px] text-gray-500 mt-0.5">
+              {alertCount > 0 ? `未解決 ${alertCount}件` : "不正検知・アラート管理"}
+            </p>
+          </div>
+          <span className="text-gray-500 text-[18px] ml-auto shrink-0">&rsaquo;</span>
+        </button>
+
         {cards.map((card) => (
           <button
             key={card.href}
