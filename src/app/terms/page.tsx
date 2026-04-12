@@ -18,7 +18,16 @@ export default function TermsPage() {
       </div>
 
       <div className="bg-[#232640] rounded-[10px] px-4 py-5 space-y-5 text-[13px] text-gray-300 leading-relaxed">
-        <p className="text-[11px] text-gray-500">最終更新日: 2026年4月7日</p>
+        <p className="text-[11px] text-gray-500">最終更新日: 2026年4月12日</p>
+
+        <section>
+          <h2 className="text-[14px] font-medium text-white mb-2">非公式ツールについて</h2>
+          <p>
+            本アプリは、対応するデジタルカードゲーム（以下「対応ゲーム」）の非公式ファンツールです。
+            各対応ゲームの開発元・運営元とは一切の関係がなく、公式に承認・提携されたものではありません。
+            各対応ゲームの名称・関連用語は、それぞれの権利者に帰属します。
+          </p>
+        </section>
 
         <section>
           <h2 className="text-[14px] font-medium text-white mb-2">第1条（適用）</h2>
@@ -31,8 +40,8 @@ export default function TermsPage() {
         <section>
           <h2 className="text-[14px] font-medium text-white mb-2">第2条（サービス内容）</h2>
           <p>
-            本サービスは、カードゲーム「デュエル・マスターズ プレイス」の対戦記録を管理・分析するための個人開発ツールです。
-            公式サービスではなく、株式会社タカラトミーおよび関連企業とは一切関係ありません。
+            本サービスは、対応ゲームの対戦記録を管理・分析するための個人開発ツールです。
+            公式サービスではなく、各対応ゲームの開発元・運営元とは一切関係ありません。
           </p>
         </section>
 

@@ -36,6 +36,7 @@ function StatsPageInner() {
   });
   const [view, setView] = useState<View>("stats");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [battleCounts, setBattleCounts] = useState<Record<string, number>>({});
 
   const [startDate, setStartDate] = useState(() => {
@@ -153,6 +154,7 @@ function StatsPageInner() {
     }
 
     setLoading(true);
+    setError(null);
 
     try {
     if (scope === "personal" && view === "stats") {
@@ -177,6 +179,7 @@ function StatsPageInner() {
 
     } catch {
       console.error("Failed to load stats data");
+      setError("データの読み込みに失敗しました");
     } finally {
       setLoading(false);
     }
@@ -202,6 +205,10 @@ function StatsPageInner() {
   };
 
   const renderContent = () => {
+    if (error) {
+      return <p className="text-center text-red-400 py-12 text-sm">{error}</p>;
+    }
+
     if (scope === "team" && !activeTeamId) {
       return (
         <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">

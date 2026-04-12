@@ -269,6 +269,9 @@ export default function AuthPage() {
             プライバシーポリシー
           </Link>
         </div>
+        <p className="text-center text-[10px] text-gray-600 mt-2">
+          本アプリは非公式のファンツールであり、各ゲームの開発元・運営元とは関係ありません。
+        </p>
       </div>
     </div>
   );

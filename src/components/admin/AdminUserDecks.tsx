@@ -15,15 +15,24 @@ type Props = {
 export function AdminUserDecks({ userId, format }: Props) {
   const [decks, setDecks] = useState<Deck[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [expandedDeck, setExpandedDeck] = useState<string | null>(null);
 
   useEffect(() => {
     setLoading(true);
+    setError(null);
     getAdminUserDecks(userId, format).then((data) => {
       setDecks(data as Deck[]);
       setLoading(false);
+    }).catch(() => {
+      setError("データの読み込みに失敗しました");
+      setLoading(false);
     });
   }, [userId, format]);
+
+  if (error) {
+    return <p className="text-center text-red-400 py-12 text-sm">{error}</p>;
+  }
 
   if (loading) {
     return (

@@ -20,18 +20,25 @@ export function AdminUserBattles({ userId, format }: Props) {
   const [endDate, setEndDate] = useState(() => new Date().toLocaleDateString("sv-SE"));
   const [battles, setBattles] = useState<ReturnType<typeof getAdminUserBattles> extends Promise<infer T> ? T : never>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [battleCounts, setBattleCounts] = useState<Record<string, number>>({});
   const [selectedDeck, setSelectedDeck] = useState<string | null>(null);
 
   const loadBattles = useCallback(async () => {
     setLoading(true);
-    const data = await getAdminUserBattles(userId, format, startDate, endDate);
-    setBattles(data);
-    setLoading(false);
+    setError(null);
+    try {
+      const data = await getAdminUserBattles(userId, format, startDate, endDate);
+      setBattles(data);
+    } catch {
+      setError("データの読み込みに失敗しました");
+    } finally {
+      setLoading(false);
+    }
   }, [userId, format, startDate, endDate]);
 
   const loadCounts = useCallback((year: number, month: number) => {
-    getAdminUserDailyBattleCounts(userId, format, year, month).then(setBattleCounts);
+    getAdminUserDailyBattleCounts(userId, format, year, month).then(setBattleCounts).catch(() => {});
   }, [userId, format]);
 
   useEffect(() => {
@@ -71,7 +78,9 @@ export function AdminUserBattles({ userId, format }: Props) {
         />
       )}
 
-      {loading ? (
+      {error ? (
+        <p className="text-center text-red-400 py-12 text-sm">{error}</p>
+      ) : loading ? (
         <div className="flex justify-center py-12">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
         </div>

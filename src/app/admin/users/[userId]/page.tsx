@@ -25,6 +25,7 @@ export default function AdminUserDetailPage() {
   const { format, setFormat, ready } = useFormat();
   const [tab, setTab] = useState<Tab>("decks");
   const [userName, setUserName] = useState<string>("");
+  const [userError, setUserError] = useState<string | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -33,8 +34,12 @@ export default function AdminUserDetailPage() {
       .select("display_name")
       .eq("id", userId)
       .single()
-      .then(({ data }) => {
-        setUserName(data?.display_name || "名前未設定");
+      .then(({ data, error }) => {
+        if (error) {
+          setUserError("ユーザー情報の取得に失敗しました");
+        } else {
+          setUserName(data?.display_name || "名前未設定");
+        }
       });
   }, [userId]);
 
@@ -44,7 +49,11 @@ export default function AdminUserDetailPage() {
         <button onClick={() => router.push("/admin/users")} className="text-gray-400 hover:text-white">
           <ChevronLeft size={20} />
         </button>
-        <h1 className="text-[20px] font-medium truncate">{userName}</h1>
+        {userError ? (
+          <p className="text-red-400 text-[14px]">{userError}</p>
+        ) : (
+          <h1 className="text-[20px] font-medium truncate">{userName}</h1>
+        )}
       </div>
 
       <div className="flex items-center gap-3 mb-4">
