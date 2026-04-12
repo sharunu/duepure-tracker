@@ -1,7 +1,7 @@
 "use client";
 
 import { PieChart, Pie, Cell, Sector, ResponsiveContainer } from "recharts";
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { getWinRateColor, COLORS } from "@/lib/stats-utils";
 
 interface DonutItem {
@@ -12,12 +12,14 @@ interface DonutItem {
 
 interface Props {
   items: DonutItem[];
+  otherBreakdown?: DonutItem[];
   overallWinRate: number;
   overallWins: number;
   overallLosses: number;
   overallTotal: number;
 }
 
+const OTHER_COLOR = "#64748b";
 const RADIAN = Math.PI / 180;
 
 // A. renderActiveShape: expanded Sector only, no text
@@ -71,22 +73,46 @@ const renderLabel = (props: any) => {
   );
 };
 
-export function EncounterDonutChart({ items, overallWinRate, overallWins, overallLosses, overallTotal }: Props) {
+export function EncounterDonutChart({ items, otherBreakdown, overallWinRate, overallWins, overallLosses, overallTotal }: Props) {
   const [activeIndex, setActiveIndex] = useState<number>(-1);
   const [animationDone, setAnimationDone] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const [chartCenter, setChartCenter] = useState<{ cx: number; cy: number } | null>(null);
+  const [otherExpanded, setOtherExpanded] = useState(false);
 
   const innerRadius = 55;
   const outerRadius = 80;
 
-  const data = items
-    .map((item) => ({
-      name: item.name,
-      value: item.total,
-      pct: overallTotal > 0 ? Math.round((item.total / overallTotal) * 100) : 0,
-    }))
-    .sort((a, b) => b.value - a.value);
+  // Reset expansion when items change
+  useEffect(() => { setOtherExpanded(false); }, [items]);
+
+  // Sort: "その他" always last in both chart and legend
+  const data = useMemo(() =>
+    items
+      .map((item) => ({
+        name: item.name,
+        value: item.total,
+        pct: overallTotal > 0 ? Math.round((item.total / overallTotal) * 100) : 0,
+      }))
+      .sort((a, b) => {
+        if (a.name === "\u305D\u306E\u4ED6") return 1;
+        if (b.name === "\u305D\u306E\u4ED6") return -1;
+        return b.value - a.value;
+      }),
+  [items, overallTotal]);
+
+  // Sorted breakdown for expansion display
+  const sortedBreakdown = useMemo(() => {
+    if (!otherBreakdown || otherBreakdown.length === 0) return [];
+    return [...otherBreakdown]
+      .sort((a, b) => b.total - a.total)
+      .map(item => ({
+        name: item.name,
+        total: item.total,
+        pct: overallTotal > 0 ? Math.round((item.total / overallTotal) * 100) : 0,
+        winRate: item.winRate,
+      }));
+  }, [otherBreakdown, overallTotal]);
 
   const winRateColor = getWinRateColor(overallWinRate);
 
@@ -133,6 +159,10 @@ export function EncounterDonutChart({ items, overallWinRate, overallWins, overal
     activeShape: renderActiveShape,
   };
 
+  // Color assignment: "その他" gets a fixed color
+  const getColor = (name: string, index: number) =>
+    name === "\u305D\u306E\u4ED6" ? OTHER_COLOR : COLORS[index % COLORS.length];
+
   return (
     <div className="space-y-3">
       <div ref={containerRef} className="relative" style={{ height: 180 }}>
@@ -156,8 +186,8 @@ export function EncounterDonutChart({ items, overallWinRate, overallWins, overal
               labelLine={false}
               {...pieProps}
             >
-              {data.map((_, i) => (
-                <Cell key={i} fill={COLORS[i % COLORS.length]} />
+              {data.map((entry, i) => (
+                <Cell key={i} fill={getColor(entry.name, i)} />
               ))}
             </Pie>
           </PieChart>
@@ -198,23 +228,56 @@ export function EncounterDonutChart({ items, overallWinRate, overallWins, overal
 
       {/* C. Legend with click support */}
       <div className="flex flex-wrap gap-x-4 gap-y-1 justify-center">
-        {data.map((d, i) => (
-          <div
-            key={d.name}
-            className="flex items-center gap-1.5 text-xs cursor-pointer rounded px-1 py-0.5 transition-colors"
-            style={{
-              backgroundColor: activeIndex === i ? "rgba(0,0,0,0.08)" : "transparent",
-              outline: activeIndex === i ? `2px solid ${COLORS[i % COLORS.length]}` : "none",
-              outlineOffset: 1,
-            }}
-            onClick={() => setActiveIndex(activeIndex === i ? -1 : i)}
-          >
-            <div className="w-2 h-2 rounded-sm shrink-0" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
-            <span className="text-muted-foreground">{d.name}</span>
-            <span className="font-medium">{d.pct}%</span>
-          </div>
-        ))}
+        {data.map((d, i) => {
+          const color = getColor(d.name, i);
+          const isOther = d.name === "\u305D\u306E\u4ED6";
+          const hasBreakdown = isOther && otherBreakdown && otherBreakdown.length > 0;
+          return (
+            <div
+              key={d.name}
+              className="flex items-center gap-1.5 text-xs cursor-pointer rounded px-1 py-0.5 transition-colors"
+              style={{
+                backgroundColor: activeIndex === i ? "rgba(0,0,0,0.08)" : "transparent",
+                outline: activeIndex === i ? `2px solid ${color}` : "none",
+                outlineOffset: 1,
+              }}
+              onClick={() => {
+                if (hasBreakdown) {
+                  setOtherExpanded(prev => !prev);
+                  setActiveIndex(-1);
+                } else {
+                  setActiveIndex(activeIndex === i ? -1 : i);
+                }
+              }}
+            >
+              <div className="w-2 h-2 rounded-sm shrink-0" style={{ backgroundColor: color }} />
+              <span className="text-muted-foreground">
+                {d.name}
+                {hasBreakdown && <span className="ml-0.5 text-[10px]">{otherExpanded ? "\u25B2" : "\u25BC"}</span>}
+              </span>
+              <span className="font-medium">{d.pct}%</span>
+            </div>
+          );
+        })}
       </div>
+
+      {/* Other breakdown (expanded) */}
+      {otherExpanded && sortedBreakdown.length > 0 && (
+        <div className="rounded-lg border border-border bg-card/50 px-3 py-2">
+          <div className="text-[11px] text-muted-foreground mb-1.5">{"\u300C\u305D\u306E\u4ED6\u300D\u5185\u8A33"}</div>
+          <div className="space-y-1">
+            {sortedBreakdown.map((item) => (
+              <div key={item.name} className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground truncate mr-2">{item.name}</span>
+                <span className="flex items-center gap-2 shrink-0">
+                  <span className="font-medium">{item.pct}%</span>
+                  <span className="text-muted-foreground">({item.total}件)</span>
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

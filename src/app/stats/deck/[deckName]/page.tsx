@@ -2,9 +2,9 @@
 
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
-import { getDeckDetailStats, getGlobalDeckDetailStats, getTeamDeckDetailStats } from "@/lib/actions/stats-actions";
+import { getDeckDetailStats, getGlobalDeckDetailStats, getTeamDeckDetailStats, getGlobalDeckDetailStatsMulti } from "@/lib/actions/stats-actions";
 import type { DeckDetailStats } from "@/lib/actions/stats-actions";
-import { getDailyBattleCounts } from "@/lib/actions/battle-actions";
+import { getDailyBattleCounts, getOpponentDeckSuggestions } from "@/lib/actions/battle-actions";
 import { useFormat } from "@/hooks/use-format";
 import { FormatSelector } from "@/components/ui/FormatSelector";
 import { DateRangeCalendar } from "@/components/battle/DateRangeCalendar";
@@ -22,6 +22,7 @@ export default function DeckDetailPage() {
   const { format, setFormat, ready } = useFormat();
 
   const deckName = decodeURIComponent(params.deckName as string);
+  const isOtherAggregate = deckName === "\u305D\u306E\u4ED6";
   const scope = searchParams.get("scope") ?? "personal";
   const isGlobal = scope === "global";
   const isTeam = scope === "team";
@@ -29,11 +30,17 @@ export default function DeckDetailPage() {
   const memberId = searchParams.get("memberId");
   const memberName = searchParams.get("memberName");
 
+  const otherDeckNamesFromUrl = useMemo(() => {
+    const param = searchParams.get("otherDecks");
+    return param ? param.split(",") : [];
+  }, [searchParams]);
+
   const [stats, setStats] = useState<DeckDetailStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [battleCounts, setBattleCounts] = useState<Record<string, number>>({});
   const [sortBy, setSortBy] = useState<"count" | "winRate">("count");
   const [viewMode, setViewMode] = useState<"visual" | "table">("visual");
+  const [deckCategories, setDeckCategories] = useState<{ major: string[]; minor: string[]; other: string[] }>({ major: [], minor: [], other: [] });
 
   const [startDate, setStartDate] = useState(() => {
     return searchParams.get("start") || (() => {
@@ -46,11 +53,29 @@ export default function DeckDetailPage() {
     return searchParams.get("end") || new Date().toLocaleDateString("sv-SE");
   });
 
+  // Fetch deck categories for donut chart aggregation
+  useEffect(() => {
+    if (ready) {
+      getOpponentDeckSuggestions(format).then(setDeckCategories);
+    }
+  }, [format, ready]);
+
+  const categoryMap = useMemo(() => {
+    const m = new Map<string, "major" | "minor" | "other">();
+    for (const name of deckCategories.major) m.set(name, "major");
+    for (const name of deckCategories.minor) m.set(name, "minor");
+    for (const name of deckCategories.other) m.set(name, "other");
+    return m;
+  }, [deckCategories]);
+
   const loadStats = useCallback(() => {
     if (!ready) return;
+
     setLoading(true);
     let promise: Promise<DeckDetailStats>;
-    if (isTeam && teamId) {
+    if (isOtherAggregate && isGlobal && otherDeckNamesFromUrl.length > 0) {
+      promise = getGlobalDeckDetailStatsMulti(otherDeckNamesFromUrl, format, startDate, endDate);
+    } else if (isTeam && teamId) {
       promise = getTeamDeckDetailStats(teamId, memberId, deckName, format, startDate, endDate);
     } else if (isGlobal) {
       promise = getGlobalDeckDetailStats(deckName, format, startDate, endDate);
@@ -61,7 +86,7 @@ export default function DeckDetailPage() {
       setStats(s);
       setLoading(false);
     });
-  }, [deckName, format, startDate, endDate, ready, isGlobal, isTeam, teamId, memberId]);
+  }, [deckName, format, startDate, endDate, ready, isGlobal, isTeam, teamId, memberId, isOtherAggregate, otherDeckNamesFromUrl]);
 
   const loadCounts = useCallback((year: number, month: number) => {
     if (!ready) return;
@@ -88,10 +113,37 @@ export default function DeckDetailPage() {
     return arr;
   }, [stats, sortBy]);
 
-  const donutItems = useMemo(() => {
-    if (!stats) return [];
-    return stats.overall.map((o) => ({ name: o.opponentName, total: o.total, winRate: o.winRate }));
-  }, [stats]);
+  // Aggregate opponent donut items: major/minor individual, other -> "その他"
+  const { donutItems, otherBreakdown: donutOtherBreakdown } = useMemo(() => {
+    if (!stats) return { donutItems: [], otherBreakdown: [] };
+    if (categoryMap.size === 0) {
+      return {
+        donutItems: stats.overall.map((o) => ({ name: o.opponentName, total: o.total, winRate: o.winRate })),
+        otherBreakdown: [],
+      };
+    }
+
+    const items: { name: string; total: number; winRate: number }[] = [];
+    const breakdown: { name: string; total: number; winRate: number }[] = [];
+    let oW = 0, oL = 0, oT = 0;
+
+    for (const o of stats.overall) {
+      const cat = categoryMap.get(o.opponentName) ?? "other";
+      if (cat === "major" || cat === "minor") {
+        items.push({ name: o.opponentName, total: o.total, winRate: o.winRate });
+      } else {
+        oW += o.wins;
+        oL += o.losses;
+        oT += o.total;
+        breakdown.push({ name: o.opponentName, total: o.total, winRate: o.winRate });
+      }
+    }
+    if (oT > 0) {
+      items.push({ name: "\u305D\u306E\u4ED6", total: oT, winRate: Math.round((oW / oT) * 100) });
+    }
+
+    return { donutItems: items, otherBreakdown: breakdown };
+  }, [stats, categoryMap]);
 
   const handleRangeChange = (start: string, end: string) => {
     setStartDate(start);
@@ -99,8 +151,8 @@ export default function DeckDetailPage() {
   };
 
   const titleSuffix = isTeam
-    ? memberId && memberName ? `（${memberName}）` : "（チーム全体）"
-    : isGlobal ? "（全体）" : "（個人）";
+    ? memberId && memberName ? `\uFF08${memberName}\uFF09` : "\uFF08\u30C1\u30FC\u30E0\u5168\u4F53\uFF09"
+    : isGlobal ? "\uFF08\u5168\u4F53\uFF09" : "\uFF08\u500B\u4EBA\uFF09";
 
   const backScope = isTeam ? "team" : isGlobal ? "global" : "personal";
 
@@ -154,6 +206,7 @@ export default function DeckDetailPage() {
                 <>
                   <EncounterDonutChart
                     items={donutItems}
+                    otherBreakdown={donutOtherBreakdown}
                     overallWinRate={stats.overallWinRate}
                     overallWins={stats.overallWins}
                     overallLosses={stats.overallLosses}

@@ -610,6 +610,50 @@ export async function getGlobalDeckDetailStats(
   return { overall, overallWins: totalWins, overallLosses: totalLosses, overallTotal, overallWinRate: safeRate(totalWins, overallTotal), tuningStats: [] };
 }
 
+export async function getGlobalDeckDetailStatsMulti(
+  deckNames: string[],
+  format: string,
+  startDate?: string,
+  endDate?: string
+): Promise<DeckDetailStats> {
+  if (deckNames.length === 0) return { overall: [], overallWins: 0, overallLosses: 0, overallTotal: 0, overallWinRate: 0, tuningStats: [] };
+
+  const results = await Promise.all(
+    deckNames.map(name => getGlobalDeckDetailStats(name, format, startDate, endDate))
+  );
+
+  const safeRate = (w: number, t: number) => t === 0 ? 0 : Math.round((w / t) * 100);
+
+  const overallMap = new Map<string, { w: number; l: number; t: number; fw: number; fl: number; ft: number; sw: number; sl: number; st: number; uw: number; ul: number; ut: number }>();
+  let totalWins = 0, totalLosses = 0;
+
+  for (const result of results) {
+    totalWins += result.overallWins;
+    totalLosses += result.overallLosses;
+    for (const opp of result.overall) {
+      const existing = overallMap.get(opp.opponentName) ?? { w: 0, l: 0, t: 0, fw: 0, fl: 0, ft: 0, sw: 0, sl: 0, st: 0, uw: 0, ul: 0, ut: 0 };
+      existing.w += opp.wins; existing.l += opp.losses; existing.t += opp.total;
+      existing.fw += opp.firstWins; existing.fl += opp.firstLosses; existing.ft += opp.firstTotal;
+      existing.sw += opp.secondWins; existing.sl += opp.secondLosses; existing.st += opp.secondTotal;
+      existing.uw += opp.unknownWins; existing.ul += opp.unknownLosses; existing.ut += opp.unknownTotal;
+      overallMap.set(opp.opponentName, existing);
+    }
+  }
+
+  const overall = Array.from(overallMap.entries())
+    .map(([opponentName, d]) => ({
+      opponentName,
+      wins: d.w, losses: d.l, total: d.t, winRate: safeRate(d.w, d.t),
+      firstWins: d.fw, firstLosses: d.fl, firstTotal: d.ft, firstWinRate: safeRate(d.fw, d.ft),
+      secondWins: d.sw, secondLosses: d.sl, secondTotal: d.st, secondWinRate: safeRate(d.sw, d.st),
+      unknownWins: d.uw, unknownLosses: d.ul, unknownTotal: d.ut, unknownWinRate: safeRate(d.uw, d.ut),
+    }))
+    .sort((a, b) => b.total - a.total);
+
+  const overallTotal = totalWins + totalLosses;
+  return { overall, overallWins: totalWins, overallLosses: totalLosses, overallTotal, overallWinRate: safeRate(totalWins, overallTotal), tuningStats: [] };
+}
+
 export async function getGlobalOpponentDeckDetailStats(
   opponentDeckName: string,
   format: string,

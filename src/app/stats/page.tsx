@@ -1,10 +1,10 @@
 "use client";
 
-import { Suspense, useEffect, useState, useCallback } from "react";
+import { Suspense, useEffect, useState, useCallback, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { getDetailedPersonalStats, getGlobalStatsByRange, getDeckTrendByRange, getTeamStatsByRange, getTeamDeckTrendByRange } from "@/lib/actions/stats-actions";
 import type { DetailedPersonalStats, TrendRow } from "@/lib/actions/stats-actions";
-import { getDailyBattleCounts } from "@/lib/actions/battle-actions";
+import { getDailyBattleCounts, getOpponentDeckSuggestions } from "@/lib/actions/battle-actions";
 import { getTeamMembers, getMyTeamsWithVisibility } from "@/lib/actions/team-actions";
 import type { TeamMember, TeamWithVisibility } from "@/lib/actions/team-actions";
 import { useFormat } from "@/hooks/use-format";
@@ -19,6 +19,7 @@ import { MyDeckStatsSection } from "@/components/stats/MyDeckStatsSection";
 import { OpponentDeckStatsSection } from "@/components/stats/OpponentDeckStatsSection";
 import { EncounterDonutChart } from "@/components/stats/EncounterDonutChart";
 import { TrendChart } from "@/components/stats/TrendChart";
+import { TrendHeatmap } from "@/components/stats/TrendHeatmap";
 import { TeamMemberSelector } from "@/components/stats/TeamMemberSelector";
 import { TeamSelector } from "@/components/stats/TeamSelector";
 import { BottomNav } from "@/components/layout/BottomNav";
@@ -53,6 +54,9 @@ function StatsPageInner() {
   const [globalStats, setGlobalStats] = useState<DetailedPersonalStats>({ myDeckStats: [], opponentDeckStats: [], turnOrder: { firstWins: 0, firstLosses: 0, secondWins: 0, secondLosses: 0, unknownWins: 0, unknownLosses: 0 } });
   const [teamStats, setTeamStats] = useState<DetailedPersonalStats>({ myDeckStats: [], opponentDeckStats: [], turnOrder: { firstWins: 0, firstLosses: 0, secondWins: 0, secondLosses: 0, unknownWins: 0, unknownLosses: 0 } });
   const [trendData, setTrendData] = useState<TrendRow[]>([]);
+  const [deckCategories, setDeckCategories] = useState<{ major: string[]; minor: string[]; other: string[] }>({ major: [], minor: [], other: [] });
+  const [trendMode, setTrendMode] = useState<"line" | "heatmap">("line");
+  const [trendCalcMode, setTrendCalcMode] = useState<"daily" | "cumulative">("daily");
 
   // Team states
   const [visibleTeams, setVisibleTeams] = useState<TeamWithVisibility[]>([]);
@@ -81,6 +85,62 @@ function StatsPageInner() {
       setSelectedMemberId(null);
     }
   }, [scope]);
+
+  // Fetch deck categories
+  useEffect(() => {
+    if (!ready) return;
+    getOpponentDeckSuggestions(format).then(setDeckCategories);
+  }, [format, ready]);
+
+  const categoryMap = useMemo(() => {
+    const m = new Map<string, "major" | "minor" | "other">();
+    for (const name of deckCategories.major) m.set(name, "major");
+    for (const name of deckCategories.minor) m.set(name, "minor");
+    for (const name of deckCategories.other) m.set(name, "other");
+    return m;
+  }, [deckCategories]);
+
+  // Compute cumulative trend data from daily data
+  const cumulativeTrendData = useMemo(() => {
+    if (trendData.length === 0) return [];
+    const periods = [...new Set(trendData.map(d => d.periodStart))].sort();
+    const deckNames = [...new Set(trendData.map(d => d.deckName))];
+    const lookup = new Map<string, Map<string, number>>();
+    for (const d of trendData) {
+      if (!lookup.has(d.periodStart)) lookup.set(d.periodStart, new Map());
+      lookup.get(d.periodStart)!.set(d.deckName, d.battleCount);
+    }
+    const cumCounts = new Map<string, number>();
+    const result: TrendRow[] = [];
+    for (const period of periods) {
+      for (const deck of deckNames) {
+        const count = lookup.get(period)?.get(deck) ?? 0;
+        cumCounts.set(deck, (cumCounts.get(deck) ?? 0) + count);
+      }
+      let totalCum = 0;
+      for (const c of cumCounts.values()) totalCum += c;
+      for (const deck of deckNames) {
+        const cumCount = cumCounts.get(deck) ?? 0;
+        if (cumCount > 0) {
+          result.push({
+            periodStart: period,
+            deckName: deck,
+            battleCount: cumCount,
+            sharePct: totalCum > 0 ? Math.round((cumCount / totalCum) * 100) : 0,
+          });
+        }
+      }
+    }
+    return result;
+  }, [trendData]);
+
+  // Apply calc mode + major-only filter
+  const filteredTrendData = useMemo(() => {
+    const source = trendCalcMode === "daily" ? trendData : cumulativeTrendData;
+    if (deckCategories.major.length === 0) return source;
+    const majorSet = new Set(deckCategories.major);
+    return source.filter(row => majorSet.has(row.deckName));
+  }, [trendData, cumulativeTrendData, trendCalcMode, deckCategories.major]);
 
   const loadData = useCallback(async () => {
     if (!ready || !teamReady) {
@@ -165,13 +225,55 @@ function StatsPageInner() {
       const totalBattles = totalWins + totalLosses;
       const overallWinRate = totalBattles > 0 ? Math.round((totalWins / totalBattles) * 100) : 0;
 
+      // Aggregate opponent deck stats: major/minor individual, other -> "その他"
+      const aggregatedDonut: { name: string; total: number; winRate: number }[] = [];
+      const otherBreakdown: { name: string; total: number; winRate: number }[] = [];
+      let otherWins = 0, otherLosses = 0, otherTotal = 0;
+      for (const o of stats.opponentDeckStats) {
+        const cat = categoryMap.get(o.deckName) ?? "other";
+        if (cat === "major" || cat === "minor") {
+          aggregatedDonut.push({ name: o.deckName, total: o.total, winRate: o.winRate });
+        } else {
+          otherWins += o.wins;
+          otherLosses += o.losses;
+          otherTotal += o.total;
+          otherBreakdown.push({ name: o.deckName, total: o.total, winRate: o.winRate });
+        }
+      }
+      if (otherTotal > 0) {
+        aggregatedDonut.push({ name: "その他", total: otherTotal, winRate: Math.round((otherWins / otherTotal) * 100) });
+      }
+
+      // Aggregate myDeckStats for global scope — also collect the actual "other" deck names
+      const otherMyDeckNames: string[] = [];
+      const myDeckData = scope === "global" && categoryMap.size > 0 ? (() => {
+        const kept: typeof stats.myDeckStats = [];
+        let mOtherWins = 0, mOtherLosses = 0, mOtherTotal = 0;
+        for (const d of stats.myDeckStats) {
+          const cat = categoryMap.get(d.deckName) ?? "other";
+          if (cat === "major" || cat === "minor") {
+            kept.push(d);
+          } else {
+            mOtherWins += d.wins;
+            mOtherLosses += d.losses;
+            mOtherTotal += d.total;
+            otherMyDeckNames.push(d.deckName);
+          }
+        }
+        if (mOtherTotal > 0) {
+          kept.push({ deckName: "その他", wins: mOtherWins, losses: mOtherLosses, total: mOtherTotal, winRate: Math.round((mOtherWins / mOtherTotal) * 100), opponents: [] });
+        }
+        return kept;
+      })() : stats.myDeckStats;
+
       return (
         <>
           <div>
             <h2 className="text-base font-bold mb-2">対面デッキ分布</h2>
             {stats.opponentDeckStats.length > 0 ? (
               <EncounterDonutChart
-                items={stats.opponentDeckStats.map(o => ({ name: o.deckName, total: o.total, winRate: o.winRate }))}
+                items={categoryMap.size > 0 ? aggregatedDonut : stats.opponentDeckStats.map(o => ({ name: o.deckName, total: o.total, winRate: o.winRate }))}
+                otherBreakdown={otherBreakdown}
                 overallWinRate={overallWinRate}
                 overallWins={totalWins}
                 overallLosses={totalLosses}
@@ -191,7 +293,10 @@ function StatsPageInner() {
           </div>
           <div>
             <h2 className="text-base font-bold mb-2">使用デッキ別</h2>
-            <MyDeckStatsSection stats={stats.myDeckStats} startDate={startDate} endDate={endDate} scope={scope} teamId={activeTeamId ?? undefined} memberId={selectedMemberId} memberName={selectedMemberId ? (teamMembers.find(m => m.user_id === selectedMemberId)?.discord_username ?? null) : null} />
+            {scope === "global" && categoryMap.size > 0 && (
+              <p className="text-xs text-muted-foreground">※ 使用率の低いデッキは「その他」に集約されています</p>
+            )}
+            <MyDeckStatsSection stats={myDeckData} startDate={startDate} endDate={endDate} scope={scope} teamId={activeTeamId ?? undefined} memberId={selectedMemberId} memberName={selectedMemberId ? (teamMembers.find(m => m.user_id === selectedMemberId)?.discord_username ?? null) : null} otherDeckNames={otherMyDeckNames} />
           </div>
           <div>
             <h2 className="text-base font-bold mb-2">対面デッキ別</h2>
@@ -202,7 +307,39 @@ function StatsPageInner() {
     }
 
     if (view === "trend") {
-      return <TrendChart data={trendData} />;
+      return (
+        <>
+          <div className="flex items-center gap-3 mb-2 flex-wrap">
+            <div className="flex rounded-full border border-border overflow-hidden">
+              <button onClick={() => setTrendMode("line")}
+                className={`px-3 py-1 text-xs font-medium transition-colors ${trendMode === "line" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>
+                折れ線
+              </button>
+              <button onClick={() => setTrendMode("heatmap")}
+                className={`px-3 py-1 text-xs font-medium transition-colors ${trendMode === "heatmap" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>
+                ヒートマップ
+              </button>
+            </div>
+            <div className="flex rounded-full border border-border overflow-hidden">
+              <button onClick={() => setTrendCalcMode("daily")}
+                className={`px-3 py-1 text-xs font-medium transition-colors ${trendCalcMode === "daily" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>
+                単日
+              </button>
+              <button onClick={() => setTrendCalcMode("cumulative")}
+                className={`px-3 py-1 text-xs font-medium transition-colors ${trendCalcMode === "cumulative" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>
+                累計
+              </button>
+            </div>
+          </div>
+          {deckCategories.major.length > 0 && (
+            <p className="text-xs text-muted-foreground">※ 使用率の高いデッキのみ表示されています</p>
+          )}
+          {trendMode === "line"
+            ? <TrendChart data={filteredTrendData} />
+            : <TrendHeatmap data={filteredTrendData} />
+          }
+        </>
+      );
     }
 
     return null;

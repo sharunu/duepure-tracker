@@ -7,7 +7,7 @@ import { BattleCountBadge } from "@/components/ui/BattleCountBadge";
 
 type MyDeckRow = DetailedPersonalStats["myDeckStats"][number];
 
-export function MyDeckStatsSection({ stats, startDate, endDate, scope, teamId, memberId, memberName }: { stats: MyDeckRow[]; startDate?: string; endDate?: string; scope?: "personal" | "global" | "team"; teamId?: string; memberId?: string | null; memberName?: string | null }) {
+export function MyDeckStatsSection({ stats, startDate, endDate, scope, teamId, memberId, memberName, otherDeckNames }: { stats: MyDeckRow[]; startDate?: string; endDate?: string; scope?: "personal" | "global" | "team"; teamId?: string; memberId?: string | null; memberName?: string | null; otherDeckNames?: string[] }) {
   const router = useRouter();
 
   if (stats.length === 0) {
@@ -28,6 +28,9 @@ export function MyDeckStatsSection({ stats, startDate, endDate, scope, teamId, m
       if (teamId) params.set("teamId", teamId);
       if (memberId) params.set("memberId", memberId);
       if (memberName) params.set("memberName", memberName);
+    }
+    if (deckName === "\u305D\u306E\u4ED6" && otherDeckNames && otherDeckNames.length > 0) {
+      params.set("otherDecks", otherDeckNames.join(","));
     }
     const qs = params.toString();
     router.push(`/stats/deck/${encodeURIComponent(deckName)}${qs ? "?" + qs : ""}`);
