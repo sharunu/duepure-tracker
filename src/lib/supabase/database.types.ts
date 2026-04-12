@@ -12,31 +12,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.4"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       battles: {
@@ -320,6 +295,8 @@ export type Database = {
           id: string
           is_admin: boolean
           is_guest: boolean
+          x_user_id: string | null
+          x_username: string | null
         }
         Insert: {
           created_at?: string
@@ -327,6 +304,8 @@ export type Database = {
           id: string
           is_admin?: boolean
           is_guest?: boolean
+          x_user_id?: string | null
+          x_username?: string | null
         }
         Update: {
           created_at?: string
@@ -334,6 +313,8 @@ export type Database = {
           id?: string
           is_admin?: boolean
           is_guest?: boolean
+          x_user_id?: string | null
+          x_username?: string | null
         }
         Relationships: []
       }
@@ -665,6 +646,18 @@ export type Database = {
           unknown_wins: number
         }[]
       }
+      get_users_for_admin: {
+        Args: never
+        Returns: {
+          battle_count: number
+          created_at: string
+          display_name: string
+          email: string
+          id: string
+          is_guest: boolean
+        }[]
+      }
+      is_admin_user: { Args: never; Returns: boolean }
       is_team_member: {
         Args: { p_team_id: string; p_user_id: string }
         Returns: boolean
@@ -806,9 +799,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {},
   },

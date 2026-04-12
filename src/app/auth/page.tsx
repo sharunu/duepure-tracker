@@ -129,6 +129,17 @@ export default function AuthPage() {
           <>
             <div className="space-y-3">
               <button
+                onClick={() => signInWithOAuth("twitter")}
+                className="w-full rounded-[10px] bg-[#232640] px-4 py-3 text-[14px] font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-3 relative"
+                style={{ border: "0.5px solid rgba(100,100,150,0.2)" }}
+              >
+                <span className="absolute -top-2 -right-2 bg-[#6366f1] text-white text-[10px] px-2 py-0.5 rounded-full font-bold">おすすめ</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                </svg>
+                X (Twitter) でログイン
+              </button>
+              <button
                 onClick={() => signInWithOAuth("google")}
                 className="w-full rounded-[10px] bg-[#232640] px-4 py-3 text-[14px] font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-3"
                 style={{ border: "0.5px solid rgba(100,100,150,0.2)" }}
@@ -140,16 +151,6 @@ export default function AuthPage() {
                   <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
                 </svg>
                 Googleでログイン
-              </button>
-              <button
-                onClick={() => signInWithOAuth("twitter")}
-                className="w-full rounded-[10px] bg-[#232640] px-4 py-3 text-[14px] font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-3"
-                style={{ border: "0.5px solid rgba(100,100,150,0.2)" }}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
-                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                </svg>
-                X (Twitter) でログイン
               </button>
             </div>
 

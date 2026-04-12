@@ -67,3 +67,77 @@ export async function deleteAccount(): Promise<void> {
   const { error } = await supabase.rpc("delete_own_account");
   if (error) throw error;
 }
+
+// --- X連携関連 ---
+
+export async function getXConnectionStatus(): Promise<{
+  isConnected: boolean;
+  xUsername: string | null;
+  source: "login" | "linked" | null;
+}> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { isConnected: false, xUsername: null, source: null };
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("x_user_id, x_username")
+    .eq("id", user.id)
+    .single();
+
+  if (profile?.x_username) {
+    const source = user.app_metadata?.provider === "twitter" ? "login" : "linked";
+    return { isConnected: true, xUsername: profile.x_username, source };
+  }
+
+  return { isConnected: false, xUsername: null, source: null };
+}
+
+export async function syncXAccountFromAuth(): Promise<boolean> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return false;
+
+  console.log("[syncX] identities:", user.identities?.map(i => i.provider));
+
+  const twitterIdentity = user.identities?.find(i => i.provider === "twitter");
+  if (!twitterIdentity) {
+    console.log("[syncX] no twitter identity found");
+    return false;
+  }
+
+  console.log("[syncX] identity_data keys:", Object.keys(twitterIdentity.identity_data ?? {}));
+
+  const xUsername = twitterIdentity.identity_data?.user_name
+    ?? twitterIdentity.identity_data?.preferred_username;
+  const xUserId = twitterIdentity.identity_data?.provider_id
+    ?? twitterIdentity.id;
+
+  if (!xUsername) {
+    console.log("[syncX] no xUsername in identity_data");
+    return false;
+  }
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ x_user_id: xUserId, x_username: xUsername })
+    .eq("id", user.id);
+
+  if (error) {
+    console.log("[syncX] update error:", error);
+    return false;
+  }
+
+  console.log("[syncX] success:", xUsername);
+  return true;
+}
+
+export async function unlinkXAccount(): Promise<void> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+  await supabase
+    .from("profiles")
+    .update({ x_user_id: null, x_username: null })
+    .eq("id", user.id);
+}

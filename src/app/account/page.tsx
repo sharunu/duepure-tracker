@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { getDisplayName, updateDisplayName, changePassword, getAuthProvider, getEmail, deleteAccount } from "@/lib/actions/account-actions";
+import { getDisplayName, updateDisplayName, changePassword, getAuthProvider, getEmail, deleteAccount, getXConnectionStatus, syncXAccountFromAuth, unlinkXAccount } from "@/lib/actions/account-actions";
 import { submitFeedback } from "@/lib/actions/feedback-actions";
 import { checkIsAdmin } from "@/lib/actions/admin-actions";
 import { BottomNav } from "@/components/layout/BottomNav";
@@ -42,14 +42,36 @@ export default function AccountPage() {
   const [feedbackToast, setFeedbackToast] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
 
+  // X連携関連
+  const [xConnected, setXConnected] = useState(false);
+  const [xLinkError, setXLinkError] = useState<string | null>(null);
+  const [xUsername, setXUsername] = useState<string | null>(null);
+  const [xSource, setXSource] = useState<"login" | "linked" | null>(null);
+  const [xLoading, setXLoading] = useState(false);
+
   useEffect(() => {
     const load = async () => {
       try {
-        const [name, prov, mail, admin] = await Promise.all([getDisplayName(), getAuthProvider(), getEmail(), checkIsAdmin()]);
+        const [name, prov, mail, admin, xStatus] = await Promise.all([getDisplayName(), getAuthProvider(), getEmail(), checkIsAdmin(), getXConnectionStatus()]);
         setDisplayName(name);
         setProvider(prov);
         setEmail(mail);
         setIsAdmin(admin);
+        setXConnected(xStatus.isConnected);
+        setXUsername(xStatus.xUsername);
+        setXSource(xStatus.source);
+
+        // X未連携の場合、auth identitiesからTwitter情報を検出して同期を試みる
+        // (Xログイン初回、linkIdentity完了後、いずれのケースもカバー)
+        if (!xStatus.isConnected) {
+          const synced = await syncXAccountFromAuth();
+          if (synced) {
+            const updated = await getXConnectionStatus();
+            setXConnected(updated.isConnected);
+            setXUsername(updated.xUsername);
+            setXSource(updated.source);
+          }
+        }
       } catch {
         console.error("Failed to load account data");
       } finally {
@@ -59,8 +81,14 @@ export default function AccountPage() {
     load();
 
     // URLパラメータからリカバリー状態を検知
-    if (new URLSearchParams(window.location.search).get("recovery") === "true") {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("recovery") === "true") {
       setIsRecovery(true);
+    }
+    // X連携エラー検知
+    if (params.get("x_link_error") === "conflict") {
+      setXLinkError("このXアカウントはすでに別のユーザーで使用されています");
+      window.history.replaceState({}, "", "/account");
     }
 
     // リカバリーセッション検知
@@ -178,6 +206,49 @@ export default function AccountPage() {
     setFeedbackLoading(false);
   };
 
+  const handleLinkX = async () => {
+    setXLoading(true);
+    try {
+      // 連携失敗検出用にユーザーIDを保存
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (currentUser) {
+        localStorage.setItem('x_link_pending', currentUser.id);
+      }
+      const { data, error } = await supabase.auth.linkIdentity({
+        provider: "twitter",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback?link_x=true`,
+        },
+      });
+      if (error) {
+        console.error("X linking error:", error);
+        alert("X連携に失敗しました: " + error.message);
+        setXLoading(false);
+        return;
+      }
+      if (data?.url) {
+        window.location.href = data.url;
+      }
+    } catch (err) {
+      console.error("X linking error:", err);
+      alert("X連携に失敗しました。もう一度お試しください。");
+      setXLoading(false);
+    }
+  };
+
+  const handleUnlinkX = async () => {
+    setXLoading(true);
+    try {
+      await unlinkXAccount();
+      setXConnected(false);
+      setXUsername(null);
+      setXSource(null);
+    } catch {
+      // エラー時は何もしない
+    }
+    setXLoading(false);
+  };
+
   const isSnsLogin = provider === "google" || provider === "twitter";
   const isGuest = provider === "anonymous" || provider === "unknown";
   const isEmailLogin = !isSnsLogin && !isGuest;
@@ -261,6 +332,60 @@ export default function AccountPage() {
             </div>
           </div>
         </div>
+
+        {/* X連携セクション（ゲスト以外に表示） */}
+        {!isGuest && (
+          <div className="mt-5">
+            <p className="text-[12px] text-gray-500 mb-2">X連携</p>
+            <div className="bg-[#232640] rounded-[10px] px-4 py-[14px]">
+              {provider === "twitter" ? (
+                // パターンA: Xでログインしているユーザー
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[14px]">
+                      {xUsername ? `@${xUsername}` : "X"} で連携済み
+                    </p>
+                    <p className="text-[11px] text-gray-500 mt-0.5">ログイン連携</p>
+                  </div>
+                  <span className="text-[10px] bg-[#1e2138] text-[#555577] px-2 py-0.5 rounded-full flex-shrink-0 ml-2">自動連携</span>
+                </div>
+              ) : xConnected ? (
+                // パターンC: X連携済みの非Xユーザー
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[14px]">@{xUsername} で連携済み</p>
+                  </div>
+                  <button
+                    onClick={handleUnlinkX}
+                    disabled={xLoading}
+                    className="text-[12px] text-[#e85d75] hover:opacity-80 disabled:opacity-50 flex-shrink-0 ml-2"
+                  >
+                    連携解除
+                  </button>
+                </div>
+              ) : (
+                // パターンB: X未連携の非Xユーザー
+                <div>
+                  <p className="text-[11px] text-gray-500 mb-3">X連携すると、管理者がアカウントを確認しやすくなります</p>
+                  <button
+                    onClick={handleLinkX}
+                    disabled={xLoading}
+                    className="w-full bg-[#232640] text-white rounded-[6px] px-4 py-2.5 text-[13px] font-medium hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
+                    style={{ border: "0.5px solid rgba(100,100,150,0.3)" }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="white">
+                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                    </svg>
+                    Xアカウントを連携
+                  </button>
+                  {xLinkError && (
+                    <p className="text-[11px] text-[#e85d75] mt-2">{xLinkError}</p>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* セキュリティセクション */}
         <div className="mt-5">

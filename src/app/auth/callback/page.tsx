@@ -8,6 +8,63 @@ export default function AuthCallbackPage() {
 
   useEffect(() => {
     const supabase = createClient();
+    const searchParams = new URLSearchParams(window.location.search);
+
+    // linkIdentity 完了後: ?link_x=true パラメータがある場合
+    if (searchParams.get("link_x") === "true") {
+      const handleLink = async () => {
+        // supabase-jsの初期化（hash fragment処理含む）を待つ
+        await new Promise<void>((resolve) => {
+          const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+            if (event === "INITIAL_SESSION" || event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+              subscription.unsubscribe();
+              resolve();
+            }
+          });
+          setTimeout(() => { subscription.unsubscribe(); resolve(); }, 3000);
+        });
+
+        // セッションを最新化
+        await supabase.auth.refreshSession();
+
+        // サーバーから最新のユーザー情報を取得
+        const { data: { user } } = await supabase.auth.getUser();
+        console.log("[X link] identities:", user?.identities?.map(i => i.provider));
+
+        if (user) {
+          const tw = user.identities?.find((i: { provider: string }) => i.provider === "twitter");
+          if (tw) {
+            const xUsername = tw.identity_data?.user_name ?? tw.identity_data?.preferred_username;
+            const xUserId = tw.identity_data?.provider_id ?? tw.id;
+            console.log("[X link] syncing:", { xUsername, xUserId });
+            if (xUsername) {
+              await supabase.from("profiles").update({
+                x_user_id: xUserId,
+                x_username: xUsername,
+              }).eq("id", user.id);
+            }
+          } else {
+            console.log("[X link] no twitter identity found");
+            localStorage.removeItem('x_link_pending');
+            window.location.href = "/account?x_link_error=conflict";
+            return;
+          }
+        }
+
+        localStorage.removeItem('x_link_pending');
+        window.location.href = "/account";
+      };
+      handleLink();
+      return;
+    }
+
+    // X連携失敗検出: linkIdentityが失敗してlink_x=trueパラメータが失われた場合
+    const xLinkPending = localStorage.getItem('x_link_pending');
+    if (xLinkPending) {
+      localStorage.removeItem('x_link_pending');
+      window.location.href = "/account?x_link_error=conflict";
+      return;
+    }
 
     // supabase-js auto-detects hash fragment tokens
     // Listen for auth state change

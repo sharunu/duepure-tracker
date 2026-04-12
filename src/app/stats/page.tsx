@@ -25,6 +25,8 @@ import { TeamSelector } from "@/components/stats/TeamSelector";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { getWinRateColor } from "@/lib/stats-utils";
 import { TurnOrderCards } from "@/components/stats/TurnOrderCards";
+import { ShareButton } from "@/components/share/ShareButton";
+import type { StatsShareData } from "@/components/share/ShareButton";
 
 function StatsPageInner() {
   const searchParams = useSearchParams();
@@ -356,7 +358,38 @@ function StatsPageInner() {
     <>
       <div className="min-h-screen pb-20 px-4 pt-6 max-w-lg mx-auto space-y-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold">分析</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-bold">分析</h1>
+            {scope === "personal" && view === "stats" && (() => {
+              const stats = personalStats;
+              const totalWins = stats.myDeckStats.reduce((sum, d) => sum + d.wins, 0);
+              const totalLosses = stats.myDeckStats.reduce((sum, d) => sum + d.losses, 0);
+              const totalBattles = totalWins + totalLosses;
+              if (totalBattles === 0) return null;
+              const shareData: StatsShareData = {
+                totalWins,
+                totalLosses,
+                winRate: Math.round((totalWins / totalBattles) * 100),
+                firstWins: stats.turnOrder.firstWins,
+                firstLosses: stats.turnOrder.firstLosses,
+                secondWins: stats.turnOrder.secondWins,
+                secondLosses: stats.turnOrder.secondLosses,
+                topMyDecks: stats.myDeckStats.slice(0, 3).map(d => ({ name: d.deckName, wins: d.wins, losses: d.losses, winRate: d.winRate })),
+                topOpponentDecks: stats.opponentDeckStats.slice(0, 3).map(d => ({ name: d.deckName, wins: d.wins, losses: d.losses, winRate: d.winRate })),
+                encounterDistribution: (() => {
+                  const allOpponents = stats.opponentDeckStats.map(d => ({ name: d.deckName, count: d.wins + d.losses }));
+                  const topN = allOpponents.slice(0, 5);
+                  const otherCount = allOpponents.slice(5).reduce((s, d) => s + d.count, 0);
+                  if (otherCount > 0) topN.push({ name: "その他", count: otherCount });
+                  const total = topN.reduce((s, d) => s + d.count, 0);
+                  return topN.map(d => ({ name: d.name, count: d.count, percentage: total > 0 ? Math.round((d.count / total) * 100) : 0 }));
+                })(),
+                period: `${startDate} ~ ${endDate}`,
+                format,
+              };
+              return <ShareButton type="stats" data={shareData} />;
+            })()}
+          </div>
           <div className={!ready ? "invisible" : ""}>
             <FormatSelector format={format} setFormat={setFormat} />
           </div>

@@ -14,6 +14,8 @@ import { MatchupTable } from "@/components/stats/MatchupTable";
 import { EncounterDonutChart } from "@/components/stats/EncounterDonutChart";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { TurnOrderCards } from "@/components/stats/TurnOrderCards";
+import { ShareButton } from "@/components/share/ShareButton";
+import type { DeckShareData } from "@/components/share/ShareButton";
 
 export default function DeckDetailPage() {
   const params = useParams();
@@ -176,7 +178,27 @@ export default function DeckDetailPage() {
         </button>
 
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold">{`${deckName}${titleSuffix}`}</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-bold">{`${deckName}${titleSuffix}`}</h1>
+            {scope === "personal" && stats && stats.overallTotal > 0 && (() => {
+              const fW = stats.overall.reduce((s, o) => s + o.firstWins, 0);
+              const fL = stats.overall.reduce((s, o) => s + o.firstLosses, 0);
+              const sW = stats.overall.reduce((s, o) => s + o.secondWins, 0);
+              const sL = stats.overall.reduce((s, o) => s + o.secondLosses, 0);
+              const shareData: DeckShareData = {
+                deckName,
+                totalWins: stats.overallWins,
+                totalLosses: stats.overallLosses,
+                winRate: stats.overallWinRate,
+                firstWins: fW, firstLosses: fL,
+                secondWins: sW, secondLosses: sL,
+                topMatchups: stats.overall.slice(0, 5).map(o => ({ name: o.opponentName, wins: o.wins, losses: o.losses, winRate: o.winRate })),
+                period: `${startDate} ~ ${endDate}`,
+                format,
+              };
+              return <ShareButton type="deck" data={shareData} />;
+            })()}
+          </div>
           <div className={!ready ? "invisible" : ""}>
             <FormatSelector format={format} setFormat={setFormat} />
           </div>
