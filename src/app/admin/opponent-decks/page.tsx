@@ -3,13 +3,13 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
-  checkIsAdmin,
   getOpponentDeckMasterList,
   getOpponentDeckSettings,
 } from "@/lib/actions/admin-actions";
 import { useFormat } from "@/hooks/use-format";
 import { FormatSelector } from "@/components/ui/FormatSelector";
 import { OpponentDeckManager } from "@/components/admin/OpponentDeckManager";
+import { ChevronLeft } from "lucide-react";
 
 type Settings = {
   management_mode: string;
@@ -31,21 +31,15 @@ export default function AdminOpponentDecksPage() {
 
   const loadDecks = useCallback(() => {
     setLoading(true);
-    checkIsAdmin().then((isAdmin) => {
-      if (!isAdmin) {
-        router.replace("/battle");
-        return;
-      }
-      Promise.all([
-        getOpponentDeckMasterList(format),
-        getOpponentDeckSettings(format),
-      ]).then(([d, s]) => {
-        setDecks(d);
-        setSettings(s as Settings | null);
-        setLoading(false);
-      });
+    Promise.all([
+      getOpponentDeckMasterList(format),
+      getOpponentDeckSettings(format),
+    ]).then(([d, s]) => {
+      setDecks(d);
+      setSettings(s as Settings | null);
+      setLoading(false);
     });
-  }, [format, router]);
+  }, [format]);
 
   useEffect(() => {
     loadDecks();
@@ -62,13 +56,12 @@ export default function AdminOpponentDecksPage() {
   return (
     <div className="min-h-screen px-4 pt-6 pb-8 max-w-lg mx-auto">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-[20px] font-medium">対面デッキ管理</h1>
-        <a
-          href="/battle"
-          className="text-sm text-gray-500 hover:text-gray-300"
-        >
-          ← 戻る
-        </a>
+        <div className="flex items-center gap-3">
+          <button onClick={() => router.push("/admin")} className="text-gray-400 hover:text-white">
+            <ChevronLeft size={20} />
+          </button>
+          <h1 className="text-[20px] font-medium">対面デッキ管理</h1>
+        </div>
       </div>
       <div className="bg-[#232640] rounded-[10px] px-4 py-3 mb-4 flex items-center gap-3">
         <div className="flex-1">

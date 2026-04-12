@@ -7,7 +7,7 @@ import { BattleCountBadge } from "@/components/ui/BattleCountBadge";
 
 type OpponentRow = DetailedPersonalStats["opponentDeckStats"][number];
 
-export function OpponentDeckStatsSection({ stats, startDate, endDate, scope, teamId, memberId, memberName }: { stats: OpponentRow[]; startDate?: string; endDate?: string; scope?: "personal" | "global" | "team"; teamId?: string; memberId?: string | null; memberName?: string | null }) {
+export function OpponentDeckStatsSection({ stats, startDate, endDate, scope, teamId, memberId, memberName, disableLinks }: { stats: OpponentRow[]; startDate?: string; endDate?: string; scope?: "personal" | "global" | "team"; teamId?: string; memberId?: string | null; memberName?: string | null; disableLinks?: boolean }) {
   const router = useRouter();
 
   if (stats.length === 0) {
@@ -19,6 +19,7 @@ export function OpponentDeckStatsSection({ stats, startDate, endDate, scope, tea
   }
 
   const handleClick = (deckName: string) => {
+    if (disableLinks) return;
     const params = new URLSearchParams();
     if (startDate) params.set("start", startDate);
     if (endDate) params.set("end", endDate);
@@ -42,7 +43,7 @@ export function OpponentDeckStatsSection({ stats, startDate, endDate, scope, tea
             <div className="absolute left-0 top-0 bottom-0 w-[3px]" style={{ backgroundColor: color }} />
             <button
               onClick={() => handleClick(row.deckName)}
-              className="w-full pl-4 pr-4 py-3 text-sm transition-colors hover:bg-muted/50"
+              className={`w-full pl-4 pr-4 py-3 text-sm transition-colors ${disableLinks ? "cursor-default" : "hover:bg-muted/50"}`}
             >
               <div className="flex items-center justify-between mb-2">
                 <span className="flex items-center gap-1.5">
@@ -57,7 +58,7 @@ export function OpponentDeckStatsSection({ stats, startDate, endDate, scope, tea
                   <span className="text-muted-foreground text-xs">
                     {row.wins}勝 {row.losses}敗
                   </span>
-                  <span className="text-muted-foreground">›</span>
+                  {!disableLinks && <span className="text-muted-foreground">›</span>}
                 </span>
               </div>
               <div className="h-1 rounded-full bg-muted/30">

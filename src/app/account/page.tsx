@@ -6,6 +6,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { getDisplayName, updateDisplayName, changePassword, getAuthProvider, getEmail, deleteAccount } from "@/lib/actions/account-actions";
 import { submitFeedback } from "@/lib/actions/feedback-actions";
+import { checkIsAdmin } from "@/lib/actions/admin-actions";
 import { BottomNav } from "@/components/layout/BottomNav";
 
 export default function AccountPage() {
@@ -39,14 +40,16 @@ export default function AccountPage() {
   const [feedbackMessage, setFeedbackMessage] = useState("");
   const [feedbackLoading, setFeedbackLoading] = useState(false);
   const [feedbackToast, setFeedbackToast] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const [name, prov, mail] = await Promise.all([getDisplayName(), getAuthProvider(), getEmail()]);
+        const [name, prov, mail, admin] = await Promise.all([getDisplayName(), getAuthProvider(), getEmail(), checkIsAdmin()]);
         setDisplayName(name);
         setProvider(prov);
         setEmail(mail);
+        setIsAdmin(admin);
       } catch {
         console.error("Failed to load account data");
       } finally {
@@ -347,6 +350,7 @@ export default function AccountPage() {
         <div className="mt-5">
           <p className="text-[12px] text-gray-500 mb-2">その他</p>
           <div className="space-y-3">
+            {isAdmin && (              <div                className="bg-[#232640] rounded-[10px] px-4 py-[14px] flex items-center justify-between cursor-pointer"                onClick={() => router.push("/admin")}              >                <div>                  <p className="text-[14px]">管理者画面</p>                  <p className="text-[11px] text-gray-500 mt-0.5">ユーザー閲覧・フィードバック確認</p>                </div>                <span className="text-gray-500 text-[18px]">&rsaquo;</span>              </div>            )}
             {/* ご意見・バグ報告 */}
             <div
               className="bg-[#232640] rounded-[10px] px-4 py-[14px] flex items-center justify-between cursor-pointer"

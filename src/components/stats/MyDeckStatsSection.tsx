@@ -7,7 +7,7 @@ import { BattleCountBadge } from "@/components/ui/BattleCountBadge";
 
 type MyDeckRow = DetailedPersonalStats["myDeckStats"][number];
 
-export function MyDeckStatsSection({ stats, startDate, endDate, scope, teamId, memberId, memberName, otherDeckNames }: { stats: MyDeckRow[]; startDate?: string; endDate?: string; scope?: "personal" | "global" | "team"; teamId?: string; memberId?: string | null; memberName?: string | null; otherDeckNames?: string[] }) {
+export function MyDeckStatsSection({ stats, startDate, endDate, scope, teamId, memberId, memberName, otherDeckNames, disableLinks }: { stats: MyDeckRow[]; startDate?: string; endDate?: string; scope?: "personal" | "global" | "team"; teamId?: string; memberId?: string | null; memberName?: string | null; otherDeckNames?: string[]; disableLinks?: boolean }) {
   const router = useRouter();
 
   if (stats.length === 0) {
@@ -19,6 +19,7 @@ export function MyDeckStatsSection({ stats, startDate, endDate, scope, teamId, m
   }
 
   const handleClick = (deckName: string) => {
+    if (disableLinks) return;
     const params = new URLSearchParams();
     if (startDate) params.set("start", startDate);
     if (endDate) params.set("end", endDate);
@@ -29,7 +30,7 @@ export function MyDeckStatsSection({ stats, startDate, endDate, scope, teamId, m
       if (memberId) params.set("memberId", memberId);
       if (memberName) params.set("memberName", memberName);
     }
-    if (deckName === "\u305D\u306E\u4ED6" && otherDeckNames && otherDeckNames.length > 0) {
+    if (deckName === "\u305d\u306e\u4ed6" && otherDeckNames && otherDeckNames.length > 0) {
       params.set("otherDecks", otherDeckNames.join(","));
     }
     const qs = params.toString();
@@ -45,7 +46,7 @@ export function MyDeckStatsSection({ stats, startDate, endDate, scope, teamId, m
             <div className="absolute left-0 top-0 bottom-0 w-[3px]" style={{ backgroundColor: color }} />
             <button
               onClick={() => handleClick(deck.deckName)}
-              className="w-full pl-4 pr-4 py-3 text-sm transition-colors hover:bg-muted/50"
+              className={`w-full pl-4 pr-4 py-3 text-sm transition-colors ${disableLinks ? "cursor-default" : "hover:bg-muted/50"}`}
             >
               <div className="flex items-center justify-between mb-2">
                 <span className="flex items-center gap-1.5">
@@ -60,7 +61,7 @@ export function MyDeckStatsSection({ stats, startDate, endDate, scope, teamId, m
                   <span className="text-muted-foreground text-xs">
                     {deck.wins}勝 {deck.losses}敗
                   </span>
-                  <span className="text-muted-foreground">›</span>
+                  {!disableLinks && <span className="text-muted-foreground">›</span>}
                 </span>
               </div>
               <div className="h-1 rounded-full bg-muted/30">

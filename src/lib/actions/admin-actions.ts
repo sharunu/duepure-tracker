@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import type { DetailedPersonalStats, TurnOrderSummary, OpponentDetail, TrendRow } from "@/lib/actions/stats-actions";
 
 async function requireAdmin() {
   const supabase = createClient();
@@ -32,6 +33,8 @@ export async function checkIsAdmin(): Promise<boolean> {
 
   return profile?.is_admin ?? false;
 }
+
+// === 対面デッキ管理（既存） ===
 
 export async function getOpponentDeckMasterList(format?: string) {
   const supabase = await requireAdmin();
@@ -225,4 +228,223 @@ export async function getBattleCountsForPeriod(format: string, periodDays: numbe
     counts[b.opponent_deck_name] = (counts[b.opponent_deck_name] ?? 0) + 1;
   }
   return counts;
+}
+
+// =============================================
+// 管理者ダッシュボード用関数
+// =============================================
+
+// === ユーザー一覧 ===
+
+export async function getAdminUserList() {
+  await requireAdmin();
+  const supabase = createClient();
+  const { data, error } = await (supabase.rpc as any)("get_users_for_admin");
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+// === ユーザーのデッキ取得 ===
+
+export async function getAdminUserDecks(userId: string, format: string) {
+  await requireAdmin();
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("decks")
+    .select("id, name, sort_order, deck_tunings(id, name, sort_order)")
+    .eq("user_id", userId)
+    .eq("format", format)
+    .eq("is_archived", false)
+    .order("sort_order", { ascending: true });
+
+  return (data ?? []).map(d => ({
+    ...d,
+    deck_tunings: (d.deck_tunings ?? []).sort(
+      (a: { sort_order: number }, b: { sort_order: number }) => a.sort_order - b.sort_order
+    ),
+  }));
+}
+
+// === ユーザーの戦績取得 ===
+
+export async function getAdminUserBattles(
+  userId: string, format: string, startDate: string, endDate: string
+) {
+  await requireAdmin();
+  const supabase = createClient();
+  const endPlusOne = new Date(endDate);
+  endPlusOne.setDate(endPlusOne.getDate() + 1);
+  const { data } = await supabase
+    .from("battles")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("format", format)
+    .gte("fought_at", startDate)
+    .lt("fought_at", endPlusOne.toISOString().split("T")[0])
+    .order("fought_at", { ascending: false });
+  return data ?? [];
+}
+
+// === ユーザーの個人統計 ===
+
+export async function getAdminUserPersonalStats(
+  userId: string, format: string, startDate?: string, endDate?: string
+): Promise<DetailedPersonalStats> {
+  await requireAdmin();
+  const supabase = createClient();
+
+  const empty: DetailedPersonalStats = {
+    myDeckStats: [], opponentDeckStats: [],
+    turnOrder: { firstWins: 0, firstLosses: 0, secondWins: 0, secondLosses: 0, unknownWins: 0, unknownLosses: 0 },
+  };
+
+  let query = supabase
+    .from("battles")
+    .select("my_deck_name, opponent_deck_name, result, turn_order, fought_at")
+    .eq("user_id", userId)
+    .eq("format", format);
+
+  if (startDate) query = query.gte("fought_at", startDate);
+  if (endDate) {
+    const endPlusOne = new Date(endDate);
+    endPlusOne.setDate(endPlusOne.getDate() + 1);
+    query = query.lt("fought_at", endPlusOne.toISOString().split("T")[0]);
+  }
+
+  const { data: battles } = await query;
+  if (!battles || battles.length === 0) return empty;
+
+  const myDeckMap = new Map<string, { wins: number; losses: number; total: number; opponents: Map<string, OpponentDetail> }>();
+  const oppDeckMap = new Map<string, { wins: number; losses: number; total: number }>();
+  const turnOrder: TurnOrderSummary = { firstWins: 0, firstLosses: 0, secondWins: 0, secondLosses: 0, unknownWins: 0, unknownLosses: 0 };
+
+  for (const b of battles) {
+    const myDeckName = b.my_deck_name ?? "不明";
+    const oppName = b.opponent_deck_name;
+    const isWin = b.result === "win";
+
+    if (!myDeckMap.has(myDeckName)) {
+      myDeckMap.set(myDeckName, { wins: 0, losses: 0, total: 0, opponents: new Map() });
+    }
+    const myEntry = myDeckMap.get(myDeckName)!;
+    myEntry.total++;
+    if (isWin) myEntry.wins++; else myEntry.losses++;
+
+    if (!myEntry.opponents.has(oppName)) {
+      myEntry.opponents.set(oppName, {
+        wins: 0, losses: 0, total: 0, winRate: 0,
+        firstWins: 0, firstLosses: 0, firstTotal: 0, firstWinRate: 0,
+        secondWins: 0, secondLosses: 0, secondTotal: 0, secondWinRate: 0,
+        unknownWins: 0, unknownLosses: 0, unknownTotal: 0, unknownWinRate: 0,
+      });
+    }
+    const oppDetail = myEntry.opponents.get(oppName)!;
+    oppDetail.total++;
+    if (isWin) oppDetail.wins++; else oppDetail.losses++;
+
+    if (b.turn_order === "first") {
+      oppDetail.firstTotal++;
+      if (isWin) oppDetail.firstWins++; else oppDetail.firstLosses++;
+      if (isWin) turnOrder.firstWins++; else turnOrder.firstLosses++;
+    } else if (b.turn_order === "second") {
+      oppDetail.secondTotal++;
+      if (isWin) oppDetail.secondWins++; else oppDetail.secondLosses++;
+      if (isWin) turnOrder.secondWins++; else turnOrder.secondLosses++;
+    } else {
+      oppDetail.unknownTotal++;
+      if (isWin) oppDetail.unknownWins++; else oppDetail.unknownLosses++;
+      if (isWin) turnOrder.unknownWins++; else turnOrder.unknownLosses++;
+    }
+
+    if (!oppDeckMap.has(oppName)) oppDeckMap.set(oppName, { wins: 0, losses: 0, total: 0 });
+    const oppGlobal = oppDeckMap.get(oppName)!;
+    oppGlobal.total++;
+    if (isWin) oppGlobal.wins++; else oppGlobal.losses++;
+  }
+
+  const safeRate = (w: number, t: number) => t === 0 ? 0 : Math.round((w / t) * 100);
+
+  const myDeckStats = Array.from(myDeckMap.entries())
+    .map(([deckName, s]) => ({
+      deckName,
+      wins: s.wins, losses: s.losses, total: s.total,
+      winRate: safeRate(s.wins, s.total),
+      opponents: Array.from(s.opponents.entries())
+        .map(([opponentName, o]) => ({
+          opponentName, ...o,
+          winRate: safeRate(o.wins, o.total),
+          firstWinRate: safeRate(o.firstWins, o.firstTotal),
+          secondWinRate: safeRate(o.secondWins, o.secondTotal),
+          unknownWinRate: safeRate(o.unknownWins, o.unknownTotal),
+        }))
+        .sort((a, b) => b.total - a.total),
+    }))
+    .sort((a, b) => b.total - a.total);
+
+  const opponentDeckStats = Array.from(oppDeckMap.entries())
+    .map(([deckName, s]) => ({
+      deckName, ...s, winRate: safeRate(s.wins, s.total),
+    }))
+    .sort((a, b) => b.total - a.total);
+
+  return { myDeckStats, opponentDeckStats, turnOrder };
+}
+
+// === ユーザーのデッキ推移 ===
+
+export async function getAdminUserDeckTrend(
+  userId: string, startDate: string, endDate: string, format: string
+): Promise<TrendRow[]> {
+  await requireAdmin();
+  const supabase = createClient();
+  const { data, error } = await supabase.rpc("get_deck_trend_range", {
+    p_start_date: startDate,
+    p_end_date: endDate,
+    p_format: format,
+    p_user_id: userId,
+  });
+  if (error) return [];
+  return ((data as { period_start: string; deck_name: string; battle_count: number; share_pct: number }[]) ?? []).map((r) => ({
+    periodStart: r.period_start,
+    deckName: r.deck_name,
+    battleCount: Number(r.battle_count),
+    sharePct: Number(r.share_pct),
+  }));
+}
+
+// === ユーザーの日別戦績数（カレンダー用） ===
+
+export async function getAdminUserDailyBattleCounts(
+  userId: string, format: string, year: number, month: number
+): Promise<Record<string, number>> {
+  await requireAdmin();
+  const supabase = createClient();
+  const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
+  const nextMonth = month === 12 ? new Date(year + 1, 0, 1) : new Date(year, month, 1);
+  const endDate = nextMonth.toISOString().split("T")[0];
+  const { data } = await supabase
+    .from("battles")
+    .select("fought_at")
+    .eq("user_id", userId)
+    .eq("format", format)
+    .gte("fought_at", startDate)
+    .lt("fought_at", endDate);
+  const counts: Record<string, number> = {};
+  for (const b of (data ?? [])) {
+    const day = new Date(b.fought_at).toLocaleDateString("sv-SE");
+    counts[day] = (counts[day] || 0) + 1;
+  }
+  return counts;
+}
+
+// === フィードバック一覧 ===
+
+export async function getAdminFeedbackList() {
+  await requireAdmin();
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("feedback")
+    .select("id, category, message, user_id, created_at")
+    .order("created_at", { ascending: false });
+  return data ?? [];
 }

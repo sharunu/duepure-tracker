@@ -1,0 +1,44 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { ChevronLeft, Users, MessageSquare, Swords } from "lucide-react";
+
+const cards = [
+  { title: "対面デッキ管理", description: "対面デッキの追加・編集・並べ替え", href: "/admin/opponent-decks", icon: Swords },
+  { title: "ユーザー閲覧", description: "ユーザーのデッキ・履歴・分析を閲覧", href: "/admin/users", icon: Users },
+  { title: "フィードバック", description: "ユーザーからのご意見・バグ報告", href: "/admin/feedback", icon: MessageSquare },
+];
+
+export default function AdminDashboardPage() {
+  const router = useRouter();
+
+  return (
+    <div className="min-h-screen px-4 pt-6 pb-8 max-w-lg mx-auto">
+      <div className="flex items-center gap-3 mb-6">
+        <button onClick={() => router.push("/account")} className="text-gray-400 hover:text-white">
+          <ChevronLeft size={20} />
+        </button>
+        <h1 className="text-[20px] font-medium">管理者画面</h1>
+      </div>
+
+      <div className="space-y-3">
+        {cards.map((card) => (
+          <button
+            key={card.href}
+            onClick={() => router.push(card.href)}
+            className="w-full bg-[#232640] rounded-[10px] px-4 py-4 flex items-center gap-4 text-left hover:bg-[#2a2d4a] transition-colors"
+          >
+            <div className="w-10 h-10 rounded-[8px] bg-[rgba(99,102,241,0.1)] flex items-center justify-center shrink-0">
+              <card.icon size={20} className="text-[#6366f1]" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[14px] font-medium">{card.title}</p>
+              <p className="text-[12px] text-gray-500 mt-0.5">{card.description}</p>
+            </div>
+            <span className="text-gray-500 text-[18px] ml-auto shrink-0">&rsaquo;</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}

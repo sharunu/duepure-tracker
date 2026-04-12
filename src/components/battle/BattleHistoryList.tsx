@@ -25,7 +25,8 @@ type Props = {
   battles: Battle[];
   decks: Deck[];
   suggestions: { major: string[]; minor: string[]; other: string[] };
-  onRefresh: () => void;
+  onRefresh?: () => void;
+  readOnly?: boolean;
 };
 
 function formatTime(dateStr: string) {
@@ -46,7 +47,7 @@ function groupByDate(battles: Battle[]): { date: string; battles: Battle[] }[] {
   return Array.from(map.entries()).map(([date, battles]) => ({ date, battles }));
 }
 
-export function BattleHistoryList({ battles, decks, suggestions, onRefresh }: Props) {
+export function BattleHistoryList({ battles, decks, suggestions, onRefresh, readOnly }: Props) {
   const [editingBattle, setEditingBattle] = useState<Battle | null>(null);
 
   if (battles.length === 0) {
@@ -60,7 +61,7 @@ export function BattleHistoryList({ battles, decks, suggestions, onRefresh }: Pr
   const handleDelete = async (id: string) => {
     if (!window.confirm("この対戦記録を削除しますか？")) return;
     await deleteBattle(id);
-    onRefresh();
+    onRefresh?.();
   };
 
   const handleSave = async (fields: {
@@ -76,7 +77,7 @@ export function BattleHistoryList({ battles, decks, suggestions, onRefresh }: Pr
     if (!editingBattle) return;
     await updateBattle(editingBattle.id, fields);
     setEditingBattle(null);
-    onRefresh();
+    onRefresh?.();
   };
 
   const groups = groupByDate(battles);
@@ -167,20 +168,22 @@ export function BattleHistoryList({ battles, decks, suggestions, onRefresh }: Pr
                           {formatTime(b.fought_at)}
                         </span>
 
-                        <div className="ml-auto flex gap-1.5">
-                          <button
-                            onClick={() => setEditingBattle(b)}
-                            className="relative p-2 -m-2 flex items-center justify-center"
-                          >
-                            <span className="w-[28px] h-[28px] flex items-center justify-center rounded-[6px] bg-[rgba(91,141,239,0.08)]"><Pencil size={13} color="#5b8def" /></span>
-                          </button>
-                          <button
-                            onClick={() => handleDelete(b.id)}
-                            className="relative p-2 -m-2 flex items-center justify-center"
-                          >
-                            <span className="w-[28px] h-[28px] flex items-center justify-center rounded-[6px] bg-[rgba(232,93,117,0.08)]"><X size={13} color="#e85d75" /></span>
-                          </button>
-                        </div>
+                        {!readOnly && (
+                          <div className="ml-auto flex gap-1.5">
+                            <button
+                              onClick={() => setEditingBattle(b)}
+                              className="relative p-2 -m-2 flex items-center justify-center"
+                            >
+                              <span className="w-[28px] h-[28px] flex items-center justify-center rounded-[6px] bg-[rgba(91,141,239,0.08)]"><Pencil size={13} color="#5b8def" /></span>
+                            </button>
+                            <button
+                              onClick={() => handleDelete(b.id)}
+                              className="relative p-2 -m-2 flex items-center justify-center"
+                            >
+                              <span className="w-[28px] h-[28px] flex items-center justify-center rounded-[6px] bg-[rgba(232,93,117,0.08)]"><X size={13} color="#e85d75" /></span>
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -191,7 +194,7 @@ export function BattleHistoryList({ battles, decks, suggestions, onRefresh }: Pr
         ))}
       </div>
 
-      {editingBattle && (
+      {!readOnly && editingBattle && (
         <EditBattleModal
           battle={editingBattle}
           decks={decks}
