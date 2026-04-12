@@ -210,3 +210,19 @@ export async function getOpponentDeckStatsForAdmin(format: string) {
     denominator,
   };
 }
+
+export async function getBattleCountsForPeriod(format: string, periodDays: number) {
+  const supabase = await requireAdmin();
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - periodDays);
+  const { data: battles } = await supabase
+    .from("battles")
+    .select("opponent_deck_name")
+    .eq("format", format)
+    .gte("fought_at", startDate.toISOString());
+  const counts: Record<string, number> = {};
+  for (const b of battles ?? []) {
+    counts[b.opponent_deck_name] = (counts[b.opponent_deck_name] ?? 0) + 1;
+  }
+  return counts;
+}
