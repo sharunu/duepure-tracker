@@ -702,39 +702,24 @@ export async function getTeamStatsByRange(
     winRate: Number(r.win_rate),
   }));
 
-  // Turn order aggregation
-  const endPlusOne = new Date(endDate);
-  endPlusOne.setDate(endPlusOne.getDate() + 1);
+  // Turn order aggregation via RPC (bypasses RLS)
+  const { data: turnData } = await supabase.rpc("get_team_turn_order_stats_range", {
+    p_team_id: teamId,
+    p_user_id: memberId ?? undefined,
+    p_start_date: startDate,
+    p_end_date: endDate,
+    p_format: format,
+  });
 
-  let turnQuery = supabase
-    .from("battles")
-    .select("turn_order, result, user_id")
-    .gte("fought_at", startDate)
-    .lt("fought_at", endPlusOne.toISOString().split("T")[0])
-    .eq("format", format);
-
-  // Get team member IDs
-  const { data: members } = await supabase
-    .from("team_members")
-    .select("user_id")
-    .eq("team_id", teamId);
-  const memberIds = (members ?? []).map((m: { user_id: string }) => m.user_id);
-
-  if (memberId) {
-    turnQuery = turnQuery.eq("user_id", memberId);
-  } else if (memberIds.length > 0) {
-    turnQuery = turnQuery.in("user_id", memberIds);
-  }
-
-  const { data: turnBattles } = await turnQuery;
-
-  const turnOrder: TurnOrderSummary = { firstWins: 0, firstLosses: 0, secondWins: 0, secondLosses: 0, unknownWins: 0, unknownLosses: 0 };
-  for (const b of turnBattles ?? []) {
-    const isWin = b.result === "win";
-    if (b.turn_order === "first") { if (isWin) turnOrder.firstWins++; else turnOrder.firstLosses++; }
-    else if (b.turn_order === "second") { if (isWin) turnOrder.secondWins++; else turnOrder.secondLosses++; }
-    else { if (isWin) turnOrder.unknownWins++; else turnOrder.unknownLosses++; }
-  }
+  const tr = (turnData as { first_wins: number; first_losses: number; second_wins: number; second_losses: number; unknown_wins: number; unknown_losses: number }[] | null)?.[0];
+  const turnOrder: TurnOrderSummary = {
+    firstWins: Number(tr?.first_wins ?? 0),
+    firstLosses: Number(tr?.first_losses ?? 0),
+    secondWins: Number(tr?.second_wins ?? 0),
+    secondLosses: Number(tr?.second_losses ?? 0),
+    unknownWins: Number(tr?.unknown_wins ?? 0),
+    unknownLosses: Number(tr?.unknown_losses ?? 0),
+  };
 
   return { myDeckStats, opponentDeckStats, turnOrder };
 }

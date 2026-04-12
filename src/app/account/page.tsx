@@ -439,7 +439,7 @@ export default function AccountPage() {
       {/* フィードバックモーダル */}
       {feedbackOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center"
+          className="fixed inset-0 z-[60] flex items-end justify-center"
           style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
           onClick={(e) => { if (e.target === e.currentTarget) setFeedbackOpen(false); }}
         >

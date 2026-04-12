@@ -639,6 +639,23 @@ export type Database = {
           wins: number
         }[]
       }
+      get_team_turn_order_stats_range: {
+        Args: {
+          p_end_date?: string
+          p_format?: string
+          p_start_date?: string
+          p_team_id: string
+          p_user_id?: string
+        }
+        Returns: {
+          first_losses: number
+          first_wins: number
+          second_losses: number
+          second_wins: number
+          unknown_losses: number
+          unknown_wins: number
+        }[]
+      }
       is_team_member: {
         Args: { p_team_id: string; p_user_id: string }
         Returns: boolean
