@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { recordBattle, getMiniStats, getAllBattles } from "@/lib/actions/battle-actions";
+import { recordBattle, getMiniStats, getAllBattles, getOpponentMemoSuggestions } from "@/lib/actions/battle-actions";
 import { OpponentDeckSelector } from "./OpponentDeckSelector";
 import { BattleIntervalModal } from "./BattleIntervalModal";
 import { MiniStats } from "../stats/MiniStats";
@@ -43,6 +43,19 @@ function parseDeckSelection(value: string): { deckId: string; tuningId: string |
   return { deckId: parts[0], tuningId: parts[1] ?? null };
 }
 
+const MemoIcon = ({ active, hasMemo }: { active: boolean; hasMemo: boolean }) => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+    stroke={hasMemo ? "#6366f1" : active ? "#94a3b8" : "#555577"}
+    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+  >
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
+    <path d="M14 2v6h6" />
+    <path d="M16 13H8" />
+    <path d="M16 17H8" />
+    <path d="M10 9H8" />
+  </svg>
+);
+
 export function BattleRecordForm({
   decks,
   suggestions,
@@ -52,6 +65,9 @@ export function BattleRecordForm({
 }: Props) {
   const [selectedValue, setSelectedValue] = useState<string>("");
   const [opponentDeck, setOpponentDeck] = useState("");
+  const [opponentMemo, setOpponentMemo] = useState("");
+  const [memoSuggestions, setMemoSuggestions] = useState<string[]>([]);
+  const [showMemo, setShowMemo] = useState(false);
   const [turnOrder, setTurnOrder] = useState<"first" | "second" | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [lastResult, setLastResult] = useState<"win" | "loss" | null>(null);
@@ -112,6 +128,17 @@ export function BattleRecordForm({
     }
   }, [selectedValue, format]);
 
+  // Fetch memo suggestions when opponent deck changes
+  useEffect(() => {
+    if (opponentDeck.trim()) {
+      getOpponentMemoSuggestions(opponentDeck.trim()).then(setMemoSuggestions);
+    } else {
+      setMemoSuggestions([]);
+      setShowMemo(false);
+      setOpponentMemo("");
+    }
+  }, [opponentDeck]);
+
   const handleSubmit = async (result: "win" | "loss") => {
     const { deckId, tuningId } = parseDeckSelection(selectedValue);
     if (!deckId || !opponentDeck.trim()) return;
@@ -124,9 +151,13 @@ export function BattleRecordForm({
         turnOrder,
         format,
         tuningId,
+        opponentMemo: opponentMemo.trim() || null,
       });
       setLastResult(result);
       setOpponentDeck("");
+      setOpponentMemo("");
+      setMemoSuggestions([]);
+      setShowMemo(false);
       setTurnOrder(null);
       setTimeout(() => setLastResult(null), 1500);
       const updatedStats = await getMiniStats(format, measureSince ?? undefined);
@@ -169,6 +200,34 @@ export function BattleRecordForm({
     }
   }
 
+  const hasMemo = opponentMemo.trim().length > 0;
+
+  const deckSelected = opponentDeck.trim().length > 0;
+
+  const memoHeaderExtra = (
+    <button
+      type="button"
+      onClick={() => { if (deckSelected) setShowMemo(prev => !prev); }}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 4,
+        padding: "3px 8px",
+        borderRadius: 6,
+        background: showMemo ? "rgba(99,102,241,0.1)" : "transparent",
+        border: showMemo ? "1px solid rgba(99,102,241,0.3)" : "1px solid transparent",
+        cursor: deckSelected ? "pointer" : "default",
+        opacity: deckSelected ? 1 : 0.35,
+        transition: "all 0.15s",
+      }}
+    >
+      <MemoIcon active={showMemo} hasMemo={hasMemo} />
+      <span style={{ fontSize: 11, color: hasMemo ? "#6366f1" : showMemo ? "#94a3b8" : "#555577" }}>
+        {hasMemo ? opponentMemo.trim() : "メモ"}
+      </span>
+    </button>
+  );
+
   return (
     <div className="space-y-4">
 
@@ -193,14 +252,16 @@ export function BattleRecordForm({
           />
 
           {/* Deck selector */}
+          <div style={{ background: '#1a1d2e', border: '1px solid #2a2d48', borderRadius: 10, padding: 12 }}>
           <div className="flex items-center justify-between mb-2">
             <p className="text-[12px] text-gray-500">使用デッキ</p>
             <a
               href="/decks"
-              className="text-sm text-primary hover:underline flex items-center gap-1"
+              className="flex items-center gap-0.5 text-[12px]"
+              style={{ color: "#8888aa" }}
             >
               使用デッキ管理
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M9 18l6-6-6-6" />
               </svg>
             </a>
@@ -217,18 +278,80 @@ export function BattleRecordForm({
               </option>
             ))}
           </select>
+          </div>
 
-          {/* Opponent deck */}
+          {/* Opponent deck + memo */}
+          <div style={{ background: '#1a1d2e', border: '1px solid #2a2d48', borderRadius: 10, padding: 12 }}>
           <OpponentDeckSelector
             majorSuggestions={suggestions.major}
             minorSuggestions={suggestions.minor}
             otherSuggestions={suggestions.other}
             value={opponentDeck}
             onChange={setOpponentDeck}
+            headerExtra={memoHeaderExtra}
           />
 
+          {/* Memo panel — expands below opponent deck selector */}
+          {showMemo && opponentDeck.trim() && (
+            <div
+              style={{
+                marginTop: 10,
+                background: "#1e2138",
+                borderRadius: 10,
+                border: "0.5px solid #333355",
+                padding: "10px 12px",
+              }}
+            >
+              <input
+                type="text"
+                value={opponentMemo}
+                onChange={(e) => setOpponentMemo(e.target.value)}
+                placeholder="デッキの特徴をメモ（例：クロック入り）"
+                autoFocus
+                style={{
+                  width: "100%",
+                  background: "#232640",
+                  border: "0.5px solid #333355",
+                  borderRadius: 6,
+                  padding: "8px 12px",
+                  fontSize: 13,
+                  color: "#e8e8ec",
+                  outline: "none",
+                }}
+              />
+              {memoSuggestions.length > 0 && (
+                <div style={{ marginTop: 8 }}>
+                  <p style={{ fontSize: 10, color: "#666688", marginBottom: 6 }}>過去のメモ</p>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {memoSuggestions.map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => setOpponentMemo(s)}
+                        style={{
+                          padding: "5px 10px",
+                          fontSize: 11,
+                          borderRadius: 6,
+                          background: opponentMemo === s ? "rgba(99,102,241,0.15)" : "#232640",
+                          border: opponentMemo === s ? "1px solid #6366f1" : "0.5px solid #333355",
+                          color: "#ccccdd",
+                          cursor: "pointer",
+                          transition: "all 0.15s",
+                        }}
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          </div>
+
           {/* Turn order */}
-          <div>
+          <div style={{ background: '#1a1d2e', border: '1px solid #2a2d48', borderRadius: 10, padding: 12 }}>
             <p className="text-[12px] text-gray-500 mb-2">先攻/後攻（任意）</p>
             <div className="flex gap-2">
               {(["first", "second"] as const).map((order) => (

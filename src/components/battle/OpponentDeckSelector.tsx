@@ -8,6 +8,7 @@ type Props = {
   otherSuggestions: string[];
   value: string;
   onChange: (name: string) => void;
+  headerExtra?: React.ReactNode;
 };
 
 const SearchIcon = () => (
@@ -23,6 +24,7 @@ export function OpponentDeckSelector({
   otherSuggestions,
   value,
   onChange,
+  headerExtra,
 }: Props) {
   const [showOther, setShowOther] = useState(false);
   const [showMore, setShowMore] = useState(false);
@@ -71,7 +73,10 @@ export function OpponentDeckSelector({
 
   return (
     <div>
-      <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 8 }}>対面デッキ</p>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+        <p style={{ fontSize: 12, color: "#6b7280" }}>対面デッキ</p>
+        {headerExtra}
+      </div>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
         {(hasSearchText ? filteredMajor : majorSuggestions).map((name) => (

@@ -316,6 +316,7 @@ export function DeckList({
               {/* Expanded tuning section */}
               {isExpanded(deck.id) && (
                 <div className="bg-[#1e2138] border-t border-[#333355]">
+                    <div style={{ fontSize: 10, color: "#666688", padding: "8px 16px 0 16px" }}>構築の調整パターンを追加できます</div>
                   {deck.deck_tunings.map((tuning, idx) => (
                     <div
                       key={tuning.id}
@@ -361,7 +362,7 @@ export function DeckList({
                   <div className="flex gap-2 px-4 py-3 border-t border-[#333355]">
                     <input
                       type="text"
-                      placeholder="チューニング名"
+                      placeholder="例：スパーク入り、クロック型"
                       value={newTuningName}
                       onChange={(e) => setNewTuningName(e.target.value)}
                       onKeyDown={(e) => {
@@ -381,6 +382,7 @@ export function DeckList({
                   {tuningError && isExpanded(deck.id) && (
                     <p className="text-xs text-[#e85d75] px-4 pb-2">{tuningError}</p>
                   )}
+                    <div style={{ fontSize: 10, color: "#666688", padding: "4px 16px 8px 16px" }}>※対戦記録登録時チーム内で共有されます（他ユーザーには非公開）</div>
                 </div>
               )}
             </div>
@@ -628,7 +630,7 @@ export function DeckList({
           </button>
         </div>
         <div style={{ fontSize: 10, color: "#666688", marginTop: 8 }}>
-          ※同じデッキの型違いは、デッキ登録後にチューニングで追加してください
+          同じデッキの構築調整は、デッキカードを開いてチューニングとして追加できます
         </div>
       </div>
 

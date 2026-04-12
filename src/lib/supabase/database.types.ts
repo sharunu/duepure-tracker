@@ -46,6 +46,7 @@ export type Database = {
           id: string
           my_deck_id: string
           opponent_deck_name: string
+          opponent_memo: string | null
           result: string
           tuning_id: string | null
           turn_order: string | null
@@ -57,6 +58,7 @@ export type Database = {
           id?: string
           my_deck_id: string
           opponent_deck_name: string
+          opponent_memo?: string | null
           result: string
           tuning_id?: string | null
           turn_order?: string | null
@@ -68,6 +70,7 @@ export type Database = {
           id?: string
           my_deck_id?: string
           opponent_deck_name?: string
+          opponent_memo?: string | null
           result?: string
           tuning_id?: string | null
           turn_order?: string | null

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { OpponentDeckSelector } from "./OpponentDeckSelector";
+import { getOpponentMemoSuggestions } from "@/lib/actions/battle-actions";
 
 type Tuning = { id: string; name: string; sort_order: number };
 type Deck = { id: string; name: string; deck_tunings?: Tuning[] };
@@ -10,6 +11,7 @@ type Battle = {
   id: string;
   my_deck_id: string;
   opponent_deck_name: string;
+  opponent_memo?: string | null;
   result: "win" | "loss";
   turn_order: "first" | "second" | null;
   tuning_id?: string | null;
@@ -25,6 +27,7 @@ type Props = {
     turnOrder: "first" | "second" | null;
     myDeckId: string;
     tuningId?: string | null;
+    opponentMemo?: string | null;
   }) => Promise<void>;
   onClose: () => void;
 };
@@ -34,18 +37,41 @@ function parseDeckSelection(value: string): { deckId: string; tuningId: string |
   return { deckId: parts[0], tuningId: parts[1] ?? null };
 }
 
+const MemoIcon = ({ active, hasMemo }: { active: boolean; hasMemo: boolean }) => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+    stroke={hasMemo ? "#6366f1" : active ? "#94a3b8" : "#555577"}
+    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+  >
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
+    <path d="M14 2v6h6" />
+    <path d="M16 13H8" />
+    <path d="M16 17H8" />
+    <path d="M10 9H8" />
+  </svg>
+);
+
 export function EditBattleModal({ battle, decks, suggestions, onSave, onClose }: Props) {
-  // Build initial composite value
   const initialValue = battle.tuning_id
     ? `${battle.my_deck_id}:${battle.tuning_id}`
     : battle.my_deck_id;
   const [selectedValue, setSelectedValue] = useState(initialValue);
   const [opponentDeckName, setOpponentDeckName] = useState(battle.opponent_deck_name);
+  const [opponentMemo, setOpponentMemo] = useState(battle.opponent_memo ?? "");
+  const [memoSuggestions, setMemoSuggestions] = useState<string[]>([]);
+  const [showMemo, setShowMemo] = useState(!!battle.opponent_memo);
   const [result, setResult] = useState<"win" | "loss">(battle.result);
   const [turnOrder, setTurnOrder] = useState<"first" | "second" | null>(battle.turn_order);
   const [saving, setSaving] = useState(false);
 
-  // Build options
+  // Fetch memo suggestions when opponent deck changes
+  useEffect(() => {
+    if (opponentDeckName.trim()) {
+      getOpponentMemoSuggestions(opponentDeckName.trim()).then(setMemoSuggestions);
+    } else {
+      setMemoSuggestions([]);
+    }
+  }, [opponentDeckName]);
+
   const deckOptions: { value: string; label: string }[] = [];
   for (const deck of decks) {
     const tunings = deck.deck_tunings ?? [];
@@ -63,7 +89,14 @@ export function EditBattleModal({ battle, decks, suggestions, onSave, onClose }:
     setSaving(true);
     try {
       const { deckId, tuningId } = parseDeckSelection(selectedValue);
-      await onSave({ opponentDeckName: opponentDeckName.trim(), result, turnOrder, myDeckId: deckId, tuningId });
+      await onSave({
+        opponentDeckName: opponentDeckName.trim(),
+        result,
+        turnOrder,
+        myDeckId: deckId,
+        tuningId,
+        opponentMemo: opponentMemo.trim() || null,
+      });
     } catch (e) {
       console.error(e);
       alert("保存に失敗しました");
@@ -71,6 +104,31 @@ export function EditBattleModal({ battle, decks, suggestions, onSave, onClose }:
       setSaving(false);
     }
   };
+
+  const hasMemo = opponentMemo.trim().length > 0;
+
+  const memoHeaderExtra = (
+    <button
+      type="button"
+      onClick={() => setShowMemo(prev => !prev)}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 4,
+        padding: "3px 8px",
+        borderRadius: 6,
+        background: showMemo ? "rgba(99,102,241,0.1)" : "transparent",
+        border: showMemo ? "1px solid rgba(99,102,241,0.3)" : "1px solid transparent",
+        cursor: "pointer",
+        transition: "all 0.15s",
+      }}
+    >
+      <MemoIcon active={showMemo} hasMemo={hasMemo} />
+      <span style={{ fontSize: 11, color: hasMemo ? "#6366f1" : showMemo ? "#94a3b8" : "#555577" }}>
+        {hasMemo ? opponentMemo.trim() : "メモ"}
+      </span>
+    </button>
+  );
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50" onClick={onClose}>
@@ -93,7 +151,7 @@ export function EditBattleModal({ battle, decks, suggestions, onSave, onClose }:
           </select>
         </div>
 
-        {/* Opponent deck selector */}
+        {/* Opponent deck selector + memo */}
         <div className="space-y-1">
           <OpponentDeckSelector
             majorSuggestions={suggestions.major}
@@ -101,7 +159,65 @@ export function EditBattleModal({ battle, decks, suggestions, onSave, onClose }:
             otherSuggestions={suggestions.other}
             value={opponentDeckName}
             onChange={setOpponentDeckName}
+            headerExtra={memoHeaderExtra}
           />
+
+          {/* Memo panel */}
+          {showMemo && (
+            <div
+              style={{
+                marginTop: 8,
+                background: "#1e2138",
+                borderRadius: 10,
+                border: "0.5px solid #333355",
+                padding: "10px 12px",
+              }}
+            >
+              <input
+                type="text"
+                value={opponentMemo}
+                onChange={(e) => setOpponentMemo(e.target.value)}
+                placeholder="デッキの特徴をメモ（例：クロック入り）"
+                autoFocus
+                style={{
+                  width: "100%",
+                  background: "#232640",
+                  border: "0.5px solid #333355",
+                  borderRadius: 6,
+                  padding: "8px 12px",
+                  fontSize: 13,
+                  color: "#e8e8ec",
+                  outline: "none",
+                }}
+              />
+              {memoSuggestions.length > 0 && (
+                <div style={{ marginTop: 8 }}>
+                  <p style={{ fontSize: 10, color: "#666688", marginBottom: 6 }}>過去のメモ</p>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {memoSuggestions.map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => setOpponentMemo(s)}
+                        style={{
+                          padding: "5px 10px",
+                          fontSize: 11,
+                          borderRadius: 6,
+                          background: opponentMemo === s ? "rgba(99,102,241,0.15)" : "#232640",
+                          border: opponentMemo === s ? "1px solid #6366f1" : "0.5px solid #333355",
+                          color: "#ccccdd",
+                          cursor: "pointer",
+                          transition: "all 0.15s",
+                        }}
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Turn order */}

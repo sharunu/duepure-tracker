@@ -12,6 +12,7 @@ type Battle = {
   id: string;
   my_deck_id: string;
   opponent_deck_name: string;
+  opponent_memo?: string | null;
   result: "win" | "loss";
   turn_order: "first" | "second" | null;
   fought_at: string;
@@ -68,6 +69,7 @@ export function BattleHistoryList({ battles, decks, suggestions, onRefresh }: Pr
     turnOrder: "first" | "second" | null;
     myDeckId: string;
     tuningId?: string | null;
+    opponentMemo?: string | null;
   }) => {
     if (!editingBattle) return;
     await updateBattle(editingBattle.id, fields);
@@ -141,7 +143,7 @@ export function BattleHistoryList({ battles, decks, suggestions, onRefresh }: Pr
                         </span>
                       </div>
 
-                      {/* Bottom row: turn order, time, buttons */}
+                      {/* Bottom row: turn order, memo, time, buttons */}
                       <div className="flex items-center gap-2 mt-1">
                         {b.turn_order && (
                           <span
@@ -152,6 +154,11 @@ export function BattleHistoryList({ battles, decks, suggestions, onRefresh }: Pr
                             }`}
                           >
                             {b.turn_order === "first" ? "先攻" : "後攻"}
+                          </span>
+                        )}
+                        {b.opponent_memo && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-[3px] bg-[rgba(148,163,184,0.1)] text-[#94a3b8] truncate max-w-[120px]">
+                            {b.opponent_memo}
                           </span>
                         )}
                         <span className="text-[10px] text-[#555577]">

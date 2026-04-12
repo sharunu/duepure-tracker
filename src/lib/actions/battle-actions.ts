@@ -7,6 +7,7 @@ export async function recordBattle(formData: {
   turnOrder: "first" | "second" | null;
   format: string;
   tuningId?: string | null;
+  opponentMemo?: string | null;
 }) {
   const supabase = createClient();
   const {
@@ -22,6 +23,7 @@ export async function recordBattle(formData: {
     turn_order: formData.turnOrder,
     format: formData.format,
     tuning_id: formData.tuningId ?? null,
+    opponent_memo: formData.opponentMemo || null,
   });
 
   if (error) throw new Error(error.message);
@@ -41,6 +43,7 @@ export async function updateBattle(
     turnOrder?: "first" | "second" | null;
     myDeckId?: string;
     tuningId?: string | null;
+    opponentMemo?: string | null;
   }
 ) {
   const supabase = createClient();
@@ -58,6 +61,7 @@ export async function updateBattle(
 
   if (fields.myDeckId !== undefined) updateData.my_deck_id = fields.myDeckId;
   if (fields.tuningId !== undefined) updateData.tuning_id = fields.tuningId;
+  if (fields.opponentMemo !== undefined) updateData.opponent_memo = fields.opponentMemo;
 
   const { error } = await supabase
     .from("battles")
@@ -186,6 +190,26 @@ export async function getBattlesByDateRange(format: string, startDate: string, e
   return data ?? [];
 }
 
+export async function getOpponentMemoSuggestions(opponentDeckName: string): Promise<string[]> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+  const { data } = await supabase
+    .from("battles")
+    .select("opponent_memo")
+    .eq("user_id", user.id)
+    .eq("opponent_deck_name", opponentDeckName)
+    .not("opponent_memo", "is", null)
+    .order("fought_at", { ascending: false });
+  if (!data) return [];
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const row of data) {
+    const memo = (row.opponent_memo as string).trim();
+    if (memo && !seen.has(memo)) { seen.add(memo); result.push(memo); }
+  }
+  return result;
+}
 export async function getDailyBattleCounts(format: string, year: number, month: number) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
