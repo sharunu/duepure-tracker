@@ -1,6 +1,6 @@
 "use client";
 
-import { PieChart, Pie, Cell, Sector, ResponsiveContainer } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { getWinRateColor, COLORS } from "@/lib/stats-utils";
 
@@ -22,37 +22,7 @@ interface Props {
 const OTHER_COLOR = "#64748b";
 const RADIAN = Math.PI / 180;
 
-// A. renderActiveShape: expanded Sector only, no text
-const renderActiveShape = (props: any) => {
-  const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props;
-  return (
-    <g>
-      <style>{""
-        + ".active-sector{"
-        + "animation:sectorExpand 200ms ease-out;"
-        + "transform-origin:" + cx + "px " + cy + "px;"
-        + "}"
-        + "@keyframes sectorExpand{"
-        + "from{transform:scale(0.97)}"
-        + "to{transform:scale(1)}"
-        + "}"
-      }</style>
-      <g className="active-sector">
-        <Sector
-          cx={cx}
-          cy={cy}
-          innerRadius={innerRadius}
-          outerRadius={outerRadius + 6}
-          startAngle={startAngle}
-          endAngle={endAngle}
-          fill={fill}
-        />
-      </g>
-    </g>
-  );
-};
-
-// A. Stable label renderer — no activeIndex dependency
+// Stable label renderer — no activeIndex dependency
 const renderLabel = (props: any) => {
   const { cx, cy, midAngle, innerRadius, outerRadius, pct } = props;
   const radius = (innerRadius + outerRadius) / 2;
@@ -79,9 +49,13 @@ export function EncounterDonutChart({ items, otherBreakdown, overallWinRate, ove
   const containerRef = useRef<HTMLDivElement>(null);
   const [chartCenter, setChartCenter] = useState<{ cx: number; cy: number } | null>(null);
   const [otherExpanded, setOtherExpanded] = useState(false);
+  const activeIndexRef = useRef(activeIndex);
 
   const innerRadius = 55;
   const outerRadius = 80;
+
+  // Mirror activeIndex to ref for native event handlers
+  useEffect(() => { activeIndexRef.current = activeIndex; }, [activeIndex]);
 
   // Reset expansion when items change
   useEffect(() => { setOtherExpanded(false); }, [items]);
@@ -129,15 +103,79 @@ export function EncounterDonutChart({ items, otherBreakdown, overallWinRate, ove
     return () => window.removeEventListener("resize", updateCenter);
   }, []);
 
-  // B. Calculate deck name overlay position from active segment
+  // Hit-test: determine which arc segment a point falls on
+  const getArcIndexFromPoint = useCallback((clientX: number, clientY: number): number => {
+    if (!containerRef.current || !chartCenter) return -1;
+    const rect = containerRef.current.getBoundingClientRect();
+    const dx = (clientX - rect.left) - chartCenter.cx;
+    const dy = (clientY - rect.top) - chartCenter.cy;
+    const r = Math.sqrt(dx * dx + dy * dy);
+
+    if (r < innerRadius || r > outerRadius + 10) return -1;
+
+    let angle = Math.atan2(-dy, dx) / RADIAN;
+    angle = ((90 - angle) % 360 + 360) % 360;
+
+    const total = data.reduce((s, d) => s + d.value, 0);
+    if (total === 0) return -1;
+
+    let cumulative = 0;
+    for (let i = 0; i < data.length; i++) {
+      cumulative += (data[i].value / total) * 360;
+      if (angle <= cumulative) return i;
+    }
+    return data.length - 1;
+  }, [chartCenter, data, innerRadius, outerRadius]);
+
+  // Touch handlers
+  const handleTouchStart = useCallback((e: TouchEvent) => {
+    const touch = e.touches[0];
+    const idx = getArcIndexFromPoint(touch.clientX, touch.clientY);
+    if (idx >= 0) {
+      e.preventDefault();
+      setActiveIndex(idx);
+    }
+  }, [getArcIndexFromPoint]);
+
+  const handleTouchMove = useCallback((e: TouchEvent) => {
+    const touch = e.touches[0];
+    const idx = getArcIndexFromPoint(touch.clientX, touch.clientY);
+    if (idx >= 0) {
+      e.preventDefault();
+      if (idx !== activeIndexRef.current) {
+        setActiveIndex(idx);
+      }
+    } else if (activeIndexRef.current >= 0) {
+      setActiveIndex(-1);
+    }
+  }, [getArcIndexFromPoint]);
+
+  const handleTouchEnd = useCallback(() => {
+    setActiveIndex(-1);
+  }, []);
+
+  // Register native touch listeners (passive: false for preventDefault)
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    el.addEventListener("touchstart", handleTouchStart, { passive: false });
+    el.addEventListener("touchmove", handleTouchMove, { passive: false });
+    el.addEventListener("touchend", handleTouchEnd);
+    return () => {
+      el.removeEventListener("touchstart", handleTouchStart);
+      el.removeEventListener("touchmove", handleTouchMove);
+      el.removeEventListener("touchend", handleTouchEnd);
+    };
+  }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
+
+  // Calculate deck name overlay position from active segment
   const getOverlayPosition = useCallback(() => {
     if (activeIndex < 0 || !chartCenter) return null;
 
-    // Compute start/end angles for the active segment
     const total = data.reduce((s, d) => s + d.value, 0);
     if (total === 0) return null;
 
-    let cumulativeAngle = 90; // startAngle
+    let cumulativeAngle = 90;
     for (let i = 0; i < activeIndex; i++) {
       cumulativeAngle -= (data[i].value / total) * 360;
     }
@@ -153,19 +191,22 @@ export function EncounterDonutChart({ items, otherBreakdown, overallWinRate, ove
 
   const overlayPos = getOverlayPosition();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const pieProps: any = {
-    activeIndex: activeIndex >= 0 ? activeIndex : undefined,
-    activeShape: renderActiveShape,
-  };
-
   // Color assignment: "その他" gets a fixed color
   const getColor = (name: string, index: number) =>
     name === "\u305D\u306E\u4ED6" ? OTHER_COLOR : COLORS[index % COLORS.length];
 
   return (
     <div className="space-y-3">
-      <div ref={containerRef} className="relative" style={{ height: 180 }}>
+      <div
+        ref={containerRef}
+        className="relative"
+        style={{
+          height: 180,
+          touchAction: "none",
+          WebkitTapHighlightColor: "transparent",
+          userSelect: "none",
+        }}
+      >
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
@@ -184,10 +225,14 @@ export function EncounterDonutChart({ items, otherBreakdown, overallWinRate, ove
               isAnimationActive={!animationDone}
               label={renderLabel}
               labelLine={false}
-              {...pieProps}
             >
               {data.map((entry, i) => (
-                <Cell key={i} fill={getColor(entry.name, i)} />
+                <Cell
+                  key={i}
+                  fill={getColor(entry.name, i)}
+                  opacity={activeIndex >= 0 && activeIndex !== i ? 0.35 : 1}
+                  style={{ transition: "opacity 150ms" }}
+                />
               ))}
             </Pie>
           </PieChart>
@@ -202,7 +247,7 @@ export function EncounterDonutChart({ items, otherBreakdown, overallWinRate, ove
           <span className="text-xs text-muted-foreground">{overallWins}勝{overallLosses}敗 / {overallTotal}件</span>
         </div>
 
-        {/* B. Deck name HTML overlay — always in front of SVG */}
+        {/* Deck name overlay */}
         {activeIndex >= 0 && overlayPos && (
           <div
             className="absolute pointer-events-none"
@@ -226,7 +271,7 @@ export function EncounterDonutChart({ items, otherBreakdown, overallWinRate, ove
         )}
       </div>
 
-      {/* C. Legend with click support */}
+      {/* Legend with click support */}
       <div className="flex flex-wrap gap-x-4 gap-y-1 justify-center">
         {data.map((d, i) => {
           const color = getColor(d.name, i);

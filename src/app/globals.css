@@ -44,3 +44,5 @@ body {
     padding-bottom: env(safe-area-inset-bottom);
   }
 }
+
+.recharts-wrapper, .recharts-wrapper:focus, .recharts-wrapper *:focus, .recharts-surface:focus { outline: none; -webkit-tap-highlight-color: transparent; }
