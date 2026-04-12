@@ -11,14 +11,14 @@ type Deck = { id: string; name: string; deck_tunings?: Tuning[] };
 type Battle = {
   id: string;
   my_deck_id: string;
+  my_deck_name: string;
   opponent_deck_name: string;
   opponent_memo?: string | null;
   result: "win" | "loss";
   turn_order: "first" | "second" | null;
   fought_at: string;
   tuning_id: string | null;
-  decks: { name: string } | null;
-  deck_tunings: { name: string } | null;
+  tuning_name?: string | null;
 };
 
 type Props = {
@@ -68,7 +68,9 @@ export function BattleHistoryList({ battles, decks, suggestions, onRefresh }: Pr
     result: "win" | "loss";
     turnOrder: "first" | "second" | null;
     myDeckId: string;
+    myDeckName: string;
     tuningId?: string | null;
+    tuningName?: string | null;
     opponentMemo?: string | null;
   }) => {
     if (!editingBattle) return;
@@ -96,8 +98,8 @@ export function BattleHistoryList({ battles, decks, suggestions, onRefresh }: Pr
             {/* Battle cards */}
             <div className="flex flex-col gap-[6px]">
               {group.battles.map((b) => {
-                const deckDisplay = b.decks?.name ?? "?";
-                const tuningDisplay = b.deck_tunings?.name;
+                const deckDisplay = b.my_deck_name ?? "?";
+                const tuningDisplay = b.tuning_name;
                 const isWin = b.result === "win";
 
                 return (

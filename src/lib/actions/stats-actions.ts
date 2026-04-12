@@ -119,7 +119,7 @@ export async function getDetailedPersonalStats(
 
   let query = supabase
     .from("battles")
-    .select("my_deck_id, opponent_deck_name, result, turn_order, fought_at, decks(name)")
+    .select("my_deck_name, opponent_deck_name, result, turn_order, fought_at")
     .eq("user_id", user.id)
     .eq("format", format);
 
@@ -141,7 +141,7 @@ export async function getDetailedPersonalStats(
   const turnOrder: TurnOrderSummary = { firstWins: 0, firstLosses: 0, secondWins: 0, secondLosses: 0, unknownWins: 0, unknownLosses: 0 };
 
   for (const b of battles) {
-    const myDeckName = b.decks?.name ?? "不明";
+    const myDeckName = b.my_deck_name ?? "不明";
     const oppName = b.opponent_deck_name;
     const isWin = b.result === "win";
 
@@ -254,7 +254,7 @@ export async function getDeckDetailStats(
 
   let query = supabase
     .from("battles")
-    .select("opponent_deck_name, result, turn_order, tuning_id, decks(name), deck_tunings(id, name)")
+    .select("opponent_deck_name, result, turn_order, my_deck_name, tuning_name")
     .eq("user_id", user.id)
     .eq("format", format);
 
@@ -271,7 +271,7 @@ export async function getDeckDetailStats(
   if (!battles || battles.length === 0) return { overall: [], overallWins: 0, overallLosses: 0, overallTotal: 0, overallWinRate: 0, tuningStats: [] };
 
   // Filter to only battles with this deck name
-  const filtered = battles.filter(b => b.decks?.name === deckName);
+  const filtered = battles.filter(b => b.my_deck_name === deckName);
   if (filtered.length === 0) return { overall: [], overallWins: 0, overallLosses: 0, overallTotal: 0, overallWinRate: 0, tuningStats: [] };
 
   const safeRate = (w: number, t: number) => t === 0 ? 0 : Math.round((w / t) * 100);
@@ -316,7 +316,7 @@ export async function getDeckDetailStats(
     if (isWin) overallWins++; else overallLosses++;
 
     // Tuning
-    const tuningName = b.deck_tunings?.name ?? "指定なし";
+    const tuningName = b.tuning_name ?? "指定なし";
     const tuningKey = tuningName;
     if (!tuningMap.has(tuningKey)) {
       tuningMap.set(tuningKey, { tuningName, opponents: new Map(), wins: 0, losses: 0, total: 0 });
@@ -378,7 +378,7 @@ export async function getOpponentDeckDetailStats(
 
   let query = supabase
     .from("battles")
-    .select("opponent_deck_name, result, turn_order, decks(name)")
+    .select("opponent_deck_name, result, turn_order, my_deck_name")
     .eq("user_id", user.id)
     .eq("format", format);
 
@@ -428,7 +428,7 @@ export async function getOpponentDeckDetailStats(
   let overallLosses = 0;
 
   for (const b of filtered) {
-    const myDeckName = b.decks?.name ?? "不明";
+    const myDeckName = b.my_deck_name ?? "不明";
     const isWin = b.result === "win";
 
     if (!myDeckMap.has(myDeckName)) myDeckMap.set(myDeckName, newOppDetail());

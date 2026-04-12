@@ -45,10 +45,12 @@ export type Database = {
           fought_at: string
           id: string
           my_deck_id: string
+          my_deck_name: string
           opponent_deck_name: string
           opponent_memo: string | null
           result: string
           tuning_id: string | null
+          tuning_name: string | null
           turn_order: string | null
           user_id: string
         }
@@ -57,10 +59,12 @@ export type Database = {
           fought_at?: string
           id?: string
           my_deck_id: string
+          my_deck_name: string
           opponent_deck_name: string
           opponent_memo?: string | null
           result: string
           tuning_id?: string | null
+          tuning_name?: string | null
           turn_order?: string | null
           user_id: string
         }
@@ -69,10 +73,12 @@ export type Database = {
           fought_at?: string
           id?: string
           my_deck_id?: string
+          my_deck_name?: string
           opponent_deck_name?: string
           opponent_memo?: string | null
           result?: string
           tuning_id?: string | null
+          tuning_name?: string | null
           turn_order?: string | null
           user_id?: string
         }

@@ -10,11 +10,13 @@ type Deck = { id: string; name: string; deck_tunings?: Tuning[] };
 type Battle = {
   id: string;
   my_deck_id: string;
+  my_deck_name: string;
   opponent_deck_name: string;
   opponent_memo?: string | null;
   result: "win" | "loss";
   turn_order: "first" | "second" | null;
   tuning_id?: string | null;
+  tuning_name?: string | null;
 };
 
 type Props = {
@@ -26,7 +28,9 @@ type Props = {
     result: "win" | "loss";
     turnOrder: "first" | "second" | null;
     myDeckId: string;
+    myDeckName: string;
     tuningId?: string | null;
+    tuningName?: string | null;
     opponentMemo?: string | null;
   }) => Promise<void>;
   onClose: () => void;
@@ -51,9 +55,12 @@ const MemoIcon = ({ active, hasMemo }: { active: boolean; hasMemo: boolean }) =>
 );
 
 export function EditBattleModal({ battle, decks, suggestions, onSave, onClose }: Props) {
-  const initialValue = battle.tuning_id
-    ? `${battle.my_deck_id}:${battle.tuning_id}`
-    : battle.my_deck_id;
+  const recordedDeckExists = decks.some(d => d.name === battle.my_deck_name);
+  const initialValue = !recordedDeckExists
+    ? `__snapshot__:${battle.my_deck_name}`
+    : battle.tuning_id
+      ? `${battle.my_deck_id}:${battle.tuning_id}`
+      : battle.my_deck_id;
   const [selectedValue, setSelectedValue] = useState(initialValue);
   const [opponentDeckName, setOpponentDeckName] = useState(battle.opponent_deck_name);
   const [opponentMemo, setOpponentMemo] = useState(battle.opponent_memo ?? "");
@@ -72,7 +79,25 @@ export function EditBattleModal({ battle, decks, suggestions, onSave, onClose }:
     }
   }, [opponentDeckName]);
 
+  const deckNameMap = new Map<string, string>();
+  const tuningNameMap = new Map<string, string>();
+  for (const deck of decks) {
+    deckNameMap.set(deck.id, deck.name);
+    for (const t of (deck.deck_tunings ?? [])) {
+      tuningNameMap.set(t.id, t.name);
+    }
+  }
+
   const deckOptions: { value: string; label: string }[] = [];
+
+  // 記録時のデッキ名が現在のデッキリストに存在しない場合、先頭に追加
+  if (!recordedDeckExists) {
+    deckOptions.push({
+      value: `__snapshot__:${battle.my_deck_name}`,
+      label: `${battle.my_deck_name}（記録時）`,
+    });
+  }
+
   for (const deck of decks) {
     const tunings = deck.deck_tunings ?? [];
     if (tunings.length === 0) {
@@ -88,13 +113,32 @@ export function EditBattleModal({ battle, decks, suggestions, onSave, onClose }:
   const handleSave = async () => {
     setSaving(true);
     try {
-      const { deckId, tuningId } = parseDeckSelection(selectedValue);
+      let deckId: string;
+      let tuningId: string | null;
+      let myDeckName: string;
+      let tuningName: string | null;
+
+      if (selectedValue.startsWith("__snapshot__:")) {
+        deckId = battle.my_deck_id;
+        tuningId = battle.tuning_id ?? null;
+        myDeckName = battle.my_deck_name;
+        tuningName = battle.tuning_name ?? null;
+      } else {
+        const parsed = parseDeckSelection(selectedValue);
+        deckId = parsed.deckId;
+        tuningId = parsed.tuningId;
+        myDeckName = deckNameMap.get(deckId) ?? "";
+        tuningName = tuningId ? tuningNameMap.get(tuningId) ?? null : null;
+      }
+
       await onSave({
         opponentDeckName: opponentDeckName.trim(),
         result,
         turnOrder,
         myDeckId: deckId,
+        myDeckName,
         tuningId,
+        tuningName,
         opponentMemo: opponentMemo.trim() || null,
       });
     } catch (e) {

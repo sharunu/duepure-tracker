@@ -2,11 +2,13 @@ import { createClient } from "@/lib/supabase/client";
 
 export async function recordBattle(formData: {
   myDeckId: string;
+  myDeckName: string;
   opponentDeckName: string;
   result: "win" | "loss";
   turnOrder: "first" | "second" | null;
   format: string;
   tuningId?: string | null;
+  tuningName?: string | null;
   opponentMemo?: string | null;
 }) {
   const supabase = createClient();
@@ -18,11 +20,13 @@ export async function recordBattle(formData: {
   const { error } = await supabase.from("battles").insert({
     user_id: user.id,
     my_deck_id: formData.myDeckId,
+    my_deck_name: formData.myDeckName,
     opponent_deck_name: formData.opponentDeckName,
     result: formData.result,
     turn_order: formData.turnOrder,
     format: formData.format,
     tuning_id: formData.tuningId ?? null,
+    tuning_name: formData.tuningName ?? null,
     opponent_memo: formData.opponentMemo || null,
   });
 
@@ -42,7 +46,9 @@ export async function updateBattle(
     result?: "win" | "loss";
     turnOrder?: "first" | "second" | null;
     myDeckId?: string;
+    myDeckName?: string;
     tuningId?: string | null;
+    tuningName?: string | null;
     opponentMemo?: string | null;
   }
 ) {
@@ -60,7 +66,9 @@ export async function updateBattle(
   }
 
   if (fields.myDeckId !== undefined) updateData.my_deck_id = fields.myDeckId;
+  if (fields.myDeckName !== undefined) updateData.my_deck_name = fields.myDeckName;
   if (fields.tuningId !== undefined) updateData.tuning_id = fields.tuningId;
+  if (fields.tuningName !== undefined) updateData.tuning_name = fields.tuningName;
   if (fields.opponentMemo !== undefined) updateData.opponent_memo = fields.opponentMemo;
 
   const { error } = await supabase
@@ -97,7 +105,7 @@ export async function getRecentBattles(limit = 50, format: string = "ND") {
 
   const { data } = await supabase
     .from("battles")
-    .select("*, decks(name), deck_tunings(name)")
+    .select("*")
     .eq("user_id", user.id)
     .eq("format", format)
     .order("fought_at", { ascending: false })
@@ -165,7 +173,7 @@ export async function getAllBattles(format: string = "ND") {
 
   const { data } = await supabase
     .from("battles")
-    .select("id, opponent_deck_name, result, fought_at, decks(name)")
+    .select("id, opponent_deck_name, result, fought_at, my_deck_name")
     .eq("user_id", user.id)
     .eq("format", format)
     .order("fought_at", { ascending: false });
@@ -181,7 +189,7 @@ export async function getBattlesByDateRange(format: string, startDate: string, e
   endPlusOne.setDate(endPlusOne.getDate() + 1);
   const { data } = await supabase
     .from("battles")
-    .select("*, decks(name), deck_tunings(name)")
+    .select("*")
     .eq("user_id", user.id)
     .eq("format", format)
     .gte("fought_at", startDate)

@@ -5,7 +5,7 @@ type Battle = {
   opponent_deck_name: string;
   result: string;
   fought_at: string;
-  decks: { name: string } | null;
+  my_deck_name: string;
 };
 
 type Props = {
@@ -69,7 +69,7 @@ export function BattleIntervalModal({ open, onClose, battles, onSelect, currentT
                       {b.result === "win" ? "勝" : "敗"}
                     </span>
                     <span className="truncate">
-                      {b.decks?.name ?? "?"} vs {b.opponent_deck_name}
+                      {b.my_deck_name ?? "?"} vs {b.opponent_deck_name}
                     </span>
                   </div>
                   <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">

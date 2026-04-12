@@ -15,13 +15,13 @@ type Deck = { id: string; name: string; deck_tunings?: Tuning[] };
 type Battle = {
   id: string;
   my_deck_id: string;
+  my_deck_name: string;
   opponent_deck_name: string;
   result: "win" | "loss";
   turn_order: "first" | "second" | null;
   fought_at: string;
   tuning_id: string | null;
-  decks: { name: string } | null;
-  deck_tunings: { name: string } | null;
+  tuning_name?: string | null;
 };
 
 export default function BattlesPage() {
@@ -86,14 +86,14 @@ export default function BattlesPage() {
   const deckNames = useMemo(() => {
     const names = new Set<string>();
     for (const b of battles) {
-      if (b.decks?.name) names.add(b.decks.name);
+      if (b.my_deck_name) names.add(b.my_deck_name);
     }
     return Array.from(names);
   }, [battles]);
 
   const filteredBattles = useMemo(() => {
     if (!selectedDeck) return battles;
-    return battles.filter((b) => b.decks?.name === selectedDeck);
+    return battles.filter((b) => b.my_deck_name === selectedDeck);
   }, [battles, selectedDeck]);
 
   return (

@@ -27,7 +27,7 @@ type BattleForModal = {
   opponent_deck_name: string;
   result: string;
   fought_at: string;
-  decks: { name: string } | null;
+  my_deck_name: string;
 };
 
 type Props = {
@@ -146,11 +146,13 @@ export function BattleRecordForm({
     try {
       await recordBattle({
         myDeckId: deckId,
+        myDeckName: deckNameMap.get(deckId) ?? "",
         opponentDeckName: opponentDeck.trim(),
         result,
         turnOrder,
         format,
         tuningId,
+        tuningName: tuningId ? tuningNameMap.get(tuningId) ?? null : null,
         opponentMemo: opponentMemo.trim() || null,
       });
       setLastResult(result);
@@ -186,6 +188,15 @@ export function BattleRecordForm({
       setMeasureSince(timestamp);
     }
   };
+
+  const deckNameMap = new Map<string, string>();
+  const tuningNameMap = new Map<string, string>();
+  for (const deck of decks) {
+    deckNameMap.set(deck.id, deck.name);
+    for (const t of (deck.deck_tunings ?? [])) {
+      tuningNameMap.set(t.id, t.name);
+    }
+  }
 
   const deckOptions: { value: string; label: string }[] = [];
   for (const deck of decks) {
