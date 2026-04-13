@@ -109,8 +109,8 @@ export default function DetectionRulesPage() {
                     editEnabled[rule.rule_key] ? "bg-[#6366f1]" : "bg-[#333355]"
                   }`}
                 >
-                  <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${
-                    editEnabled[rule.rule_key] ? "translate-x-5" : "translate-x-0.5"
+                  <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all duration-200 ${
+                    editEnabled[rule.rule_key] ? "left-[22px]" : "left-[2px]"
                   }`} />
                 </button>
               </div>

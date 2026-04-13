@@ -431,8 +431,8 @@ function StatsPageInner() {
                     premiumFilter ? "bg-[#6366f1]" : "bg-[#333355]"
                   } ${userStage !== 1 ? "opacity-40 cursor-not-allowed" : "cursor-pointer"}`}
                 >
-                  <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${
-                    premiumFilter ? "translate-x-5" : "translate-x-0.5"
+                  <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all duration-200 ${
+                    premiumFilter ? "left-[22px]" : "left-[2px]"
                   }`} />
                 </button>
               </div>
