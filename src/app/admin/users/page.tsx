@@ -14,11 +14,14 @@ type UserRow = {
   battle_count: number;
 };
 
+type GuestFilter = "non-guest" | "guest";
+
 export default function AdminUsersPage() {
   const router = useRouter();
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [guestFilter, setGuestFilter] = useState<GuestFilter>("non-guest");
 
   useEffect(() => {
     getAdminUserList()
@@ -33,15 +36,19 @@ export default function AdminUsersPage() {
       });
   }, []);
 
-  const filtered = search.trim()
-    ? users.filter((u) => {
-        const q = search.trim().toLowerCase();
-        return (
-          (u.display_name?.toLowerCase().includes(q)) ||
-          (u.email?.toLowerCase().includes(q))
-        );
-      })
-    : users;
+  const filtered = users
+    .filter((u) => guestFilter === "guest" ? u.is_guest : !u.is_guest)
+    .filter((u) => {
+      if (!search.trim()) return true;
+      const q = search.trim().toLowerCase();
+      return (
+        (u.display_name?.toLowerCase().includes(q)) ||
+        (u.email?.toLowerCase().includes(q))
+      );
+    });
+
+  const guestCount = users.filter(u => u.is_guest).length;
+  const nonGuestCount = users.filter(u => !u.is_guest).length;
 
   return (
     <div className="min-h-screen px-4 pt-6 pb-8 max-w-lg mx-auto">
@@ -51,6 +58,23 @@ export default function AdminUsersPage() {
         </button>
         <h1 className="text-[20px] font-medium">ユーザー一覧</h1>
         <span className="text-[12px] text-gray-500 ml-auto">{users.length}人</span>
+      </div>
+
+      <div className="flex rounded-full bg-muted/30 p-1 mb-3">
+        {(["non-guest", "guest"] as const).map((f) => (
+          <button
+            key={f}
+            type="button"
+            onClick={() => setGuestFilter(f)}
+            className={`flex-1 rounded-full px-3 py-2 text-sm font-medium transition-colors min-h-[40px] ${
+              guestFilter === f
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground"
+            }`}
+          >
+            {f === "non-guest" ? `ゲスト以外 (${nonGuestCount})` : `ゲストのみ (${guestCount})`}
+          </button>
+        ))}
       </div>
 
       <div className="relative mb-4">

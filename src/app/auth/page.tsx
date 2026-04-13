@@ -74,16 +74,6 @@ export default function AuthPage() {
     }
   };
 
-  const signInAsGuest = async () => {
-    setLoading(true);
-    const { error } = await supabase.auth.signInAnonymously();
-    setLoading(false);
-    if (error) {
-      setMessage("認証に失敗しました。もう一度お試しください。");
-    } else {
-      window.location.href = "/battle";
-    }
-  };
 
   const handleResetPassword = async () => {
     if (!email) {
@@ -233,20 +223,6 @@ export default function AuthPage() {
 
         {mode !== "reset" && (
           <>
-            <div className="flex items-center gap-3">
-              <div className="flex-1 h-px" style={{ backgroundColor: "rgba(100,100,150,0.2)" }} />
-              <span className="text-[12px] text-gray-500">or</span>
-              <div className="flex-1 h-px" style={{ backgroundColor: "rgba(100,100,150,0.2)" }} />
-            </div>
-
-            <button
-              onClick={signInAsGuest}
-              disabled={loading}
-              className="w-full rounded-[10px] bg-[#232640] px-4 py-3 text-[13px] text-gray-400 hover:opacity-90 transition-opacity"
-              style={{ border: "0.5px solid rgba(100,100,150,0.2)" }}
-            >
-              ゲストとして使う
-            </button>
           </>
         )}
 
@@ -255,12 +231,11 @@ export default function AuthPage() {
             {message}
           </p>
         )}
-
-        <p className="text-center text-[11px] text-gray-500">
-          {mode === "reset"
-            ? "メールが届かない場合は、迷惑メールフォルダをご確認ください。"
-            : "ゲストは個人記録のみ。環境統計・投票への参加にはログインが必要です。"}
-        </p>
+        {mode === "reset" && (
+          <p className="text-center text-[11px] text-gray-500">
+            メールが届かない場合は、迷惑メールフォルダをご確認ください。
+          </p>
+        )}
 
         <div className="flex justify-center gap-4 pt-2">
           <Link href="/terms" className="text-[11px] text-gray-500 hover:text-gray-400">

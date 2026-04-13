@@ -6,6 +6,7 @@ type Props = {
   scope: Scope;
   setScope: (s: Scope) => void;
   teamEnabled?: boolean;
+  isGuest?: boolean;
 };
 
 const labels: Record<Scope, string> = {
@@ -14,11 +15,11 @@ const labels: Record<Scope, string> = {
   global: "全体",
 };
 
-export function ScopeSelector({ scope, setScope, teamEnabled = false }: Props) {
+export function ScopeSelector({ scope, setScope, teamEnabled = false, isGuest = false }: Props) {
   return (
     <div className="flex rounded-full bg-muted/30 p-1">
       {(["personal", "team", "global"] as const).map((s) => {
-        const disabled = s === "team" && !teamEnabled;
+        const disabled = (s === "team" && (!teamEnabled || isGuest)) || (s === "global" && isGuest);
         return (
           <button
             key={s}

@@ -483,11 +483,14 @@ export default function AccountPage() {
             {isAdmin && (              <div                className="bg-[#232640] rounded-[10px] px-4 py-[14px] flex items-center justify-between cursor-pointer"                onClick={() => router.push("/admin")}              >                <div>                  <p className="text-[14px]">管理者画面</p>                  <p className="text-[11px] text-gray-500 mt-0.5">ユーザー閲覧・フィードバック確認</p>                </div>                <span className="text-gray-500 text-[18px]">&rsaquo;</span>              </div>            )}
             {/* ご意見・バグ報告 */}
             <div
-              className="bg-[#232640] rounded-[10px] px-4 py-[14px] flex items-center justify-between cursor-pointer"
-              onClick={() => setFeedbackOpen(true)}
+              className={"bg-[#232640] rounded-[10px] px-4 py-[14px] flex items-center justify-between " + (isGuest ? "opacity-50 cursor-not-allowed" : "cursor-pointer")}
+              onClick={() => !isGuest && setFeedbackOpen(true)}
             >
-              <p className="text-[14px]">ご意見・バグ報告</p>
-              <span className="text-gray-500 text-[18px]">&rsaquo;</span>
+              <div>
+                <p className="text-[14px]">ご意見・バグ報告</p>
+                {isGuest && <p className="text-[11px] text-gray-500 mt-0.5">アカウント登録するとご利用いただけます</p>}
+              </div>
+              {!isGuest && <span className="text-gray-500 text-[18px]">&rsaquo;</span>}
             </div>
 
             {/* 利用規約 */}

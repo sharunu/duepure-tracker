@@ -27,7 +27,7 @@ import { getWinRateColor } from "@/lib/stats-utils";
 import { TurnOrderCards } from "@/components/stats/TurnOrderCards";
 import { ShareButton } from "@/components/share/ShareButton";
 import type { StatsShareData } from "@/components/share/ShareButton";
-import { getUserStage } from "@/lib/actions/account-actions";
+import { getUserStage, getAuthProvider } from "@/lib/actions/account-actions";
 
 function StatsPageInner() {
   const searchParams = useSearchParams();
@@ -42,6 +42,7 @@ function StatsPageInner() {
   const [error, setError] = useState<string | null>(null);
   const [userStage, setUserStage] = useState<number>(2);
   const [premiumFilter, setPremiumFilter] = useState(false);
+  const [isGuest, setIsGuest] = useState(false);
   const [battleCounts, setBattleCounts] = useState<Record<string, number>>({});
 
   const [startDate, setStartDate] = useState(() => {
@@ -75,6 +76,7 @@ function StatsPageInner() {
       setVisibleTeams(teams.filter((t) => !t.hidden));
     });
     getUserStage().then(setUserStage);
+    getAuthProvider().then(p => setIsGuest(p === "anonymous"));
   }, []);
 
   // Load team members when activeTeamId changes
@@ -413,7 +415,12 @@ function StatsPageInner() {
               battleCounts={battleCounts}
               onMonthChange={loadCounts}
             />
-            <ScopeSelector scope={scope} setScope={setScope} teamEnabled={visibleTeams.length > 0} />
+            <ScopeSelector scope={scope} setScope={setScope} teamEnabled={visibleTeams.length > 0} isGuest={isGuest} />
+            {isGuest && (
+              <div className="bg-[#232640] rounded-[8px] px-3 py-2.5 text-center" style={{ border: "0.5px solid rgba(100,100,150,0.2)" }}>
+                <p className="text-[11px] text-gray-400">全体統計やご意見・バグ報告は<a href="/auth" className="text-[#6366f1] underline ml-0.5">アカウント登録</a>するとご利用いただけます</p>
+              </div>
+            )}
             {scope === "global" && (
               <div className="flex items-center justify-between bg-[#232640] rounded-[8px] px-3 py-2.5" style={{ border: "0.5px solid rgba(100,100,150,0.2)" }}>
                 <div className="min-w-0 flex-1">
