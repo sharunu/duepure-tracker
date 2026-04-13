@@ -86,7 +86,10 @@ export async function getXConnectionStatus(): Promise<{
     .single();
 
   if (profile?.x_username) {
-    const source = user.app_metadata?.provider === "twitter" ? "login" : "linked";
+    // 実際のidentitiesを確認: Twitterが唯一のidentityの場合のみ "login"
+    const identities = user.identities ?? [];
+    const isTwitterOnly = identities.length > 0 && identities.every(i => i.provider === "twitter");
+    const source = isTwitterOnly ? "login" : "linked";
     return { isConnected: true, xUsername: profile.x_username, source };
   }
 
@@ -132,14 +135,29 @@ export async function syncXAccountFromAuth(): Promise<boolean> {
   return true;
 }
 
-export async function unlinkXAccount(): Promise<void> {
+export async function unlinkXAccount(): Promise<{ success: boolean; error?: string }> {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return;
+  if (!user) return { success: false, error: "not_authenticated" };
+
+  // Auth層からTwitter identityを削除
+  const twitterIdentity = user.identities?.find(i => i.provider === "twitter");
+  if (twitterIdentity) {
+    // 唯一のidentityの場合は解除不可（ログインできなくなる）
+    if (user.identities && user.identities.length <= 1) {
+      return { success: false, error: "only_identity" };
+    }
+    const { error } = await supabase.auth.unlinkIdentity(twitterIdentity);
+    if (error) return { success: false, error: error.message };
+  }
+
+  // DB更新
   await supabase
     .from("profiles")
     .update({ x_user_id: null, x_username: null })
     .eq("id", user.id);
+
+  return { success: true };
 }
 
 export async function getUserStage(): Promise<number> {

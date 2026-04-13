@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { getDisplayName, updateDisplayName, changePassword, getAuthProvider, getEmail, deleteAccount, getXConnectionStatus, syncXAccountFromAuth, unlinkXAccount, getUserStage } from "@/lib/actions/account-actions";
+import { getDisplayName, updateDisplayName, changePassword, getAuthProvider, getEmail, deleteAccount, getXConnectionStatus, unlinkXAccount, getUserStage } from "@/lib/actions/account-actions";
 import { submitFeedback } from "@/lib/actions/feedback-actions";
 import { checkIsAdmin } from "@/lib/actions/admin-actions";
 import { BottomNav } from "@/components/layout/BottomNav";
@@ -63,17 +63,7 @@ export default function AccountPage() {
         setXUsername(xStatus.xUsername);
         setXSource(xStatus.source);
 
-        // X未連携の場合、auth identitiesからTwitter情報を検出して同期を試みる
-        // (Xログイン初回、linkIdentity完了後、いずれのケースもカバー)
-        if (!xStatus.isConnected) {
-          const synced = await syncXAccountFromAuth();
-          if (synced) {
-            const updated = await getXConnectionStatus();
-            setXConnected(updated.isConnected);
-            setXUsername(updated.xUsername);
-            setXSource(updated.source);
-          }
-        }
+
       } catch {
         console.error("Failed to load account data");
       } finally {
@@ -241,12 +231,18 @@ export default function AccountPage() {
   const handleUnlinkX = async () => {
     setXLoading(true);
     try {
-      await unlinkXAccount();
-      setXConnected(false);
-      setXUsername(null);
-      setXSource(null);
+      const result = await unlinkXAccount();
+      if (result.success) {
+        setXConnected(false);
+        setXUsername(null);
+        setXSource(null);
+      } else if (result.error === "only_identity") {
+        alert("X連携はこのアカウントの唯一のログイン方法のため解除できません");
+      } else {
+        alert("X連携の解除に失敗しました");
+      }
     } catch {
-      // エラー時は何もしない
+      alert("X連携の解除に失敗しました");
     }
     setXLoading(false);
   };
@@ -347,7 +343,7 @@ export default function AccountPage() {
           <div className="mt-5">
             <p className="text-[12px] text-gray-500 mb-2">X連携</p>
             <div className="bg-[#232640] rounded-[10px] px-4 py-[14px]">
-              {provider === "twitter" ? (
+              {xSource === "login" && xConnected ? (
                 // パターンA: Xでログインしているユーザー
                 <div className="flex items-center justify-between">
                   <div>
