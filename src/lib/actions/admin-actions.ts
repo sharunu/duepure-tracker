@@ -560,3 +560,134 @@ export async function runDetectionScan(): Promise<number> {
   if (error) throw new Error(error.message);
   return (data as number) ?? 0;
 }
+
+// ============================================================
+// 品質スコアリング管理
+// ============================================================
+
+export async function getQualityScoringRules() {
+  await requireAdmin();
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("quality_scoring_rules")
+    .select("*")
+    .order("category")
+    .order("rule_key");
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+export async function updateQualityScoringRule(
+  ruleKey: string,
+  params: Record<string, number>,
+  score: number,
+  isEnabled: boolean
+) {
+  const supabase = await requireAdmin();
+  const { error } = await supabase
+    .from("quality_scoring_rules")
+    .update({
+      params,
+      score,
+      is_enabled: isEnabled,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("rule_key", ruleKey);
+  if (error) throw new Error(error.message);
+}
+
+export async function getQualityScoreThreshold(): Promise<number> {
+  await requireAdmin();
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("quality_scoring_settings")
+    .select("value")
+    .eq("key", "threshold")
+    .single();
+  return data?.value ? Number(data.value) : 40;
+}
+
+export async function updateQualityScoreThreshold(threshold: number) {
+  const supabase = await requireAdmin();
+  const { error } = await supabase
+    .from("quality_scoring_settings")
+    .update({ value: threshold as unknown as string, updated_at: new Date().toISOString() })
+    .eq("key", "threshold");
+  if (error) throw new Error(error.message);
+}
+
+export async function getQualityScoreSnapshot(userId: string) {
+  await requireAdmin();
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("quality_score_snapshots")
+    .select("*")
+    .eq("user_id", userId)
+    .single();
+  return data;
+}
+
+export async function getQualityAdminBonus(userId: string) {
+  await requireAdmin();
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("quality_admin_bonus")
+    .select("*")
+    .eq("user_id", userId)
+    .single();
+  return data;
+}
+
+export async function upsertQualityAdminBonus(
+  userId: string,
+  score: number,
+  memo: string
+) {
+  const supabase = await requireAdmin();
+  const { data: { user } } = await supabase.auth.getUser();
+  const { error } = await supabase
+    .from("quality_admin_bonus")
+    .upsert(
+      {
+        user_id: userId,
+        score,
+        memo,
+        granted_by: user!.id,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id" }
+    );
+  if (error) throw new Error(error.message);
+}
+
+export async function deleteQualityAdminBonus(userId: string) {
+  const supabase = await requireAdmin();
+  const { error } = await supabase
+    .from("quality_admin_bonus")
+    .delete()
+    .eq("user_id", userId);
+  if (error) throw new Error(error.message);
+}
+
+export async function runQualityScoring(): Promise<{
+  calculated: number;
+  promoted: number;
+  demoted: number;
+  threshold: number;
+}> {
+  const supabase = await requireAdmin();
+  const { data, error } = await supabase.rpc("run_quality_scoring", {
+    p_auto_update: true,
+  });
+  if (error) throw new Error(error.message);
+  return data as { calculated: number; promoted: number; demoted: number; threshold: number };
+}
+
+export async function calculateSingleUserScore(userId: string) {
+  const supabase = await requireAdmin();
+  const { data, error } = await supabase.rpc("calculate_quality_score", {
+    p_user_id: userId,
+  });
+  if (error) throw new Error(error.message);
+  return data as { total_score: number; breakdown: Record<string, number>; eligible: boolean };
+}

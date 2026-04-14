@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, Users, MessageSquare, Swords, ShieldAlert } from "lucide-react";
+import { ChevronLeft, Users, MessageSquare, Swords, ShieldAlert, Star } from "lucide-react";
 import { getDetectionAlertCount } from "@/lib/actions/admin-actions";
 
 const cards = [
@@ -47,6 +47,22 @@ export default function AdminDashboardPage() {
             <p className="text-[12px] text-gray-500 mt-0.5">
               {alertCount > 0 ? `未解決 ${alertCount}件` : "不正検知・アラート管理"}
             </p>
+          </div>
+          <span className="text-gray-500 text-[18px] ml-auto shrink-0">&rsaquo;</span>
+        </button>
+
+
+        {/* 品質スコアリング */}
+        <button
+          onClick={() => router.push("/admin/quality-scoring")}
+          className="w-full bg-[#232640] rounded-[10px] px-4 py-4 flex items-center gap-4 text-left hover:bg-[#2a2d4a] transition-colors"
+        >
+          <div className="w-10 h-10 rounded-[8px] bg-[rgba(234,179,8,0.1)] flex items-center justify-center shrink-0">
+            <Star size={20} className="text-yellow-500" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[14px] font-medium">品質スコアリング</p>
+            <p className="text-[12px] text-gray-500 mt-0.5">優良ユーザーの自動判定・ルール管理</p>
           </div>
           <span className="text-gray-500 text-[18px] ml-auto shrink-0">&rsaquo;</span>
         </button>

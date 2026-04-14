@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.4"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       battles: {
@@ -402,6 +427,140 @@ export type Database = {
         }
         Relationships: []
       }
+      quality_admin_bonus: {
+        Row: {
+          created_at: string
+          granted_by: string
+          id: string
+          memo: string | null
+          score: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          granted_by: string
+          id?: string
+          memo?: string | null
+          score?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          granted_by?: string
+          id?: string
+          memo?: string | null
+          score?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quality_admin_bonus_granted_by_fkey"
+            columns: ["granted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quality_admin_bonus_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quality_score_snapshots: {
+        Row: {
+          breakdown: Json
+          calculated_at: string
+          id: string
+          total_score: number
+          user_id: string
+        }
+        Insert: {
+          breakdown?: Json
+          calculated_at?: string
+          id?: string
+          total_score?: number
+          user_id: string
+        }
+        Update: {
+          breakdown?: Json
+          calculated_at?: string
+          id?: string
+          total_score?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quality_score_snapshots_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quality_scoring_rules: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          display_name: string
+          id: string
+          is_enabled: boolean
+          params: Json
+          rule_key: string
+          score: number
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string | null
+          display_name: string
+          id?: string
+          is_enabled?: boolean
+          params?: Json
+          rule_key: string
+          score?: number
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          display_name?: string
+          id?: string
+          is_enabled?: boolean
+          params?: Json
+          rule_key?: string
+          score?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      quality_scoring_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
+      }
       team_members: {
         Row: {
           discord_username: string
@@ -525,6 +684,7 @@ export type Database = {
         Args: { p_deck_name: string; p_format: string }
         Returns: undefined
       }
+      calculate_quality_score: { Args: { p_user_id: string }; Returns: Json }
       delete_own_account: { Args: never; Returns: undefined }
       detect_extreme_winrate: {
         Args: { p_params: Json }
@@ -850,6 +1010,7 @@ export type Database = {
       }
       run_daily_opponent_deck_batch: { Args: never; Returns: undefined }
       run_detection_scan: { Args: never; Returns: number }
+      run_quality_scoring: { Args: { p_auto_update?: boolean }; Returns: Json }
       sync_team_membership: {
         Args: { p_discord_username: string; p_guilds: Json; p_user_id: string }
         Returns: undefined
@@ -982,6 +1143,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {},
   },

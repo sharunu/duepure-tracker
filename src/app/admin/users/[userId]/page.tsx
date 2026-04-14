@@ -11,6 +11,7 @@ import { AdminUserBattles } from "@/components/admin/AdminUserBattles";
 import { AdminUserStats } from "@/components/admin/AdminUserStats";
 import { AdminUserStageControl } from "@/components/admin/AdminUserStageControl";
 import { AdminUserStageHistory } from "@/components/admin/AdminUserStageHistory";
+import { AdminUserQualityScore } from "@/components/admin/AdminUserQualityScore";
 
 type Tab = "decks" | "battles" | "stats" | "manage";
 
@@ -86,7 +87,12 @@ export default function AdminUserDetailPage() {
       {ready && tab === "decks" && <AdminUserDecks userId={userId} format={format} />}
       {ready && tab === "battles" && <AdminUserBattles userId={userId} format={format} />}
       {ready && tab === "stats" && <AdminUserStats userId={userId} format={format} />}
-      {tab === "manage" && <AdminUserStageHistory userId={userId} />}
+      {tab === "manage" && (
+        <>
+          <AdminUserQualityScore userId={userId} />
+          <AdminUserStageHistory userId={userId} />
+        </>
+      )}
     </div>
   );
 }

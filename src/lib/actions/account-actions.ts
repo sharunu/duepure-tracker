@@ -168,3 +168,19 @@ export async function getUserStage(): Promise<number> {
     .from("profiles").select("stage").eq("id", user.id).single();
   return data?.stage ?? 2;
 }
+
+export async function getMyQualityScore(): Promise<{
+  totalScore: number;
+  breakdown: Record<string, number>;
+} | null> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data } = await supabase
+    .from("quality_score_snapshots")
+    .select("total_score, breakdown")
+    .eq("user_id", user.id)
+    .single();
+  if (!data) return null;
+  return { totalScore: data.total_score, breakdown: data.breakdown as Record<string, number> };
+}
