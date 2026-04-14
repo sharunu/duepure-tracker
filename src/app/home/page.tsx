@@ -184,20 +184,21 @@ function HomePageInner() {
     );
   }
 
-  const renderTeamCard = (team: TeamWithVisibility, isHiddenSection: boolean) => {
+  const renderTeamCard = (team: TeamWithVisibility) => {
     const isActive = activeTeamId === team.id;
+    const isShared = !team.hidden;
     return (
       <div key={team.id} className="flex items-center gap-2">
         <button
-          onClick={() => !isHiddenSection && setActiveTeamId(team.id)}
+          onClick={() => isShared && setActiveTeamId(team.id)}
           className={`flex-1 flex items-center gap-3 rounded-xl border p-3 transition-colors text-left ${
-            isHiddenSection
+            !isShared
               ? "border-muted/20 opacity-50"
               : isActive
-              ? "border-primary/50 bg-primary/10"
-              : "border-muted/30 hover:border-muted/50"
+              ? "border-success/50 bg-success/5"
+              : "border-success/20 hover:border-success/40"
           }`}
-          disabled={isHiddenSection}
+          disabled={!isShared}
         >
           {team.icon_url ? (
             <img
@@ -213,26 +214,27 @@ function HomePageInner() {
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium truncate">{team.name}</p>
           </div>
-          {isActive && !isHiddenSection && (
+          {isShared && (
+            <span className="text-[10px] bg-success/15 text-success px-1.5 py-0.5 rounded-full font-medium flex-shrink-0">
+              共有中
+            </span>
+          )}
+          {isActive && isShared && (
             <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
           )}
         </button>
         <button
           onClick={() => handleToggleVisibility(team.id, team.hidden)}
-          className="p-2 rounded-lg hover:bg-muted/30 transition-colors text-muted-foreground hover:text-foreground flex-shrink-0"
-          title={team.hidden ? "再表示" : "非表示にする"}
+          className="flex-shrink-0 p-1"
+          title={team.hidden ? "共有を開始" : "共有を停止"}
         >
-          {team.hidden ? (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-              <line x1="1" y1="1" x2="23" y2="23" />
-            </svg>
-          ) : (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-              <circle cx="12" cy="12" r="3" />
-            </svg>
-          )}
+          <div className={`w-10 h-5 rounded-full transition-colors duration-200 flex items-center ${
+            isShared ? "bg-success" : "bg-muted/50"
+          }`}>
+            <span className={`w-4 h-4 rounded-full shadow-sm transition-transform duration-200 mx-0.5 ${
+              isShared ? "translate-x-5 bg-white" : "translate-x-0 bg-muted-foreground/50"
+            }`} />
+          </div>
         </button>
       </div>
     );
@@ -337,7 +339,7 @@ function HomePageInner() {
               </div>
 
               <p className="text-xs text-muted-foreground">
-                選択中のチームメンバーと戦績を共有できます。戦績タブでチーム統計を確認しましょう。
+                戦績を共有するDiscordサーバーを選択してください
               </p>
 
               {teams.length === 0 ? (
@@ -345,16 +347,21 @@ function HomePageInner() {
                   所属チームがありません
                 </p>
               ) : (
-                <div className="space-y-2">
-                  {/* Visible teams */}
-                  {visibleTeams.map((team) => renderTeamCard(team, false))}
+                <div className="space-y-4">
+                  {/* Shared teams section */}
+                  {visibleTeams.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-xs font-bold text-success">戦績を共有中</p>
+                      {visibleTeams.map((team) => renderTeamCard(team))}
+                    </div>
+                  )}
 
-                  {/* Hidden teams */}
+                  {/* Not shared teams section */}
                   {hiddenTeams.length > 0 && (
-                    <div className="pt-2">
+                    <div>
                       <button
                         onClick={() => setHiddenExpanded(!hiddenExpanded)}
-                        className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                        className="flex items-center gap-1 text-xs font-bold text-muted-foreground hover:text-foreground transition-colors"
                       >
                         <svg
                           width="12"
@@ -363,17 +370,21 @@ function HomePageInner() {
                           fill="none"
                           stroke="currentColor"
                           strokeWidth="2"
-                          className={`transition-transform ${hiddenExpanded ? "rotate-90" : ""}`}
+                          className={`transition-transform duration-200 ${hiddenExpanded ? "rotate-90" : ""}`}
                         >
                           <polyline points="9 18 15 12 9 6" />
                         </svg>
-                        非表示サーバー（{hiddenTeams.length}件）
+                        共有していないサーバー（{hiddenTeams.length}件）
                       </button>
-                      {hiddenExpanded && (
-                        <div className="space-y-2 mt-2">
-                          {hiddenTeams.map((team) => renderTeamCard(team, true))}
+                      <div className={`grid transition-[grid-template-rows] duration-200 ${
+                        hiddenExpanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                      }`}>
+                        <div className="overflow-hidden">
+                          <div className="space-y-2 pt-2">
+                            {hiddenTeams.map((team) => renderTeamCard(team))}
+                          </div>
                         </div>
-                      )}
+                      </div>
                     </div>
                   )}
                 </div>
