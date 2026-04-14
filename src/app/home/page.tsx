@@ -336,6 +336,10 @@ function HomePageInner() {
                 </div>
               </div>
 
+              <p className="text-xs text-muted-foreground">
+                選択中のチームメンバーと戦績を共有できます。戦績タブでチーム統計を確認しましょう。
+              </p>
+
               {teams.length === 0 ? (
                 <p className="text-sm text-muted-foreground py-4 text-center">
                   所属チームがありません

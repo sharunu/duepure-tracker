@@ -242,20 +242,7 @@ export function BattleRecordForm({
   return (
     <div className="space-y-4">
 
-      {decks.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-gray-400 mb-4 text-[14px]">
-            まずデッキを登録してください
-          </p>
-          <a
-            href="/decks"
-            className="inline-block rounded-[10px] bg-indigo-500 text-white px-6 py-3 text-[14px] font-medium"
-          >
-            デッキ登録へ
-          </a>
-        </div>
-      ) : (
-        <>
+
           {/* Mini stats */}
           <MiniStats
             stats={miniStats ?? { wins: 0, losses: 0, total: 0, streak: 0 }}
@@ -280,14 +267,19 @@ export function BattleRecordForm({
           <select
             value={selectedValue}
             onChange={(e) => setSelectedValue(e.target.value)}
+            disabled={deckOptions.length === 0}
             className="w-full rounded-[6px] px-4 py-3 text-[14px] focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none"
-            style={{ backgroundColor: "#1a1d2e", border: "0.5px solid #333355", color: "#e5e7eb" }}
+            style={{ backgroundColor: "#1a1d2e", border: "0.5px solid #333355", color: deckOptions.length === 0 ? "#666688" : "#e5e7eb" }}
           >
-            {deckOptions.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
+            {deckOptions.length === 0 ? (
+              <option value="" disabled>「使用デッキ管理」からデッキを登録してください</option>
+            ) : (
+              deckOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))
+            )}
           </select>
           </div>
 
@@ -389,7 +381,7 @@ export function BattleRecordForm({
           <div className="flex gap-3 pt-2">
             <button
               onClick={() => handleSubmit("win")}
-              disabled={submitting || !opponentDeck.trim()}
+              disabled={submitting || !opponentDeck.trim() || !selectedValue}
               className={"flex-1 rounded-[10px] py-4 text-[18px] font-bold transition-all min-h-[56px] shadow-lg text-white " + (
                 lastResult === "win"
                   ? "scale-95 opacity-90"
@@ -401,7 +393,7 @@ export function BattleRecordForm({
             </button>
             <button
               onClick={() => handleSubmit("loss")}
-              disabled={submitting || !opponentDeck.trim()}
+              disabled={submitting || !opponentDeck.trim() || !selectedValue}
               className={"flex-1 rounded-[10px] py-4 text-[18px] font-bold transition-all min-h-[56px] shadow-lg text-white " + (
                 lastResult === "loss"
                   ? "scale-95 opacity-90"
@@ -421,8 +413,6 @@ export function BattleRecordForm({
             onSelect={handleSelectInterval}
             currentTimestamp={measureSince}
           />
-        </>
-      )}
     </div>
   );
 }
