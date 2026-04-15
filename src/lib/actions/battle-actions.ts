@@ -218,6 +218,20 @@ export async function getOpponentMemoSuggestions(opponentDeckName: string): Prom
   }
   return result;
 }
+
+export async function deleteOpponentMemoSuggestion(opponentDeckName: string, memoText: string): Promise<boolean> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return false;
+  const { error } = await supabase
+    .from("battles")
+    .update({ opponent_memo: null })
+    .eq("user_id", user.id)
+    .eq("opponent_deck_name", opponentDeckName)
+    .eq("opponent_memo", memoText);
+  return !error;
+}
+
 export async function getDailyBattleCounts(format: string, year: number, month: number) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();

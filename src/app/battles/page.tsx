@@ -108,8 +108,14 @@ export default function BattlesPage() {
         {error ? (
           <p className="text-center text-red-400 py-12 text-sm">{error}</p>
         ) : (!ready || pageLoading) ? (
-          <div className="flex justify-center py-12">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <div className="space-y-3">
+            <div className="animate-pulse rounded-[10px] bg-[#232640] h-10" />
+            <div className="animate-pulse rounded-[10px] bg-[#232640] h-[280px]" />
+            <div className="animate-pulse rounded-[10px] bg-[#232640] h-[52px]" />
+            <div className="animate-pulse rounded-[10px] bg-[#232640] h-[52px]" />
+            <div className="animate-pulse rounded-[10px] bg-[#232640] h-[52px]" />
+            <div className="animate-pulse rounded-[10px] bg-[#232640] h-[52px]" />
+            <div className="animate-pulse rounded-[10px] bg-[#232640] h-[52px]" />
           </div>
         ) : (
           <>

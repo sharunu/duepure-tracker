@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { recordBattle, getMiniStats, getAllBattles, getOpponentMemoSuggestions } from "@/lib/actions/battle-actions";
+import { recordBattle, getMiniStats, getAllBattles, getOpponentMemoSuggestions, deleteOpponentMemoSuggestion } from "@/lib/actions/battle-actions";
+import { MemoSuggestionButton } from "./MemoSuggestionButton";
 import { OpponentDeckSelector } from "./OpponentDeckSelector";
 import { BattleIntervalModal } from "./BattleIntervalModal";
 import { MiniStats } from "../stats/MiniStats";
@@ -327,23 +328,17 @@ export function BattleRecordForm({
                   <p style={{ fontSize: 10, color: "#666688", marginBottom: 6 }}>過去のメモ</p>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                     {memoSuggestions.map((s) => (
-                      <button
+                      <MemoSuggestionButton
                         key={s}
-                        type="button"
-                        onClick={() => setOpponentMemo(s)}
-                        style={{
-                          padding: "5px 10px",
-                          fontSize: 11,
-                          borderRadius: 6,
-                          background: opponentMemo === s ? "rgba(99,102,241,0.15)" : "#232640",
-                          border: opponentMemo === s ? "1px solid #6366f1" : "0.5px solid #333355",
-                          color: "#ccccdd",
-                          cursor: "pointer",
-                          transition: "all 0.15s",
+                        memo={s}
+                        isSelected={opponentMemo === s}
+                        onSelect={setOpponentMemo}
+                        onDelete={async (memo) => {
+                          await deleteOpponentMemoSuggestion(opponentDeck.trim(), memo);
+                          setMemoSuggestions(prev => prev.filter(m => m !== memo));
+                          if (opponentMemo === memo) setOpponentMemo("");
                         }}
-                      >
-                        {s}
-                      </button>
+                      />
                     ))}
                   </div>
                 </div>

@@ -212,8 +212,11 @@ function HomePageInner() {
     return (
       <>
         <div className="min-h-screen pb-20 px-4 pt-6 max-w-lg mx-auto">
-          <div className="flex justify-center py-12">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <div className="animate-pulse rounded-[8px] bg-[#232640] h-6 w-28 mb-5" />
+          <div className="space-y-3">
+            <div className="animate-pulse rounded-[10px] bg-[#232640] h-[72px]" />
+            <div className="animate-pulse rounded-[10px] bg-[#232640] h-[72px]" />
+            <div className="animate-pulse rounded-[10px] bg-[#232640] h-[72px]" />
           </div>
         </div>
         <BottomNav />
@@ -498,9 +501,13 @@ export default function HomePage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex justify-center py-12">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-        </div>
+        <><div className="min-h-screen pb-20 px-4 pt-6 max-w-lg mx-auto">
+          <div className="animate-pulse rounded-[8px] bg-[#232640] h-6 w-28 mb-5" />
+          <div className="space-y-3">
+            <div className="animate-pulse rounded-[10px] bg-[#232640] h-[72px]" />
+            <div className="animate-pulse rounded-[10px] bg-[#232640] h-[72px]" />
+          </div>
+        </div><BottomNav /></>
       }
     >
       <HomePageInner />

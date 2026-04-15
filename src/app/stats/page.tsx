@@ -239,8 +239,11 @@ function StatsPageInner() {
 
     if (loading) {
       return (
-        <div className="flex justify-center py-12">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        <div className="space-y-4">
+          <div className="flex justify-center py-6"><div className="animate-pulse rounded-full bg-[#232640] h-[180px] w-[180px]" /></div>
+          <div className="animate-pulse rounded-[10px] bg-[#232640] h-[60px]" />
+          <div className="animate-pulse rounded-[10px] bg-[#232640] h-[60px]" />
+          <div className="animate-pulse rounded-[10px] bg-[#232640] h-[60px]" />
         </div>
       );
     }
