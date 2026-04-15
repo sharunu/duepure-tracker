@@ -914,6 +914,16 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_team_member_summaries: {
+        Args: { p_team_id: string }
+        Returns: {
+          user_id: string
+          discord_username: string
+          wins: number
+          losses: number
+          total: number
+        }[]
+      }
       get_team_my_deck_stats_range: {
         Args: {
           p_end_date?: string

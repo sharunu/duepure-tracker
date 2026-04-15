@@ -4,10 +4,13 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { getDiscordConnection, getMyTeamsWithVisibility, getTeamMembers, disconnectDiscord, toggleTeamVisibility, refreshGuilds } from "@/lib/actions/team-actions";
-import type { DiscordConnection, TeamWithVisibility } from "@/lib/actions/team-actions";
+import { getDiscordConnection, getMyTeamsWithVisibility, getTeamMembers, getTeamMemberSummaries, disconnectDiscord, toggleTeamVisibility, refreshGuilds } from "@/lib/actions/team-actions";
+import type { DiscordConnection, TeamWithVisibility, TeamMember, TeamMemberSummary } from "@/lib/actions/team-actions";
 import { useActiveTeam } from "@/hooks/use-active-team";
 import { BottomNav } from "@/components/layout/BottomNav";
+import { MemberAvatarStack } from "@/components/ui/MemberAvatarStack";
+import { MemberAvatar } from "@/components/ui/MemberAvatar";
+import { getWinRateColor } from "@/lib/stats-utils";
 
 function HomePageInner() {
   const router = useRouter();
@@ -18,15 +21,19 @@ function HomePageInner() {
   const [isGuest, setIsGuest] = useState(false);
   const [connection, setConnection] = useState<DiscordConnection | null>(null);
   const [teams, setTeams] = useState<TeamWithVisibility[]>([]);
-  const [memberCount, setMemberCount] = useState<number | null>(null);
   const [disconnecting, setDisconnecting] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [hiddenExpanded, setHiddenExpanded] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // メンバー一覧機能用state
+  const [expandedTeams, setExpandedTeams] = useState<Set<string>>(new Set());
+  const [teamMembersMap, setTeamMembersMap] = useState<Record<string, TeamMember[]>>({});
+  const [teamMemberStats, setTeamMemberStats] = useState<Record<string, TeamMemberSummary[]>>({});
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   const visibleTeams = teams.filter((t) => !t.hidden);
   const hiddenTeams = teams.filter((t) => t.hidden);
-
-  const [error, setError] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -37,7 +44,6 @@ function HomePageInner() {
       return;
     }
 
-    // anonymousセッション検出時は強制ログアウト
     if (user.is_anonymous) {
       await supabase.auth.signOut();
       router.replace("/auth");
@@ -45,6 +51,7 @@ function HomePageInner() {
     }
 
     setIsGuest(false);
+    setCurrentUserId(user.id);
 
     const conn = await getDiscordConnection();
     setConnection(conn);
@@ -52,6 +59,17 @@ function HomePageInner() {
     if (conn) {
       const myTeams = await getMyTeamsWithVisibility();
       setTeams(myTeams);
+
+      // 共有中チームのメンバー一覧を取得（アバタースタック用）
+      const visible = myTeams.filter((t) => !t.hidden);
+      const memberResults = await Promise.all(
+        visible.map((t) => getTeamMembers(t.id).then((members) => ({ teamId: t.id, members })))
+      );
+      const membersMap: Record<string, TeamMember[]> = {};
+      for (const r of memberResults) {
+        membersMap[r.teamId] = r.members;
+      }
+      setTeamMembersMap(membersMap);
     }
 
     setLoading(false);
@@ -65,7 +83,6 @@ function HomePageInner() {
     loadData();
   }, [loadData]);
 
-  // Auto-refresh guilds on load when connected
   useEffect(() => {
     if (!loading && connection) {
       refreshGuilds().then((ok) => {
@@ -77,17 +94,6 @@ function HomePageInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, !!connection]);
 
-  // Load member count when active team changes
-  useEffect(() => {
-    if (!activeTeamId) {
-      setMemberCount(null);
-      return;
-    }
-    getTeamMembers(activeTeamId).then((members) => {
-      setMemberCount(members.length);
-    });
-  }, [activeTeamId]);
-
   // Auto-select first visible team if none selected
   useEffect(() => {
     if (!loading && teamReady && !activeTeamId && visibleTeams.length > 0) {
@@ -95,19 +101,38 @@ function HomePageInner() {
     }
   }, [loading, teamReady, activeTeamId, visibleTeams, setActiveTeamId]);
 
-  // Clear active team if it is not in visible list
   useEffect(() => {
     if (!loading && teamReady && activeTeamId && visibleTeams.length > 0 && !visibleTeams.find((t) => t.id === activeTeamId)) {
       setActiveTeamId(visibleTeams[0].id);
     }
   }, [loading, teamReady, activeTeamId, visibleTeams, setActiveTeamId]);
 
-  // Clear active team if all teams hidden
   useEffect(() => {
     if (!loading && teamReady && activeTeamId && visibleTeams.length === 0) {
       setActiveTeamId(null);
     }
   }, [loading, teamReady, activeTeamId, visibleTeams, setActiveTeamId]);
+
+  // カード展開時にメンバー勝敗データを遅延ロード
+  useEffect(() => {
+    for (const teamId of expandedTeams) {
+      if (!teamMemberStats[teamId]) {
+        getTeamMemberSummaries(teamId).then((stats) => {
+          setTeamMemberStats((prev) => ({ ...prev, [teamId]: stats }));
+        });
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [expandedTeams]);
+
+  const toggleTeamExpand = (teamId: string) => {
+    setExpandedTeams((prev) => {
+      const next = new Set(prev);
+      if (next.has(teamId)) next.delete(teamId);
+      else next.add(teamId);
+      return next;
+    });
+  };
 
   const handleDiscordConnect = async () => {
     const supabase = createClient();
@@ -165,6 +190,11 @@ function HomePageInner() {
     setRefreshing(false);
   };
 
+  const handleMemberTap = (teamId: string, member: TeamMemberSummary) => {
+    setActiveTeamId(teamId);
+    router.push(`/stats?scope=team&member=${member.user_id}`);
+  };
+
   const discordStatus = searchParams.get("discord");
 
   if (error) {
@@ -192,54 +222,123 @@ function HomePageInner() {
   }
 
   const renderTeamCard = (team: TeamWithVisibility) => {
-    const isActive = activeTeamId === team.id;
     const isShared = !team.hidden;
+    const isExpanded = expandedTeams.has(team.id);
+    const members = teamMembersMap[team.id] ?? [];
+    const memberStats = teamMemberStats[team.id];
+
     return (
-      <div key={team.id} className="flex items-center gap-2 min-w-0">
-        <button
-          onClick={() => isShared && setActiveTeamId(team.id)}
-          className={`flex-1 min-w-0 flex items-center gap-3 rounded-xl border p-3 transition-colors text-left overflow-hidden ${
-            !isShared
-              ? "border-muted/20 opacity-50"
-              : isActive
-              ? "border-success/50 bg-success/5"
-              : "border-success/20 hover:border-success/40"
-          }`}
-          disabled={!isShared}
-        >
-          {team.icon_url ? (
-            <img
-              src={team.icon_url}
-              alt=""
-              className="w-10 h-10 rounded-full object-cover"
-            />
-          ) : (
-            <div className="w-10 h-10 rounded-full bg-muted/30 flex items-center justify-center text-sm font-medium text-muted-foreground">
-              {team.name.charAt(0)}
+      <div key={team.id} className="rounded-xl border border-muted/20 overflow-hidden">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => isShared && toggleTeamExpand(team.id)}
+            className={`flex-1 min-w-0 flex items-center gap-3 p-3 transition-colors text-left overflow-hidden ${
+              !isShared
+                ? "opacity-50"
+                : ""
+            }`}
+            disabled={!isShared}
+          >
+            {team.icon_url ? (
+              <img
+                src={team.icon_url}
+                alt=""
+                className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-muted/30 flex items-center justify-center text-sm font-medium text-muted-foreground flex-shrink-0">
+                {team.name.charAt(0)}
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-medium truncate">{team.name}</p>
+                {isShared && (
+                  <span className="text-[10px] bg-success/15 text-success px-1.5 py-0.5 rounded-full font-medium flex-shrink-0">
+                    共有中
+                  </span>
+                )}
+              </div>
+              {isShared && members.length > 0 && (
+                <div className="flex items-center gap-1.5 mt-1">
+                  <MemberAvatarStack members={members} max={4} />
+                  <span className="text-[10px] text-muted-foreground">{members.length}人</span>
+                </div>
+              )}
             </div>
-          )}
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{team.name}</p>
+            {isShared && (
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                className={`text-muted-foreground flex-shrink-0 transition-transform duration-200 ${isExpanded ? "rotate-90" : ""}`}
+              >
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            )}
+          </button>
+          <button
+            onClick={() => handleToggleVisibility(team.id, team.hidden)}
+            className="flex-shrink-0 p-3 pl-0"
+            title={team.hidden ? "共有を開始" : "共有を停止"}
+          >
+            <div className={`w-10 h-5 rounded-full transition-colors duration-200 flex items-center ${
+              isShared ? "bg-success" : "bg-muted/50"
+            }`}>
+              <span className={`w-4 h-4 rounded-full shadow-sm transition-transform duration-200 mx-0.5 ${
+                isShared ? "translate-x-5 bg-white" : "translate-x-0 bg-muted-foreground/50"
+              }`} />
+            </div>
+          </button>
+        </div>
+
+        {/* 展開時のメンバー一覧 */}
+        {isShared && isExpanded && (
+          <div style={{ backgroundColor: "#1b1e35", borderTop: "0.5px solid #2a2d48" }}>
+            {!memberStats ? (
+              <div className="flex justify-center py-4">
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              </div>
+            ) : memberStats.length === 0 ? (
+              <p className="text-center text-muted-foreground text-xs py-4">メンバーがいません</p>
+            ) : (
+              memberStats.map((member) => (
+                <button
+                  key={member.user_id}
+                  onClick={(e) => { e.stopPropagation(); handleMemberTap(team.id, member); }}
+                  className="flex items-center gap-3 w-full px-4 py-2.5 text-left transition-colors hover:bg-white/5"
+                  style={{ borderBottom: "0.5px solid #2a2d48" }}
+                >
+                  <MemberAvatar userId={member.user_id} username={member.discord_username} size={32} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[13px] text-foreground truncate">{member.discord_username}</span>
+                      {member.user_id === currentUserId && (
+                        <span className="text-[9px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-full font-medium flex-shrink-0">自分</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-right flex-shrink-0 flex items-center gap-1.5">
+                    {member.total > 0 ? (
+                      <>
+                        <span className="text-[12px] font-medium" style={{ color: getWinRateColor(member.winRate) }}>{member.winRate}%</span>
+                        <span className="text-[10px] text-muted-foreground">{member.wins}勝{member.losses}敗</span>
+                      </>
+                    ) : (
+                      <span className="text-[10px] text-muted-foreground">-- 0勝0敗</span>
+                    )}
+                  </div>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-muted-foreground/50 flex-shrink-0">
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
+                </button>
+              ))
+            )}
           </div>
-          {isShared && (
-            <span className="text-[10px] bg-success/15 text-success px-1.5 py-0.5 rounded-full font-medium flex-shrink-0">
-              共有中
-            </span>
-          )}
-        </button>
-        <button
-          onClick={() => handleToggleVisibility(team.id, team.hidden)}
-          className="flex-shrink-0 p-1"
-          title={team.hidden ? "共有を開始" : "共有を停止"}
-        >
-          <div className={`w-10 h-5 rounded-full transition-colors duration-200 flex items-center ${
-            isShared ? "bg-success" : "bg-muted/50"
-          }`}>
-            <span className={`w-4 h-4 rounded-full shadow-sm transition-transform duration-200 mx-0.5 ${
-              isShared ? "translate-x-5 bg-white" : "translate-x-0 bg-muted-foreground/50"
-            }`} />
-          </div>
-        </button>
+        )}
       </div>
     );
   };
@@ -261,7 +360,6 @@ function HomePageInner() {
         )}
 
         {!connection ? (
-          // Discord未連携
           <div className="rounded-xl border border-muted/30 p-6 space-y-4">
             <div className="space-y-2">
               <h2 className="text-base font-bold">Discord連携</h2>
@@ -284,7 +382,6 @@ function HomePageInner() {
             )}
           </div>
         ) : (
-          // Discord連携済み
           <>
             <div className="rounded-xl border border-muted/30 p-4 space-y-3">
               <div className="flex items-center justify-between">
@@ -314,9 +411,6 @@ function HomePageInner() {
               <div className="flex items-center justify-between">
                 <h2 className="text-base font-bold">所属サーバー</h2>
                 <div className="flex items-center gap-2 min-w-0">
-                  {memberCount !== null && activeTeamId && (
-                    <span className="text-xs text-muted-foreground">メンバー {memberCount}人</span>
-                  )}
                   <button
                     onClick={handleManualRefresh}
                     disabled={refreshing}
@@ -352,7 +446,6 @@ function HomePageInner() {
                 </p>
               ) : (
                 <div className="space-y-4">
-                  {/* Shared teams section */}
                   {visibleTeams.length > 0 && (
                     <div className="space-y-2">
                       <p className="text-xs font-bold text-success">戦績を共有中</p>
@@ -360,7 +453,6 @@ function HomePageInner() {
                     </div>
                   )}
 
-                  {/* Not shared teams section */}
                   {hiddenTeams.length > 0 && (
                     <div>
                       <button

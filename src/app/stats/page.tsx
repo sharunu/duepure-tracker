@@ -20,8 +20,7 @@ import { OpponentDeckStatsSection } from "@/components/stats/OpponentDeckStatsSe
 import { EncounterDonutChart } from "@/components/stats/EncounterDonutChart";
 import { TrendChart } from "@/components/stats/TrendChart";
 import { TrendHeatmap } from "@/components/stats/TrendHeatmap";
-import { TeamMemberSelector } from "@/components/stats/TeamMemberSelector";
-import { TeamSelector } from "@/components/stats/TeamSelector";
+import { TeamServerCard } from "@/components/stats/TeamServerCard";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { Crown, Lock } from "lucide-react";
 import { getWinRateColor } from "@/lib/stats-utils";
@@ -76,7 +75,9 @@ function StatsPageInner() {
   // Team states
   const [visibleTeams, setVisibleTeams] = useState<TeamWithVisibility[]>([]);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
-  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
+  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(() => {
+    return searchParams.get("member") || null;
+  });
 
   // Load visible teams
   useEffect(() => {
@@ -270,7 +271,7 @@ function StatsPageInner() {
         aggregatedDonut.push({ name: "その他", total: otherTotal, winRate: Math.round((otherWins / otherTotal) * 100) });
       }
 
-      // Aggregate myDeckStats for global scope — also collect the actual "other" deck names
+      // Aggregate myDeckStats for global scope
       const otherMyDeckNames: string[] = [];
       const myDeckData = scope === "global" && categoryMap.size > 0 ? (() => {
         const kept: typeof stats.myDeckStats = [];
@@ -474,18 +475,14 @@ function StatsPageInner() {
                 </div>
               </div>
             )}
-            {scope === "team" && visibleTeams.length > 1 && (
-              <TeamSelector
+            {scope === "team" && activeTeamId && (
+              <TeamServerCard
                 teams={visibleTeams}
                 activeTeamId={activeTeamId}
-                onSelect={setActiveTeamId}
-              />
-            )}
-            {scope === "team" && activeTeamId && teamMembers.length > 0 && (
-              <TeamMemberSelector
+                onTeamSelect={setActiveTeamId}
                 members={teamMembers}
                 selectedMemberId={selectedMemberId}
-                onSelect={setSelectedMemberId}
+                onMemberSelect={setSelectedMemberId}
               />
             )}
             <ViewSelector view={view} setView={setView} />

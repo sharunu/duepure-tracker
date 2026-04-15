@@ -144,3 +144,25 @@ export async function refreshGuilds(): Promise<boolean> {
     return false;
   }
 }
+
+export type TeamMemberSummary = {
+  user_id: string;
+  discord_username: string;
+  wins: number;
+  losses: number;
+  total: number;
+  winRate: number;
+};
+
+export async function getTeamMemberSummaries(teamId: string): Promise<TeamMemberSummary[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase.rpc("get_team_member_summaries", {
+    p_team_id: teamId,
+  });
+
+  if (error || !data) return [];
+  return (data as { user_id: string; discord_username: string; wins: number; losses: number; total: number }[]).map((d) => ({
+    ...d,
+    winRate: d.total > 0 ? Math.round((d.wins / d.total) * 100) : 0,
+  }));
+}
