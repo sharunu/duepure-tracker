@@ -23,11 +23,13 @@ import { TrendHeatmap } from "@/components/stats/TrendHeatmap";
 import { TeamMemberSelector } from "@/components/stats/TeamMemberSelector";
 import { TeamSelector } from "@/components/stats/TeamSelector";
 import { BottomNav } from "@/components/layout/BottomNav";
+import { Crown, Lock } from "lucide-react";
 import { getWinRateColor } from "@/lib/stats-utils";
 import { TurnOrderCards } from "@/components/stats/TurnOrderCards";
 import { ShareButton } from "@/components/share/ShareButton";
 import type { StatsShareData } from "@/components/share/ShareButton";
 import { getUserStage, getAuthProvider } from "@/lib/actions/account-actions";
+import { getPremiumUiVisible } from "@/lib/actions/admin-actions";
 
 function StatsPageInner() {
   const searchParams = useSearchParams();
@@ -42,6 +44,12 @@ function StatsPageInner() {
   const [error, setError] = useState<string | null>(null);
   const [userStage, setUserStage] = useState<number>(2);
   const [premiumFilter, setPremiumFilter] = useState(false);
+  const [premiumUiVisible, setPremiumUiVisible] = useState(true);
+
+  // Safety: reset premiumFilter when admin hides UI
+  useEffect(() => {
+    if (!premiumUiVisible) setPremiumFilter(false);
+  }, [premiumUiVisible]);
   const [isGuest, setIsGuest] = useState(false);
   const [battleCounts, setBattleCounts] = useState<Record<string, number>>({});
 
@@ -77,6 +85,7 @@ function StatsPageInner() {
     });
     getUserStage().then(setUserStage);
     getAuthProvider().then(p => setIsGuest(p === "anonymous"));
+    getPremiumUiVisible().then(setPremiumUiVisible);
   }, []);
 
   // Load team members when activeTeamId changes
@@ -222,7 +231,7 @@ function StatsPageInner() {
     if (scope === "team" && !activeTeamId) {
       return (
         <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-          <p className="text-sm">ホームタブでチームを選択してください</p>
+          <p className="text-sm">ホームタブでサーバーを選択してください</p>
         </div>
       );
     }
@@ -421,27 +430,48 @@ function StatsPageInner() {
                 <p className="text-[11px] text-gray-400">全体統計やご意見・バグ報告は<a href="/auth" className="text-[#6366f1] underline ml-0.5">アカウント登録</a>するとご利用いただけます</p>
               </div>
             )}
-            {scope === "global" && (
-              <div className="flex items-center justify-between bg-[#232640] rounded-[8px] px-3 py-2.5" style={{ border: "0.5px solid rgba(100,100,150,0.2)" }}>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[12px] font-medium text-gray-300">優良ユーザーのみ</p>
-                  <p className="text-[10px] text-gray-500 mt-0.5">
-                    {userStage === 1
-                      ? "信頼性の高いユーザーの戦績のみで集計します"
-                      : "優良ユーザーに認定されると利用できます"}
-                  </p>
+            {scope === "global" && premiumUiVisible && (
+              <div
+                className="rounded-[8px] px-3 py-2.5"
+                style={{
+                  border: userStage === 1
+                    ? "1px solid rgba(217, 170, 59, 0.35)"
+                    : "1px solid rgba(100, 100, 150, 0.2)",
+                  background: userStage === 1
+                    ? "linear-gradient(135deg, rgba(217, 170, 59, 0.08), rgba(180, 130, 30, 0.04))"
+                    : "#232640",
+                }}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    {userStage === 1 ? (
+                      <Crown size={16} className="text-amber-400 flex-shrink-0" />
+                    ) : (
+                      <Lock size={14} className="text-gray-500 flex-shrink-0" />
+                    )}
+                    <div className="min-w-0">
+                      <p className={`text-[12px] font-medium ${userStage === 1 ? "text-amber-400" : "text-gray-400"}`}>
+                        優良ユーザー限定
+                      </p>
+                      <p className="text-[10px] text-gray-500 mt-0.5">
+                        {userStage === 1
+                          ? "信頼性の高いユーザーの戦績のみで集計します"
+                          : "優良ユーザーに認定されると利用できる限定機能です"}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => userStage === 1 && setPremiumFilter(!premiumFilter)}
+                    disabled={userStage !== 1}
+                    className={`relative w-10 h-5 rounded-full transition-colors flex-shrink-0 ml-3 ${
+                      premiumFilter ? "bg-amber-500" : userStage === 1 ? "bg-[#333355]" : "bg-[#333355]"
+                    } ${userStage !== 1 ? "opacity-40 cursor-not-allowed" : "cursor-pointer"}`}
+                  >
+                    <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all duration-200 ${
+                      premiumFilter ? "left-[22px]" : "left-[2px]"
+                    }`} />
+                  </button>
                 </div>
-                <button
-                  onClick={() => userStage === 1 && setPremiumFilter(!premiumFilter)}
-                  disabled={userStage !== 1}
-                  className={`relative w-10 h-5 rounded-full transition-colors flex-shrink-0 ml-3 ${
-                    premiumFilter ? "bg-[#6366f1]" : "bg-[#333355]"
-                  } ${userStage !== 1 ? "opacity-40 cursor-not-allowed" : "cursor-pointer"}`}
-                >
-                  <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all duration-200 ${
-                    premiumFilter ? "left-[22px]" : "left-[2px]"
-                  }`} />
-                </button>
               </div>
             )}
             {scope === "team" && visibleTeams.length > 1 && (

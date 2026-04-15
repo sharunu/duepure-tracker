@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { syncXAccountFromAuth } from "@/lib/actions/account-actions";
 
 export default function AuthCallbackPage() {
   const [error, setError] = useState("");
@@ -69,8 +70,9 @@ export default function AuthCallbackPage() {
     // supabase-js auto-detects hash fragment tokens
     // Listen for auth state change
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         if (event === "SIGNED_IN" && session) {
+          await syncXAccountFromAuth();
           window.location.href = "/battle";
         }
         if (event === "PASSWORD_RECOVERY" && session) {

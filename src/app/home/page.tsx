@@ -125,7 +125,7 @@ function HomePageInner() {
   };
 
   const handleDisconnect = async () => {
-    if (!confirm("Discord連携を解除しますか？チーム情報も削除されます。")) return;
+    if (!confirm("Discord連携を解除しますか？サーバー情報も削除されます。")) return;
     setDisconnecting(true);
     const ok = await disconnectDiscord();
     if (ok) {
@@ -259,7 +259,7 @@ function HomePageInner() {
             <div className="space-y-2">
               <h2 className="text-base font-bold">Discord連携</h2>
               <p className="text-sm text-muted-foreground">
-                Discordと連携すると、同じサーバーのメンバーとチームとして戦績を共有できます。
+                Discordと連携すると、同じサーバーのメンバーと戦績を共有できます。
               </p>
             </div>
             {isGuest ? (
@@ -305,7 +305,7 @@ function HomePageInner() {
             {/* Team list */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <h2 className="text-base font-bold">チーム一覧</h2>
+                <h2 className="text-base font-bold">所属サーバー</h2>
                 <div className="flex items-center gap-2 min-w-0">
                   {memberCount !== null && activeTeamId && (
                     <span className="text-xs text-muted-foreground">メンバー {memberCount}人</span>
@@ -341,7 +341,7 @@ function HomePageInner() {
 
               {teams.length === 0 ? (
                 <p className="text-sm text-muted-foreground py-4 text-center">
-                  所属チームがありません
+                  所属サーバーがありません
                 </p>
               ) : (
                 <div className="space-y-4">

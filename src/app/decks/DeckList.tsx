@@ -382,7 +382,7 @@ export function DeckList({
                   {tuningError && isExpanded(deck.id) && (
                     <p className="text-xs text-[#e85d75] px-4 pb-2">{tuningError}</p>
                   )}
-                    <div style={{ fontSize: 10, color: "#666688", padding: "4px 16px 8px 16px" }}>※対戦記録登録時チーム内で共有されます（他ユーザーには非公開）</div>
+                    <div style={{ fontSize: 10, color: "#666688", padding: "4px 16px 8px 16px" }}>※対戦記録登録時サーバー内で共有されます（他ユーザーには非公開）</div>
                 </div>
               )}
             </div>

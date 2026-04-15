@@ -6,7 +6,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { getDisplayName, updateDisplayName, changePassword, getAuthProvider, getEmail, deleteAccount, getXConnectionStatus, unlinkXAccount, getUserStage } from "@/lib/actions/account-actions";
 import { submitFeedback } from "@/lib/actions/feedback-actions";
-import { checkIsAdmin } from "@/lib/actions/admin-actions";
+import { checkIsAdmin, getPremiumUiVisible } from "@/lib/actions/admin-actions";
 import { BottomNav } from "@/components/layout/BottomNav";
 
 export default function AccountPage() {
@@ -49,16 +49,18 @@ export default function AccountPage() {
   const [xUsername, setXUsername] = useState<string | null>(null);
   const [xSource, setXSource] = useState<"login" | "linked" | null>(null);
   const [xLoading, setXLoading] = useState(false);
+  const [premiumUiVisible, setPremiumUiVisible] = useState(true);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const [name, prov, mail, admin, xStatus, stage] = await Promise.all([getDisplayName(), getAuthProvider(), getEmail(), checkIsAdmin(), getXConnectionStatus(), getUserStage()]);
+        const [name, prov, mail, admin, xStatus, stage, puiVisible] = await Promise.all([getDisplayName(), getAuthProvider(), getEmail(), checkIsAdmin(), getXConnectionStatus(), getUserStage(), getPremiumUiVisible()]);
         setDisplayName(name);
         setProvider(prov);
         setEmail(mail);
         setIsAdmin(admin);
         setUserStage(stage);
+        setPremiumUiVisible(puiVisible);
         setXConnected(xStatus.isConnected);
         setXUsername(xStatus.xUsername);
         setXSource(xStatus.source);
@@ -285,7 +287,7 @@ export default function AccountPage() {
               )}>
                 {provider === "google" ? "Google" : provider === "twitter" ? "X" : isGuest ? "ゲスト" : "メール"}
               </span>
-              {userStage === 1 && (
+              {userStage === 1 && premiumUiVisible && (
                 <span className="inline-block text-[10px] px-2 py-0.5 rounded-full font-medium bg-yellow-600/20 text-yellow-400">
                   優良ユーザー
                 </span>

@@ -691,3 +691,50 @@ export async function calculateSingleUserScore(userId: string) {
   if (error) throw new Error(error.message);
   return data as { total_score: number; breakdown: Record<string, number>; eligible: boolean };
 }
+
+// === 優良ユーザーUI表示設定 ===
+
+export async function getPremiumUiVisible(): Promise<boolean> {
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("quality_scoring_settings")
+    .select("value")
+    .eq("key", "premium_ui_visible")
+    .single();
+  if (!data || data.value === null || data.value === undefined) return true;
+  return data.value === true || data.value === "true";
+}
+
+export async function updatePremiumUiVisible(visible: boolean) {
+  const supabase = await requireAdmin();
+  const { error } = await supabase
+    .from("quality_scoring_settings")
+    .update({ value: visible as unknown as string, updated_at: new Date().toISOString() })
+    .eq("key", "premium_ui_visible");
+  if (error) throw new Error(error.message);
+}
+
+// === 管理者用ユーザー詳細情報 ===
+
+export type AdminUserDetail = {
+  x_username: string | null;
+  x_user_id: string | null;
+  discord_id: string | null;
+  discord_username: string | null;
+  teams: {
+    team_id: string;
+    team_name: string;
+    discord_guild_id: string;
+    icon_url: string | null;
+    members: { user_id: string; discord_username: string }[];
+  }[];
+  auth_provider: string;
+  email: string | null;
+};
+
+export async function getAdminUserDetail(userId: string): Promise<AdminUserDetail> {
+  const supabase = await requireAdmin();
+  const { data, error } = await (supabase.rpc as any)('get_user_detail_for_admin', { p_user_id: userId });
+  if (error) throw new Error(error.message);
+  return data as AdminUserDetail;
+}

@@ -102,7 +102,7 @@ export default function OpponentDeckDetailPage() {
   };
 
   const titleSuffix = isTeam
-    ? memberId && memberName ? `（${memberName}）` : "（チーム全体）"
+    ? memberId && memberName ? `（${memberName}）` : "（サーバー全体）"
     : isGlobal ? "（全体）" : "";
 
   const backScope = isTeam ? "team" : isGlobal ? "global" : "personal";

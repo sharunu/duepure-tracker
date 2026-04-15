@@ -7,6 +7,8 @@ import {
   getQualityScoreThreshold,
   updateQualityScoreThreshold,
   runQualityScoring,
+  getPremiumUiVisible,
+  updatePremiumUiVisible,
 } from "@/lib/actions/admin-actions";
 
 export default function QualityScoringPage() {
@@ -23,13 +25,18 @@ export default function QualityScoringPage() {
     threshold: number;
   } | null>(null);
   const [message, setMessage] = useState("");
+  const [premiumUiVisible, setPremiumUiVisible] = useState(true);
+  const [savingPremiumUi, setSavingPremiumUi] = useState(false);
 
   useEffect(() => {
-    getQualityScoreThreshold().then((t) => {
-      setThreshold(t);
-      setEditThreshold(t);
-      setLoading(false);
-    });
+    Promise.all([getQualityScoreThreshold(), getPremiumUiVisible()]).then(
+      ([t, visible]) => {
+        setThreshold(t);
+        setEditThreshold(t);
+        setPremiumUiVisible(visible);
+        setLoading(false);
+      }
+    );
   }, []);
 
   const handleRun = async () => {
@@ -57,6 +64,18 @@ export default function QualityScoringPage() {
     }
     setSavingThreshold(false);
     setTimeout(() => setMessage(""), 2000);
+  };
+
+  const handleTogglePremiumUi = async () => {
+    setSavingPremiumUi(true);
+    try {
+      const next = !premiumUiVisible;
+      await updatePremiumUiVisible(next);
+      setPremiumUiVisible(next);
+    } catch {
+      setMessage("保存に失敗しました");
+    }
+    setSavingPremiumUi(false);
   };
 
   if (loading) {
@@ -152,6 +171,29 @@ export default function QualityScoringPage() {
           </button>
         </div>
         <p className="text-[11px] text-gray-600 mt-2">現在の閾値: {threshold}点</p>
+      </div>
+
+      {/* 優良ユーザーUI表示設定 */}
+      <div className="bg-[#232640] rounded-[10px] px-4 py-4 mt-4">
+        <div className="flex items-center justify-between">
+          <div className="min-w-0 flex-1">
+            <p className="text-[14px] font-medium mb-1">優良ユーザーUI表示</p>
+            <p className="text-[11px] text-gray-500">
+              OFFにするとユーザー側の優良ユーザー関連UIが非表示になります
+            </p>
+          </div>
+          <button
+            onClick={handleTogglePremiumUi}
+            disabled={savingPremiumUi}
+            className={`relative w-10 h-5 rounded-full transition-colors flex-shrink-0 ml-3 ${
+              premiumUiVisible ? "bg-[#6366f1]" : "bg-[#333355]"
+            } ${savingPremiumUi ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+          >
+            <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all duration-200 ${
+              premiumUiVisible ? "left-[22px]" : "left-[2px]"
+            }`} />
+          </button>
+        </div>
       </div>
     </div>
   );

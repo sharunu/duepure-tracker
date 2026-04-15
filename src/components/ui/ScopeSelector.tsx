@@ -11,7 +11,7 @@ type Props = {
 
 const labels: Record<Scope, string> = {
   personal: "個人",
-  team: "チーム",
+  team: "サーバー",
   global: "全体",
 };
 

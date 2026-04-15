@@ -12,6 +12,8 @@ type UserRow = {
   is_guest: boolean;
   created_at: string;
   battle_count: number;
+  x_username: string | null;
+  x_user_id: string | null;
 };
 
 type GuestFilter = "non-guest" | "guest";
@@ -43,7 +45,8 @@ export default function AdminUsersPage() {
       const q = search.trim().toLowerCase();
       return (
         (u.display_name?.toLowerCase().includes(q)) ||
-        (u.email?.toLowerCase().includes(q))
+        (u.email?.toLowerCase().includes(q)) ||
+        (u.x_username?.toLowerCase().includes(q))
       );
     });
 
@@ -121,6 +124,14 @@ export default function AdminUsersPage() {
                     <span className="text-[11px] text-gray-500">{dateStr} 登録</span>
                     <span className="text-[11px] text-gray-500">{u.battle_count}戦</span>
                   </div>
+                  {u.x_username && (
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <span className="text-[11px] text-[#1d9bf0]"
+                        onClick={(e) => { e.stopPropagation(); window.open(`https://x.com/${u.x_username}`, '_blank'); }}
+                      >@{u.x_username}</span>
+                      {u.x_user_id && <span className="text-[10px] text-gray-600">(ID: {u.x_user_id})</span>}
+                    </div>
+                  )}
                 </div>
                 <span className="text-gray-500 text-[18px] shrink-0">&rsaquo;</span>
               </button>

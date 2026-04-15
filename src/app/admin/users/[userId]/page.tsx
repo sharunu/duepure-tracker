@@ -12,10 +12,13 @@ import { AdminUserStats } from "@/components/admin/AdminUserStats";
 import { AdminUserStageControl } from "@/components/admin/AdminUserStageControl";
 import { AdminUserStageHistory } from "@/components/admin/AdminUserStageHistory";
 import { AdminUserQualityScore } from "@/components/admin/AdminUserQualityScore";
+import { AdminUserAccountInfo } from "@/components/admin/AdminUserAccountInfo";
+import { AdminUserHome } from "@/components/admin/AdminUserHome";
 
-type Tab = "decks" | "battles" | "stats" | "manage";
+type Tab = "home" | "decks" | "battles" | "stats" | "manage";
 
 const tabs: { value: Tab; label: string }[] = [
+  { value: "home", label: "ホーム" },
   { value: "decks", label: "デッキ" },
   { value: "battles", label: "履歴" },
   { value: "stats", label: "分析" },
@@ -27,7 +30,7 @@ export default function AdminUserDetailPage() {
   const userId = params.userId as string;
   const router = useRouter();
   const { format, setFormat, ready } = useFormat();
-  const [tab, setTab] = useState<Tab>("decks");
+  const [tab, setTab] = useState<Tab>("home");
   const [userName, setUserName] = useState<string>("");
   const [userError, setUserError] = useState<string | null>(null);
 
@@ -60,6 +63,7 @@ export default function AdminUserDetailPage() {
         )}
       </div>
 
+      <AdminUserAccountInfo userId={userId} />
       <AdminUserStageControl userId={userId} />
 
       <div className="flex items-center gap-3 mb-4">
@@ -84,6 +88,7 @@ export default function AdminUserDetailPage() {
         ))}
       </div>
 
+      {tab === "home" && <AdminUserHome userId={userId} />}
       {ready && tab === "decks" && <AdminUserDecks userId={userId} format={format} />}
       {ready && tab === "battles" && <AdminUserBattles userId={userId} format={format} />}
       {ready && tab === "stats" && <AdminUserStats userId={userId} format={format} />}

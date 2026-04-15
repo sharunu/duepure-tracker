@@ -21,7 +21,7 @@ export function TeamMemberSelector({ members, selectedMemberId, onSelect }: Prop
           backgroundPosition: "right 12px center",
         }}
       >
-        <option value="">チーム全体</option>
+        <option value="">サーバー全体</option>
         {members.map((m) => (
           <option key={m.user_id} value={m.user_id}>
             {m.discord_username}
