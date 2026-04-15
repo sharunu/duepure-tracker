@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { X, Download, ExternalLink } from "lucide-react";
+import { X, Download, ExternalLink, Loader2 } from "lucide-react";
 import type { StatsShareData, DeckShareData } from "./ShareButton";
 import { StatsShareCard } from "./StatsShareCard";
 import { DeckShareCard } from "./DeckShareCard";
+import { createClient } from "@/lib/supabase/client";
+import { generateShareId } from "@/lib/share-utils";
 
 type Props = {
   type: "stats" | "deck" | "opponent";
@@ -18,19 +20,20 @@ export function ShareModal({ type, data, onClose }: Props) {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [error, setError] = useState(false);
   const [capturing, setCapturing] = useState(true);
+  const [posting, setPosting] = useState(false);
 
   const appUrl = "http://54.152.11.99:3000";
 
   const shareText = (() => {
     if (type === "stats") {
       const d = data as StatsShareData;
-      return `デュエプレトラッカーで戦績を記録中！\n勝率 ${d.winRate}%（${d.totalWins}勝${d.totalLosses}敗）\n${appUrl}`;
+      return `デュエプレトラッカーで戦績を記録中！\n勝率 ${d.winRate}%（${d.totalWins}勝${d.totalLosses}敗）`;
     } else if (type === "deck") {
       const d = data as DeckShareData;
-      return `【${d.deckName}】勝率 ${d.winRate}%（${d.totalWins}勝${d.totalLosses}敗）\n${appUrl}`;
+      return `【${d.deckName}】勝率 ${d.winRate}%（${d.totalWins}勝${d.totalLosses}敗）`;
     } else {
       const d = data as DeckShareData;
-      return `【vs ${d.deckName}】勝率 ${d.winRate}%（${d.totalWins}勝${d.totalLosses}敗）\n${appUrl}`;
+      return `【vs ${d.deckName}】勝率 ${d.winRate}%（${d.totalWins}勝${d.totalLosses}敗）`;
     }
   })();
 
@@ -91,9 +94,47 @@ export function ShareModal({ type, data, onClose }: Props) {
     a.click();
   };
 
-  const handleXPost = () => {
-    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
-    window.open(url, "_blank", "noopener");
+  const handleXPost = async () => {
+    setPosting(true);
+
+    // モバイルのポップアップブロック回避: async処理の前にウィンドウを同期的に開く
+    const newWindow = window.open("", "_blank");
+
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const id = generateShareId();
+      const { error: insertError } = await supabase.from("shares").insert({
+        id,
+        share_type: type,
+        share_data: data as unknown as import("@/lib/supabase/database.types").Json,
+        user_id: user.id,
+      });
+
+      if (insertError) throw insertError;
+
+      const shareUrl = `${appUrl}/share/${id}`;
+      const intentUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
+
+      if (newWindow) {
+        newWindow.location.href = intentUrl;
+      } else {
+        window.location.href = intentUrl;
+      }
+    } catch {
+      // フォールバック: OGPなしの従来テキストのみ投稿
+      const fallbackText = `${shareText}\n${appUrl}`;
+      const fallbackUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(fallbackText)}`;
+      if (newWindow) {
+        newWindow.location.href = fallbackUrl;
+      } else {
+        window.location.href = fallbackUrl;
+      }
+    } finally {
+      setPosting(false);
+    }
   };
 
   const isMobile = typeof navigator !== "undefined" && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
@@ -161,13 +202,18 @@ export function ShareModal({ type, data, onClose }: Props) {
               )}
               <button
                 onClick={handleXPost}
-                className="w-full bg-[#232640] text-white rounded-[10px] px-4 py-3 text-[14px] font-medium hover:opacity-90 flex items-center justify-center gap-2"
+                disabled={posting}
+                className="w-full bg-[#232640] text-white rounded-[10px] px-4 py-3 text-[14px] font-medium hover:opacity-90 flex items-center justify-center gap-2 disabled:opacity-50"
                 style={{ border: "0.5px solid rgba(100,100,150,0.3)" }}
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="white">
-                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                </svg>
-                Xに投稿
+                {posting ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="white">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                  </svg>
+                )}
+                {posting ? "準備中..." : "Xに投稿"}
               </button>
             </>
           )}

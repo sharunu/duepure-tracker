@@ -561,6 +561,38 @@ export type Database = {
         }
         Relationships: []
       }
+      shares: {
+        Row: {
+          created_at: string
+          id: string
+          share_data: Json
+          share_type: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          share_data: Json
+          share_type: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          share_data?: Json
+          share_type?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shares_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       team_members: {
         Row: {
           discord_username: string
@@ -907,21 +939,21 @@ export type Database = {
           share_pct: number
         }[]
       }
+      get_team_member_summaries: {
+        Args: { p_team_id: string }
+        Returns: {
+          discord_username: string
+          losses: number
+          total: number
+          user_id: string
+          wins: number
+        }[]
+      }
       get_team_members: {
         Args: { p_team_id: string }
         Returns: {
           discord_username: string
           user_id: string
-        }[]
-      }
-      get_team_member_summaries: {
-        Args: { p_team_id: string }
-        Returns: {
-          user_id: string
-          discord_username: string
-          wins: number
-          losses: number
-          total: number
         }[]
       }
       get_team_my_deck_stats_range: {
@@ -998,6 +1030,7 @@ export type Database = {
           unknown_wins: number
         }[]
       }
+      get_user_detail_for_admin: { Args: { p_user_id: string }; Returns: Json }
       get_users_for_admin: {
         Args: never
         Returns: {
@@ -1007,6 +1040,8 @@ export type Database = {
           email: string
           id: string
           is_guest: boolean
+          x_user_id: string
+          x_username: string
         }[]
       }
       is_admin_user: { Args: never; Returns: boolean }
