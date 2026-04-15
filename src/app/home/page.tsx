@@ -37,7 +37,14 @@ function HomePageInner() {
       return;
     }
 
-    setIsGuest(!!user.is_anonymous);
+    // anonymousセッション検出時は強制ログアウト
+    if (user.is_anonymous) {
+      await supabase.auth.signOut();
+      router.replace("/auth");
+      return;
+    }
+
+    setIsGuest(false);
 
     const conn = await getDiscordConnection();
     setConnection(conn);

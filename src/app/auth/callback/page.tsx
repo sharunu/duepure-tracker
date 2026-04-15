@@ -72,6 +72,11 @@ export default function AuthCallbackPage() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (event === "SIGNED_IN" && session) {
+          // anonymousセッション復元は無視
+          if (session.user?.is_anonymous) {
+            await supabase.auth.signOut();
+            return;
+          }
           await syncXAccountFromAuth();
           window.location.href = "/battle";
         }

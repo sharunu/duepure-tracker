@@ -18,8 +18,13 @@ export default function AuthPage() {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event) => {
+      async (event, session) => {
         if (event === "SIGNED_IN") {
+          // anonymousセッション復元時はリダイレクトしない
+          if (session?.user?.is_anonymous) {
+            await supabase.auth.signOut();
+            return;
+          }
           window.location.href = "/battle";
         }
       }

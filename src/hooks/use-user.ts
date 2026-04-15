@@ -14,7 +14,18 @@ export function useUser() {
   useEffect(() => {
     const supabase = createClient();
 
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      // ゲスト（anonymous）セッションが復元された場合は強制ログアウト
+      if (user?.is_anonymous) {
+        await supabase.auth.signOut();
+        setUser(null);
+        setLoading(false);
+        if (!pathname.startsWith("/auth")) {
+          router.replace("/auth");
+        }
+        return;
+      }
+
       setUser(user);
       setLoading(false);
 
@@ -26,7 +37,16 @@ export function useUser() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      // anonymousセッション復元を検知して排除
+      if (session?.user?.is_anonymous) {
+        await supabase.auth.signOut();
+        setUser(null);
+        if (!pathname.startsWith("/auth")) {
+          router.replace("/auth");
+        }
+        return;
+      }
       setUser(session?.user ?? null);
       if (!session?.user && !pathname.startsWith("/auth")) {
         router.replace("/auth");

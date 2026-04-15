@@ -18,7 +18,18 @@ export function BanGuard({ children }: { children: React.ReactNode }) {
       setIsBanned(false);
       return;
     }
-    getUserStage().then(stage => {
+
+    const supabase = createClient();
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      // 未認証またはanonymousセッションの場合はログイン画面へ
+      if (!user || user.is_anonymous) {
+        if (user?.is_anonymous) {
+          await supabase.auth.signOut();
+        }
+        window.location.href = "/auth";
+        return;
+      }
+      const stage = await getUserStage();
       setIsBanned(stage === 4);
     });
   }, [isExcluded]);

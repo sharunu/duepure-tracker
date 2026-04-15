@@ -377,6 +377,7 @@ export function BattleRecordForm({
             </div>
           </div>
 
+
           {/* Result buttons */}
           <div className="flex gap-3 pt-2">
             <button
