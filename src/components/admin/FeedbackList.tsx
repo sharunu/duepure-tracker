@@ -1,18 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-
-type Feedback = {
-  id: string;
-  category: string;
-  message: string;
-  user_id: string | null;
-  created_at: string | null;
-};
+import { updateFeedbackStatus, type AdminFeedback } from "@/lib/actions/admin-actions";
 
 type Props = {
-  feedbacks: Feedback[];
+  feedbacks: AdminFeedback[];
 };
 
 const categoryConfig: Record<string, { label: string; color: string; bg: string }> = {
@@ -21,16 +15,32 @@ const categoryConfig: Record<string, { label: string; color: string; bg: string 
   other: { label: "その他", color: "#8888aa", bg: "rgba(136,136,170,0.12)" },
 };
 
-const filters = [
+const categoryFilters = [
   { value: null, label: "全て" },
   { value: "bug", label: "バグ" },
   { value: "feature", label: "機能要望" },
   { value: "other", label: "その他" },
 ];
 
+type StatusFilter = "pending" | "resolved" | null;
+
+const statusFilters: { value: StatusFilter; label: string }[] = [
+  { value: "pending", label: "未処理" },
+  { value: "resolved", label: "処理済み" },
+  { value: null, label: "全て" },
+];
+
 export function FeedbackList({ feedbacks }: Props) {
+  const router = useRouter();
   const [filter, setFilter] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
   const [userNames, setUserNames] = useState<Record<string, string>>({});
+  const [localFeedbacks, setLocalFeedbacks] = useState<AdminFeedback[]>(feedbacks);
+  const [updating, setUpdating] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    setLocalFeedbacks(feedbacks);
+  }, [feedbacks]);
 
   useEffect(() => {
     const userIds = [...new Set(feedbacks.map(f => f.user_id).filter(Boolean))] as string[];
@@ -50,12 +60,29 @@ export function FeedbackList({ feedbacks }: Props) {
       });
   }, [feedbacks]);
 
-  const filtered = filter ? feedbacks.filter(f => f.category === filter) : feedbacks;
+  const filtered = localFeedbacks
+    .filter(f => filter ? f.category === filter : true)
+    .filter(f => statusFilter ? f.status === statusFilter : true);
+
+  const pendingCount = localFeedbacks.filter(f => f.status === "pending").length;
+
+  const handleToggleStatus = async (fb: AdminFeedback) => {
+    const next: "pending" | "resolved" = fb.status === "pending" ? "resolved" : "pending";
+    setUpdating(prev => ({ ...prev, [fb.id]: true }));
+    try {
+      await updateFeedbackStatus(fb.id, next);
+      setLocalFeedbacks(prev => prev.map(f => f.id === fb.id ? { ...f, status: next } : f));
+    } catch (e) {
+      console.error("Failed to update feedback status:", e);
+    } finally {
+      setUpdating(prev => ({ ...prev, [fb.id]: false }));
+    }
+  };
 
   return (
     <div>
-      <div className="flex flex-wrap gap-2 mb-4">
-        {filters.map((f) => (
+      <div className="flex flex-wrap gap-2 mb-2">
+        {categoryFilters.map((f) => (
           <button
             key={f.value ?? "all"}
             onClick={() => setFilter(f.value)}
@@ -68,6 +95,23 @@ export function FeedbackList({ feedbacks }: Props) {
             {f.label}
           </button>
         ))}
+      </div>
+
+      <div className="flex flex-wrap gap-2 mb-4 items-center">
+        {statusFilters.map((f) => (
+          <button
+            key={f.value ?? "all"}
+            onClick={() => setStatusFilter(f.value)}
+            className={`rounded-[20px] border px-3 py-1.5 text-xs font-medium transition-colors ${
+              statusFilter === f.value
+                ? "bg-[rgba(245,195,75,0.15)] text-[#f5c34b] border-transparent"
+                : "bg-[#232640] text-[#8888aa] border-transparent"
+            }`}
+          >
+            {f.label}
+          </button>
+        ))}
+        <span className="text-[11px] text-gray-500 ml-auto">未処理 {pendingCount}件</span>
       </div>
 
       {filtered.length === 0 ? (
@@ -93,6 +137,29 @@ export function FeedbackList({ feedbacks }: Props) {
                   <span className="text-[11px] text-gray-500 ml-auto truncate max-w-[120px]">{userName}</span>
                 </div>
                 <p className="text-[13px] text-[#ccccdd] whitespace-pre-wrap break-words">{fb.message}</p>
+                <div className="flex items-center gap-2 mt-3">
+                  <button
+                    onClick={() => handleToggleStatus(fb)}
+                    disabled={updating[fb.id]}
+                    className={`text-[11px] px-2.5 py-1 rounded-full font-medium transition-colors disabled:opacity-50 ${
+                      fb.status === "pending"
+                        ? "bg-[rgba(232,93,117,0.12)] text-[#e85d75] hover:bg-[rgba(232,93,117,0.2)]"
+                        : "bg-[rgba(91,141,239,0.12)] text-[#5b8def] hover:bg-[rgba(91,141,239,0.2)]"
+                    }`}
+                  >
+                    {fb.status === "pending" ? "未処理" : "処理済み"}
+                  </button>
+                  {fb.user_id ? (
+                    <button
+                      onClick={() => router.push(`/admin/users/${fb.user_id}`)}
+                      className="text-[11px] text-[#5b8def] hover:underline ml-auto"
+                    >
+                      詳細を見る &rsaquo;
+                    </button>
+                  ) : (
+                    <span className="text-[11px] text-gray-600 ml-auto">退会済み</span>
+                  )}
+                </div>
               </div>
             );
           })}

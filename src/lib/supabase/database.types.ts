@@ -307,6 +307,7 @@ export type Database = {
           created_at: string | null
           id: string
           message: string
+          status: string
           user_id: string | null
         }
         Insert: {
@@ -314,6 +315,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           message: string
+          status?: string
           user_id?: string | null
         }
         Update: {
@@ -321,6 +323,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           message?: string
+          status?: string
           user_id?: string | null
         }
         Relationships: []
@@ -1034,12 +1037,14 @@ export type Database = {
       get_users_for_admin: {
         Args: never
         Returns: {
+          auth_provider: string
           battle_count: number
           created_at: string
           display_name: string
           email: string
           id: string
           is_guest: boolean
+          stage: number
           x_user_id: string
           x_username: string
         }[]
@@ -1058,6 +1063,10 @@ export type Database = {
       run_quality_scoring: { Args: { p_auto_update?: boolean }; Returns: Json }
       sync_team_membership: {
         Args: { p_discord_username: string; p_guilds: Json; p_user_id: string }
+        Returns: undefined
+      }
+      update_feedback_status: {
+        Args: { p_feedback_id: string; p_status: string }
         Returns: undefined
       }
     }

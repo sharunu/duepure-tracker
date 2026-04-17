@@ -236,12 +236,25 @@ export async function getBattleCountsForPeriod(format: string, periodDays: numbe
 
 // === ユーザー一覧 ===
 
-export async function getAdminUserList() {
+export type AdminUserListRow = {
+  id: string;
+  display_name: string | null;
+  email: string | null;
+  is_guest: boolean;
+  created_at: string;
+  battle_count: number;
+  x_username: string | null;
+  x_user_id: string | null;
+  stage: number;
+  auth_provider: string;
+};
+
+export async function getAdminUserList(): Promise<AdminUserListRow[]> {
   await requireAdmin();
   const supabase = createClient();
   const { data, error } = await (supabase.rpc as any)("get_users_for_admin");
   if (error) throw new Error(error.message);
-  return data ?? [];
+  return (data ?? []) as AdminUserListRow[];
 }
 
 // === ユーザーのデッキ取得 ===
@@ -439,14 +452,35 @@ export async function getAdminUserDailyBattleCounts(
 
 // === フィードバック一覧 ===
 
-export async function getAdminFeedbackList() {
+export type AdminFeedback = {
+  id: string;
+  category: string;
+  message: string;
+  user_id: string | null;
+  created_at: string | null;
+  status: "pending" | "resolved";
+};
+
+export async function getAdminFeedbackList(): Promise<AdminFeedback[]> {
   await requireAdmin();
   const supabase = createClient();
   const { data } = await supabase
     .from("feedback")
-    .select("id, category, message, user_id, created_at")
+    .select("id, category, message, user_id, created_at, status")
     .order("created_at", { ascending: false });
-  return data ?? [];
+  return (data ?? []) as AdminFeedback[];
+}
+
+export async function updateFeedbackStatus(
+  feedbackId: string,
+  status: "pending" | "resolved"
+): Promise<void> {
+  const supabase = await requireAdmin();
+  const { error } = await (supabase.rpc as any)("update_feedback_status", {
+    p_feedback_id: feedbackId,
+    p_status: status,
+  });
+  if (error) throw new Error(error.message);
 }
 
 // =============================================
