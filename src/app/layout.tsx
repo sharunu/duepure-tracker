@@ -16,10 +16,33 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const SITE_NAME = "デュエプレトラッカー";
+const SITE_DESCRIPTION = "デュエルマスターズプレイスの対戦記録・環境分析ツール";
+
 export const metadata: Metadata = {
-  title: "デュエプレトラッカー",
-  description: "デュエルマスターズプレイスの対戦記録・環境分析ツール",
+  metadataBase: new URL("http://54.152.11.99:3000"),
+  title: SITE_NAME,
+  description: SITE_DESCRIPTION,
   manifest: "/manifest.json",
+  formatDetection: {
+    telephone: false,
+    email: false,
+    address: false,
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  openGraph: {
+    type: "website",
+    locale: "ja_JP",
+    siteName: SITE_NAME,
+    description: SITE_DESCRIPTION,
+  },
+  twitter: {
+    card: "summary_large_image",
+    description: SITE_DESCRIPTION,
+  },
 };
 
 export const viewport: Viewport = {

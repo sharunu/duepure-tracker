@@ -198,6 +198,18 @@ export async function getBattlesByDateRange(format: string, startDate: string, e
   return data ?? [];
 }
 
+export async function hasAnyBattles(format: string = "ND"): Promise<boolean> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return false;
+  const { count } = await supabase
+    .from("battles")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .eq("format", format);
+  return (count ?? 0) > 0;
+}
+
 export async function getOpponentMemoSuggestions(opponentDeckName: string): Promise<string[]> {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();

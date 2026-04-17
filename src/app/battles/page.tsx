@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { getBattlesByDateRange, getDailyBattleCounts, getOpponentDeckSuggestions } from "@/lib/actions/battle-actions";
+import Link from "next/link";
+import { getBattlesByDateRange, getDailyBattleCounts, getOpponentDeckSuggestions, hasAnyBattles } from "@/lib/actions/battle-actions";
 import { getDecks } from "@/lib/actions/deck-actions";
 import { useFormat } from "@/hooks/use-format";
 import { FormatSelector } from "@/components/ui/FormatSelector";
@@ -33,6 +34,7 @@ export default function BattlesPage() {
   const [suggestions, setSuggestions] = useState<{ major: string[]; minor: string[]; other: string[] }>({ major: [], minor: [], other: [] });
   const [selectedDeck, setSelectedDeck] = useState<string | null>(null);
   const [battleCounts, setBattleCounts] = useState<Record<string, number>>({});
+  const [hasAny, setHasAny] = useState<boolean | null>(null);
 
   const [startDate, setStartDate] = useState(() => {
     const d = new Date();
@@ -47,10 +49,12 @@ export default function BattlesPage() {
       getBattlesByDateRange(format, startDate, endDate),
       getDecks(format),
       getOpponentDeckSuggestions(format),
-    ]).then(([battlesData, decksData, suggestionsData]) => {
+      hasAnyBattles(format),
+    ]).then(([battlesData, decksData, suggestionsData, anyData]) => {
       setBattles(battlesData as Battle[]);
       setDecks(decksData as Deck[]);
       setSuggestions(suggestionsData);
+      setHasAny(anyData);
       setPageLoading(false);
     }).catch(() => {
       setError("データの読み込みに失敗しました");
@@ -116,6 +120,24 @@ export default function BattlesPage() {
             <div className="animate-pulse rounded-[10px] bg-[#232640] h-[52px]" />
             <div className="animate-pulse rounded-[10px] bg-[#232640] h-[52px]" />
             <div className="animate-pulse rounded-[10px] bg-[#232640] h-[52px]" />
+          </div>
+        ) : hasAny === false ? (
+          <div
+            className="rounded-[12px] p-6 text-center space-y-4"
+            style={{ backgroundColor: "#1a1d2e", border: "0.5px solid #333355" }}
+          >
+            <div className="space-y-2">
+              <h2 className="text-[18px] font-medium">まだ対戦記録がありません</h2>
+              <p className="text-sm text-gray-400">
+                最初の対戦を記録してみましょう。
+              </p>
+            </div>
+            <Link
+              href="/battle"
+              className="inline-block rounded-[10px] px-5 py-3 text-sm font-medium bg-[#6366f1] hover:bg-[#5558e6] transition-colors"
+            >
+              対戦を記録する
+            </Link>
           </div>
         ) : (
           <>
