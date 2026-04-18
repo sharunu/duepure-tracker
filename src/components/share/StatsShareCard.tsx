@@ -18,13 +18,6 @@ function winRateColor(rate: number): string {
   return "#f87171";
 }
 
-function heroGradient(rate: number): string {
-  if (rate >= 50) {
-    return "linear-gradient(135deg, #a5b4fc 0%, #818cf8 35%, #6366f1 70%, #4338ca 100%)";
-  }
-  return "linear-gradient(135deg, #fca5a5 0%, #f87171 40%, #ef4444 100%)";
-}
-
 function TurnCard({
   label,
   color,
@@ -111,7 +104,6 @@ export const StatsShareCard = forwardRef<HTMLDivElement, Props>(
     const secondRate = secondTotal > 0 ? Math.round((data.secondWins / secondTotal) * 100) : -1;
     const unknownRate = unknownTotal > 0 ? Math.round((data.unknownWins / unknownTotal) * 100) : -1;
 
-    const heroGrad = heroGradient(data.winRate);
     const heroGlow = data.winRate >= 50 ? "rgba(99,102,241,0.45)" : "rgba(248,113,113,0.35)";
     const distribution = (data.encounterDistribution ?? []).slice(0, 5);
     const appUrl =
@@ -238,23 +230,45 @@ export const StatsShareCard = forwardRef<HTMLDivElement, Props>(
                 WIN RATE
                 <div style={{ width: 20, height: 1, background: "#a5b4fc" }} />
               </div>
-              <div
-                style={{
-                  fontSize: 228,
-                  fontWeight: 900,
-                  lineHeight: 0.9,
-                  letterSpacing: -10,
-                  fontFamily: MONO_FONT,
-                  background: heroGrad,
-                  WebkitBackgroundClip: "text",
-                  backgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  color: "transparent",
-                  textShadow: `0 8px 48px ${heroGlow}`,
-                }}
+              <svg
+                width={580}
+                height={210}
+                viewBox="0 0 580 210"
+                style={{ display: "block", overflow: "visible", marginTop: 4 }}
               >
-                {data.winRate}%
-              </div>
+                <defs>
+                  <linearGradient id="heroRateGrad" x1="0" y1="0" x2="1" y2="1">
+                    {data.winRate >= 50 ? (
+                      <>
+                        <stop offset="0%" stopColor="#a5b4fc" />
+                        <stop offset="35%" stopColor="#818cf8" />
+                        <stop offset="70%" stopColor="#6366f1" />
+                        <stop offset="100%" stopColor="#4338ca" />
+                      </>
+                    ) : (
+                      <>
+                        <stop offset="0%" stopColor="#fca5a5" />
+                        <stop offset="40%" stopColor="#f87171" />
+                        <stop offset="100%" stopColor="#ef4444" />
+                      </>
+                    )}
+                  </linearGradient>
+                </defs>
+                <text
+                  x="0"
+                  y="175"
+                  fontSize={228}
+                  fontWeight={900}
+                  fill="url(#heroRateGrad)"
+                  fontFamily={MONO_FONT}
+                  letterSpacing={-10}
+                  style={{
+                    filter: `drop-shadow(0 8px 40px ${heroGlow})`,
+                  }}
+                >
+                  {data.winRate}%
+                </text>
+              </svg>
               <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginTop: 18 }}>
                 <div
                   style={{
