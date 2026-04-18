@@ -17,7 +17,7 @@ function winRateColor(rate: number): string {
   return "#f87171";
 }
 
-function TurnStat({
+function StatColumn({
   label,
   wins,
   losses,
@@ -32,10 +32,18 @@ function TurnStat({
 }) {
   const rateColor = rate >= 0 ? winRateColor(rate) : "#55586e";
   return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
+    <div
+      style={{
+        flex: 1,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        padding: "0 16px",
+      }}
+    >
       <div
         style={{
-          fontSize: 15,
+          fontSize: 17,
           fontWeight: 700,
           color: "#e8eaf4",
           fontFamily: UI,
@@ -44,13 +52,20 @@ function TurnStat({
       >
         {label}
       </div>
-      <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginTop: 8 }}>
-        <div style={{ fontSize: 11, fontWeight: 400, color: "#8a8fa3", fontFamily: UI, letterSpacing: 0.8 }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "baseline",
+          gap: 8,
+          marginTop: 12,
+        }}
+      >
+        <div style={{ fontSize: 13, fontWeight: 400, color: "#8a8fa3", fontFamily: UI, letterSpacing: 1 }}>
           勝率
         </div>
         <div
           style={{
-            fontSize: 40,
+            fontSize: 52,
             fontWeight: 900,
             color: rateColor,
             fontFamily: MONO,
@@ -63,68 +78,14 @@ function TurnStat({
       </div>
       <div
         style={{
-          fontSize: 12,
+          fontSize: 13,
           color: "#8a8fa3",
           fontFamily: MONO,
-          marginTop: 6,
+          marginTop: 10,
           letterSpacing: 0.3,
         }}
       >
         {total > 0 ? `${wins}勝${losses}敗 / ${total}戦` : "0戦"}
-      </div>
-    </div>
-  );
-}
-
-function MatchupRow({
-  name,
-  wins,
-  losses,
-  rate,
-}: {
-  name: string;
-  wins: number;
-  losses: number;
-  rate: number;
-}) {
-  const barRate = Math.max(0, Math.min(100, rate));
-  const color = winRateColor(rate);
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-        <div
-          style={{
-            fontSize: 15,
-            fontWeight: 400,
-            color: "#d6dae8",
-            fontFamily: UI,
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-            maxWidth: 680,
-          }}
-        >
-          {name}
-        </div>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexShrink: 0 }}>
-          <div style={{ fontSize: 11, fontWeight: 400, color: "#8a8fa3", fontFamily: UI }}>勝率</div>
-          <div style={{ fontSize: 20, fontWeight: 900, color, fontFamily: MONO, lineHeight: 1 }}>
-            {rate}%
-          </div>
-          <div style={{ fontSize: 12, fontWeight: 400, color: "#55586e", fontFamily: MONO }}>
-            {wins}-{losses}
-          </div>
-        </div>
-      </div>
-      <div
-        style={{
-          height: 3,
-          background: "rgba(130,140,200,0.1)",
-          borderRadius: 999,
-          overflow: "hidden",
-        }}
-      >
-        <div style={{ height: "100%", width: `${barRate}%`, background: color, opacity: 0.85 }} />
       </div>
     </div>
   );
@@ -140,7 +101,6 @@ export const DeckShareCard = forwardRef<HTMLDivElement, Props>(
 
     const deckLabel = type === "opponent" ? "対戦相手" : "使用デッキ";
     const displayName = type === "opponent" ? `vs ${data.deckName}` : data.deckName;
-    const matchupLabel = type === "opponent" ? "使用デッキ別" : "対面別勝率";
     const appUrl =
       typeof window !== "undefined"
         ? window.location.origin
@@ -163,7 +123,7 @@ export const DeckShareCard = forwardRef<HTMLDivElement, Props>(
           boxSizing: "border-box",
           display: "flex",
           flexDirection: "column",
-          padding: "36px 64px 28px 64px",
+          padding: "44px 64px 32px 64px",
         }}
       >
         {/* Header */}
@@ -201,120 +161,150 @@ export const DeckShareCard = forwardRef<HTMLDivElement, Props>(
           </div>
         </div>
 
-        {/* Main: Deck name + Win rate side by side */}
+        {/* Hero: Deck name + Win rate */}
         <div
           style={{
+            flex: 1,
             display: "flex",
+            flexDirection: "column",
             alignItems: "center",
-            justifyContent: "space-between",
-            gap: 40,
-            marginTop: 18,
-            marginBottom: 10,
+            justifyContent: "center",
+            marginTop: -6,
           }}
         >
-          {/* Deck name block */}
-          <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0 }}>
-            <div
-              style={{
-                fontSize: 12,
-                fontWeight: 700,
-                color: "#a5b4fc",
-                letterSpacing: 4,
-                fontFamily: UI,
-                marginBottom: 6,
-              }}
-            >
-              {deckLabel}
-            </div>
-            <div
-              style={{
-                fontSize: 56,
-                fontWeight: 900,
-                color: "#f4f5fa",
-                fontFamily: UI,
-                lineHeight: 1.1,
-                letterSpacing: 0.5,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {displayName}
-            </div>
+          {/* Deck name */}
+          <div
+            style={{
+              fontSize: 13,
+              fontWeight: 400,
+              color: "#a5b4fc",
+              letterSpacing: 6,
+              fontFamily: UI,
+              marginBottom: 8,
+            }}
+          >
+            {deckLabel}
+          </div>
+          <div
+            style={{
+              fontSize: 42,
+              fontWeight: 900,
+              color: "#f4f5fa",
+              fontFamily: UI,
+              lineHeight: 1.1,
+              letterSpacing: 0.5,
+              marginBottom: 18,
+              maxWidth: 900,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              textAlign: "center",
+            }}
+          >
+            {displayName}
           </div>
 
-          {/* Win rate block */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", flexShrink: 0 }}>
-            <div
+          {/* Win rate label */}
+          <div
+            style={{
+              fontSize: 18,
+              fontWeight: 400,
+              color: "#a5b4fc",
+              letterSpacing: 10,
+              fontFamily: UI,
+              marginBottom: -14,
+              paddingLeft: 10,
+            }}
+          >
+            勝率
+          </div>
+          <svg
+            width={600}
+            height={220}
+            viewBox="0 0 600 220"
+            style={{ display: "block", overflow: "visible" }}
+          >
+            <defs>
+              <linearGradient id="deckHeroGrad" x1="0" y1="0" x2="1" y2="1">
+                {data.winRate >= 50 ? (
+                  <>
+                    <stop offset="0%" stopColor="#c7d2fe" />
+                    <stop offset="50%" stopColor="#818cf8" />
+                    <stop offset="100%" stopColor="#4338ca" />
+                  </>
+                ) : (
+                  <>
+                    <stop offset="0%" stopColor="#fca5a5" />
+                    <stop offset="100%" stopColor="#ef4444" />
+                  </>
+                )}
+              </linearGradient>
+            </defs>
+            <text
+              x="300"
+              y="180"
+              textAnchor="middle"
+              fontSize={200}
+              fontWeight={900}
+              fill="url(#deckHeroGrad)"
+              fontFamily={MONO}
+              letterSpacing={-6}
               style={{
-                fontSize: 13,
-                fontWeight: 400,
-                color: "#a5b4fc",
-                letterSpacing: 6,
-                fontFamily: UI,
-                marginBottom: -8,
-                paddingRight: 6,
+                filter:
+                  data.winRate >= 50
+                    ? "drop-shadow(0 8px 40px rgba(99,102,241,0.5))"
+                    : "drop-shadow(0 8px 32px rgba(239,68,68,0.4))",
               }}
             >
-              勝率
-            </div>
-            <svg width={260} height={140} viewBox="0 0 260 140" style={{ display: "block", overflow: "visible" }}>
-              <defs>
-                <linearGradient id="deckHeroGrad" x1="0" y1="0" x2="1" y2="1">
-                  {data.winRate >= 50 ? (
-                    <>
-                      <stop offset="0%" stopColor="#c7d2fe" />
-                      <stop offset="50%" stopColor="#818cf8" />
-                      <stop offset="100%" stopColor="#4338ca" />
-                    </>
-                  ) : (
-                    <>
-                      <stop offset="0%" stopColor="#fca5a5" />
-                      <stop offset="100%" stopColor="#ef4444" />
-                    </>
-                  )}
-                </linearGradient>
-              </defs>
-              <text
-                x="260"
-                y="115"
-                textAnchor="end"
-                fontSize={128}
-                fontWeight={900}
-                fill="url(#deckHeroGrad)"
-                fontFamily={MONO}
-                letterSpacing={-4}
-                style={{
-                  filter:
-                    data.winRate >= 50
-                      ? "drop-shadow(0 6px 28px rgba(99,102,241,0.45))"
-                      : "drop-shadow(0 6px 24px rgba(239,68,68,0.4))",
-                }}
-              >
-                {data.winRate}%
-              </text>
-            </svg>
+              {data.winRate}%
+            </text>
+          </svg>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "baseline",
+              gap: 12,
+              marginTop: -6,
+            }}
+          >
             <div
               style={{
-                fontSize: 16,
+                fontSize: 24,
                 fontWeight: 700,
                 color: "#d6dae8",
                 fontFamily: UI,
-                letterSpacing: 0.5,
-                marginTop: -2,
+                letterSpacing: 1,
               }}
             >
-              {data.totalWins}勝 {data.totalLosses}敗{" "}
-              <span style={{ color: "#6a6e85", fontSize: 13, fontWeight: 400, fontFamily: MONO }}>
-                / {totalBattles}戦
-              </span>
+              {data.totalWins}勝 {data.totalLosses}敗
+            </div>
+            <div
+              style={{
+                fontSize: 16,
+                fontWeight: 400,
+                color: "#6a6e85",
+                fontFamily: MONO,
+              }}
+            >
+              / {totalBattles}戦
             </div>
           </div>
         </div>
 
-        {/* Turn row (先攻 / 後攻) */}
-        <div style={{ display: "flex", alignItems: "stretch", marginTop: 4 }}>
-          <TurnStat
+        {/* Thin divider */}
+        <div
+          style={{
+            height: 1,
+            background:
+              "linear-gradient(90deg, transparent 0%, rgba(130,140,200,0.28) 20%, rgba(130,140,200,0.28) 80%, transparent 100%)",
+            marginTop: 18,
+            marginBottom: 24,
+          }}
+        />
+
+        {/* Stats row: 先攻 / 後攻 */}
+        <div style={{ display: "flex", alignItems: "stretch" }}>
+          <StatColumn
             label="先攻"
             wins={data.firstWins}
             losses={data.firstLosses}
@@ -322,7 +312,7 @@ export const DeckShareCard = forwardRef<HTMLDivElement, Props>(
             rate={firstRate}
           />
           <div style={{ width: 1, background: "rgba(130,140,200,0.14)" }} />
-          <TurnStat
+          <StatColumn
             label="後攻"
             wins={data.secondWins}
             losses={data.secondLosses}
@@ -331,40 +321,14 @@ export const DeckShareCard = forwardRef<HTMLDivElement, Props>(
           />
         </div>
 
-        {/* Divider */}
+        {/* Footer */}
         <div
           style={{
-            height: 1,
-            background:
-              "linear-gradient(90deg, transparent 0%, rgba(130,140,200,0.28) 20%, rgba(130,140,200,0.28) 80%, transparent 100%)",
-            marginTop: 20,
-            marginBottom: 16,
+            display: "flex",
+            justifyContent: "flex-end",
+            marginTop: 24,
           }}
-        />
-
-        {/* Matchups */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-          <div
-            style={{
-              fontSize: 11,
-              fontWeight: 700,
-              color: "#a5b4fc",
-              letterSpacing: 3.5,
-              fontFamily: UI,
-              marginBottom: 10,
-            }}
-          >
-            {matchupLabel} TOP{Math.min(5, data.topMatchups.length)}
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {data.topMatchups.slice(0, 5).map((m, i) => (
-              <MatchupRow key={i} name={m.name} wins={m.wins} losses={m.losses} rate={m.winRate} />
-            ))}
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 10 }}>
+        >
           <div
             style={{
               fontSize: 11,
