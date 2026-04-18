@@ -1,8 +1,19 @@
 import { Metadata } from "next";
 import { createClient } from "@supabase/supabase-js";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 type Props = { params: Promise<{ id: string }> };
+
+async function resolveAppUrl(): Promise<string> {
+  const h = await headers();
+  const host = h.get("host");
+  if (host) {
+    const protocol = host.startsWith("localhost") || host.startsWith("127.") ? "http" : "https";
+    return `${protocol}://${host}`;
+  }
+  return process.env.NEXT_PUBLIC_APP_URL ?? "";
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
@@ -22,7 +33,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return { title: "デュエプレトラッカー" };
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
+  const appUrl = await resolveAppUrl();
   const ogImageUrl = `${appUrl}/api/og/${id}`;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
