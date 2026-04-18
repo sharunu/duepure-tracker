@@ -22,7 +22,7 @@ export function ShareModal({ type, data, onClose }: Props) {
   const [capturing, setCapturing] = useState(true);
   const [posting, setPosting] = useState(false);
 
-  const appUrl = "http://54.152.11.99:3000";
+  const appUrl = typeof window !== "undefined" ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL ?? "");
 
   const shareText = (() => {
     if (type === "stats") {

@@ -148,7 +148,7 @@ export const StatsShareCard = forwardRef<HTMLDivElement, Props>(
         {/* Footer */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div style={{ fontSize: 16, fontWeight: 700, color: "#818cf8" }}>デュエプレトラッカー</div>
-          <div style={{ fontSize: 12, color: "#555" }}>http://54.152.11.99:3000</div>
+          <div style={{ fontSize: 12, color: "#555" }}>{process.env.NEXT_PUBLIC_APP_URL ?? ""}</div>
         </div>
       </div>
     );

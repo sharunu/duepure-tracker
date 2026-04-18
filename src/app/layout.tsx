@@ -20,7 +20,7 @@ const SITE_NAME = "デュエプレトラッカー";
 const SITE_DESCRIPTION = "デュエルマスターズプレイスの対戦記録・環境分析ツール";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("http://54.152.11.99:3000"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
   title: SITE_NAME,
   description: SITE_DESCRIPTION,
   manifest: "/manifest.json",

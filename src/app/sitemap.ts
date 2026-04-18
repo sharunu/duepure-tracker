@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const base = "http://54.152.11.99:3000";
+  const base = process.env.NEXT_PUBLIC_APP_URL ?? "";
   const now = new Date();
   return [
     {

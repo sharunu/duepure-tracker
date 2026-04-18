@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return { title: "デュエプレトラッカー" };
   }
 
-  const appUrl = "http://54.152.11.99:3000";
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
   const ogImageUrl = `${appUrl}/api/og/${id}`;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

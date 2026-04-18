@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: "/",
       disallow: ["/admin", "/account", "/api", "/auth"],
     },
-    sitemap: "http://54.152.11.99:3000/sitemap.xml",
+    sitemap: (process.env.NEXT_PUBLIC_APP_URL ?? "") + "/sitemap.xml",
   };
 }

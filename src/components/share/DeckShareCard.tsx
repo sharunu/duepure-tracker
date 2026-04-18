@@ -90,7 +90,7 @@ export const DeckShareCard = forwardRef<HTMLDivElement, Props>(
             デュエプレトラッカー
           </div>
           <div style={{ fontSize: 13, color: "#555" }}>
-            http://54.152.11.99:3000
+            {process.env.NEXT_PUBLIC_APP_URL ?? ""}
           </div>
         </div>
       </div>
