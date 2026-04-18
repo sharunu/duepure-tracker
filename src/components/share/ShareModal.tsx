@@ -104,14 +104,40 @@ export function ShareModal({ type, data, onClose }: Props) {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
+      if (!imageBlob) throw new Error("Image not ready");
 
       const id = generateShareId();
-      const { error: insertError } = await supabase.from("shares").insert({
+
+      // Upload captured image to Supabase Storage so X can use it as og:image
+      let imageUrl: string | null = null;
+      try {
+        const filePath = `${id}.png`;
+        const { error: uploadError } = await supabase.storage
+          .from("share-images")
+          .upload(filePath, imageBlob, {
+            contentType: "image/png",
+            upsert: true,
+            cacheControl: "604800",
+          });
+        if (!uploadError) {
+          const { data: pub } = supabase.storage.from("share-images").getPublicUrl(filePath);
+          imageUrl = pub.publicUrl;
+        }
+      } catch {
+        // upload失敗時は image_url なしでINSERT、OGP route がSatori fallback
+      }
+
+      const insertPayload: Record<string, unknown> = {
         id,
         share_type: type,
         share_data: data as unknown as import("@/lib/supabase/database.types").Json,
         user_id: user.id,
-      });
+      };
+      if (imageUrl) insertPayload.image_url = imageUrl;
+
+      const { error: insertError } = await supabase
+        .from("shares")
+        .insert(insertPayload as never);
 
       if (insertError) throw insertError;
 

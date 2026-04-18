@@ -7,15 +7,25 @@ type Props = {
   data: StatsShareData;
 };
 
-const CHIP_COLORS = ["#818cf8", "#6366f1", "#38bdf8", "#34d399", "#fbbf24", "#64748b"];
+const CHIP_COLORS = ["#a5b4fc", "#818cf8", "#60a5fa", "#34d399", "#fbbf24", "#f87171"];
+const MONO_FONT = "ui-monospace, 'SF Mono', 'Monaco', 'Cascadia Code', 'Menlo', 'Consolas', monospace";
+const UI_FONT = "'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
 
 function winRateColor(rate: number): string {
-  if (rate < 0) return "#8a8fa3";
-  if (rate >= 50) return "#5b8def";
-  return "#e85d75";
+  if (rate < 0) return "#55586e";
+  if (rate >= 60) return "#60a5fa";
+  if (rate >= 50) return "#818cf8";
+  return "#f87171";
 }
 
-function TurnRow({
+function heroGradient(rate: number): string {
+  if (rate >= 50) {
+    return "linear-gradient(135deg, #a5b4fc 0%, #818cf8 35%, #6366f1 70%, #4338ca 100%)";
+  }
+  return "linear-gradient(135deg, #fca5a5 0%, #f87171 40%, #ef4444 100%)";
+}
+
+function TurnCard({
   label,
   color,
   wins,
@@ -35,37 +45,38 @@ function TurnRow({
       style={{
         display: "flex",
         alignItems: "center",
-        width: "100%",
         height: 92,
-        background: "#1a1d3a",
+        background:
+          "linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(26,29,58,0.6) 50%, rgba(10,11,31,0.4) 100%)",
+        border: "1px solid rgba(130,140,200,0.15)",
+        borderLeft: `3px solid ${color}`,
         borderRadius: 14,
-        paddingLeft: 23,
-        paddingRight: 28,
-        borderLeft: "5px solid " + color,
-        gap: 20,
+        padding: "0 26px 0 22px",
+        gap: 18,
         boxSizing: "border-box",
       }}
     >
       <div
         style={{
-          display: "flex",
-          fontSize: 20,
+          fontSize: 11,
           fontWeight: 700,
+          letterSpacing: 2,
           color: color,
-          minWidth: 60,
+          minWidth: 46,
+          fontFamily: UI_FONT,
         }}
       >
         {label}
       </div>
       <div
         style={{
-          display: "flex",
-          alignItems: "baseline",
           fontSize: 54,
-          fontWeight: 700,
-          color: rate >= 0 ? winRateColor(rate) : "#55586e",
-          minWidth: 150,
+          fontWeight: 900,
+          color: winRateColor(rate),
           lineHeight: 1,
+          fontFamily: MONO_FONT,
+          minWidth: 155,
+          letterSpacing: -1,
         }}
       >
         {rate >= 0 ? `${rate}%` : "—"}
@@ -76,13 +87,14 @@ function TurnRow({
           flexDirection: "column",
           marginLeft: "auto",
           alignItems: "flex-end",
+          gap: 2,
         }}
       >
-        <div style={{ fontSize: 18, fontWeight: 700, color: "#d6dae8" }}>
+        <div style={{ fontSize: 18, fontWeight: 700, color: "#d6dae8", fontFamily: MONO_FONT, letterSpacing: 0.5 }}>
           {total > 0 ? `${wins}-${losses}` : "—"}
         </div>
-        <div style={{ fontSize: 12, fontWeight: 400, color: "#8a8fa3", marginTop: 2 }}>
-          {total > 0 ? `${total}戦` : "0戦"}
+        <div style={{ fontSize: 11, fontWeight: 400, color: "#6a6e85", letterSpacing: 0.3 }}>
+          {total > 0 ? `${total} games` : "0 games"}
         </div>
       </div>
     </div>
@@ -99,7 +111,8 @@ export const StatsShareCard = forwardRef<HTMLDivElement, Props>(
     const secondRate = secondTotal > 0 ? Math.round((data.secondWins / secondTotal) * 100) : -1;
     const unknownRate = unknownTotal > 0 ? Math.round((data.unknownWins / unknownTotal) * 100) : -1;
 
-    const heroColor = winRateColor(data.winRate);
+    const heroGrad = heroGradient(data.winRate);
+    const heroGlow = data.winRate >= 50 ? "rgba(99,102,241,0.45)" : "rgba(248,113,113,0.35)";
     const distribution = (data.encounterDistribution ?? []).slice(0, 5);
     const appUrl =
       typeof window !== "undefined"
@@ -112,164 +125,287 @@ export const StatsShareCard = forwardRef<HTMLDivElement, Props>(
         style={{
           width: 1200,
           height: 630,
-          background: "linear-gradient(135deg, #0b0d24 0%, #1a1d3a 55%, #0b0d24 100%)",
-          color: "#fff",
-          fontFamily: "'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif",
-          padding: "36px 56px 26px 56px",
-          display: "flex",
-          flexDirection: "column",
           position: "absolute",
           left: -9999,
           top: -9999,
+          overflow: "hidden",
+          fontFamily: UI_FONT,
+          color: "#fff",
+          background:
+            "radial-gradient(circle at 18% 22%, rgba(99,102,241,0.38) 0%, transparent 45%), radial-gradient(circle at 88% 85%, rgba(232,93,117,0.22) 0%, transparent 48%), linear-gradient(160deg, #0a0b1f 0%, #141636 60%, #0a0b1f 100%)",
           boxSizing: "border-box",
         }}
       >
-        {/* Header */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-            <div
-              style={{
-                width: 10,
-                height: 10,
-                borderRadius: 3,
-                background: "linear-gradient(135deg, #818cf8 0%, #6366f1 100%)",
-              }}
-            />
-            <div style={{ fontSize: 18, fontWeight: 700, color: "#cbd0e0", letterSpacing: 0.5 }}>
-              デュエプレトラッカー
-            </div>
-            <div style={{ width: 1, height: 18, background: "#3a3d55" }} />
-            <div style={{ fontSize: 15, fontWeight: 400, color: "#8a8fa3" }}>戦績サマリー</div>
-          </div>
-          <div style={{ fontSize: 14, fontWeight: 400, color: "#8a8fa3" }}>
-            {data.period} · {data.format}
-          </div>
-        </div>
+        {/* Decorative grid overlay */}
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            pointerEvents: "none",
+            backgroundImage:
+              "linear-gradient(rgba(130,140,200,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(130,140,200,0.035) 1px, transparent 1px)",
+            backgroundSize: "44px 44px",
+            backgroundPosition: "center center",
+          }}
+        />
 
-        {/* Main: Hero + Turn stats */}
-        <div style={{ display: "flex", flex: 1, alignItems: "center", gap: 56, marginTop: 16 }}>
-          {/* Hero win rate */}
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              flex: 1,
-              alignItems: "flex-start",
-              justifyContent: "center",
-            }}
-          >
-            <div style={{ fontSize: 20, fontWeight: 400, color: "#9aa0b4", letterSpacing: 2 }}>
-              WIN RATE
+        {/* Glow orb behind hero number */}
+        <div
+          style={{
+            position: "absolute",
+            left: -40,
+            top: 180,
+            width: 560,
+            height: 300,
+            background: `radial-gradient(ellipse at center, ${heroGlow} 0%, transparent 70%)`,
+            pointerEvents: "none",
+            filter: "blur(20px)",
+          }}
+        />
+
+        {/* Content */}
+        <div
+          style={{
+            position: "relative",
+            width: "100%",
+            height: "100%",
+            display: "flex",
+            flexDirection: "column",
+            padding: "38px 56px 28px 56px",
+            boxSizing: "border-box",
+          }}
+        >
+          {/* Header */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+              <div
+                style={{
+                  width: 8,
+                  height: 28,
+                  background: "linear-gradient(180deg, #a5b4fc 0%, #6366f1 100%)",
+                  borderRadius: 2,
+                  boxShadow: "0 0 12px rgba(129,140,248,0.6)",
+                }}
+              />
+              <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "#e8eaf4", letterSpacing: 0.5 }}>
+                  デュエプレトラッカー
+                </div>
+                <div
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    color: "#818cf8",
+                    letterSpacing: 3,
+                    fontFamily: MONO_FONT,
+                  }}
+                >
+                  STATS SUMMARY
+                </div>
+              </div>
             </div>
             <div
               style={{
-                fontSize: 200,
-                fontWeight: 700,
-                color: heroColor,
-                lineHeight: 1,
-                marginTop: 4,
-                letterSpacing: -4,
+                fontSize: 13,
+                fontWeight: 400,
+                color: "#8a8fa3",
+                letterSpacing: 0.5,
+                fontFamily: MONO_FONT,
               }}
             >
-              {data.winRate}%
-            </div>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginTop: 18 }}>
-              <div style={{ fontSize: 30, fontWeight: 700, color: "#e8eaf4" }}>
-                {data.totalWins}勝 {data.totalLosses}敗
-              </div>
-              <div style={{ fontSize: 18, fontWeight: 400, color: "#8a8fa3" }}>
-                / {totalBattles}戦
-              </div>
+              {data.period} · {data.format}
             </div>
           </div>
 
-          {/* Turn stats */}
-          <div style={{ display: "flex", flexDirection: "column", width: 560, gap: 14 }}>
-            <TurnRow
-              label="先攻"
-              color="#f0a030"
-              wins={data.firstWins}
-              losses={data.firstLosses}
-              total={firstTotal}
-              rate={firstRate}
-            />
-            <TurnRow
-              label="後攻"
-              color="#5b8def"
-              wins={data.secondWins}
-              losses={data.secondLosses}
-              total={secondTotal}
-              rate={secondRate}
-            />
-            <TurnRow
-              label="不明"
-              color="#8a8aa0"
-              wins={data.unknownWins}
-              losses={data.unknownLosses}
-              total={unknownTotal}
-              rate={unknownRate}
-            />
-          </div>
-        </div>
-
-        {/* Matchup chips */}
-        {distribution.length > 0 && (
-          <div style={{ display: "flex", alignItems: "center", gap: 18, marginTop: 20, flexWrap: "wrap" }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "#818cf8", letterSpacing: 1.5 }}>
-              MATCHUPS
-            </div>
-            {distribution.map((d, i) => (
+          {/* Main body */}
+          <div style={{ display: "flex", flex: 1, gap: 52, marginTop: 16, alignItems: "center" }}>
+            {/* Hero win rate */}
+            <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
               <div
-                key={i}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: 4,
+                  color: "#a5b4fc",
+                  marginBottom: 4,
+                  fontFamily: MONO_FONT,
+                }}
+              >
+                <div style={{ width: 20, height: 1, background: "#a5b4fc" }} />
+                WIN RATE
+                <div style={{ width: 20, height: 1, background: "#a5b4fc" }} />
+              </div>
+              <div
+                style={{
+                  fontSize: 228,
+                  fontWeight: 900,
+                  lineHeight: 0.9,
+                  letterSpacing: -10,
+                  fontFamily: MONO_FONT,
+                  background: heroGrad,
+                  WebkitBackgroundClip: "text",
+                  backgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  color: "transparent",
+                  textShadow: `0 8px 48px ${heroGlow}`,
+                }}
+              >
+                {data.winRate}%
+              </div>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginTop: 18 }}>
+                <div
+                  style={{
+                    fontSize: 32,
+                    fontWeight: 900,
+                    color: "#e8eaf4",
+                    fontFamily: MONO_FONT,
+                    letterSpacing: 0.5,
+                  }}
+                >
+                  {data.totalWins}W {data.totalLosses}L
+                </div>
+                <div
+                  style={{
+                    fontSize: 16,
+                    fontWeight: 400,
+                    color: "#6a6e85",
+                    fontFamily: MONO_FONT,
+                    letterSpacing: 0.5,
+                  }}
+                >
+                  / {totalBattles} games
+                </div>
+              </div>
+            </div>
+
+            {/* Turn cards */}
+            <div style={{ width: 516, display: "flex", flexDirection: "column", gap: 12 }}>
+              <TurnCard
+                label="先攻 · 1ST"
+                color="#f0a030"
+                wins={data.firstWins}
+                losses={data.firstLosses}
+                total={firstTotal}
+                rate={firstRate}
+              />
+              <TurnCard
+                label="後攻 · 2ND"
+                color="#5b8def"
+                wins={data.secondWins}
+                losses={data.secondLosses}
+                total={secondTotal}
+                rate={secondRate}
+              />
+              <TurnCard
+                label="不明 · N/A"
+                color="#8a8aa0"
+                wins={data.unknownWins}
+                losses={data.unknownLosses}
+                total={unknownTotal}
+                rate={unknownRate}
+              />
+            </div>
+          </div>
+
+          {/* Matchup chips */}
+          {distribution.length > 0 && (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 14,
+                marginTop: 18,
+                flexWrap: "wrap",
+              }}
+            >
+              <div
                 style={{
                   display: "flex",
                   alignItems: "center",
                   gap: 8,
-                  padding: "6px 12px",
-                  background: "rgba(26,29,58,0.7)",
-                  borderRadius: 999,
-                  border: "1px solid #2a2d48",
+                  fontSize: 10,
+                  fontWeight: 700,
+                  color: "#a5b4fc",
+                  letterSpacing: 3,
+                  fontFamily: MONO_FONT,
                 }}
               >
-                <div
-                  style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: 2,
-                    background: CHIP_COLORS[i % CHIP_COLORS.length],
-                  }}
-                />
-                <div
-                  style={{
-                    fontSize: 13,
-                    fontWeight: 400,
-                    color: "#d6dae8",
-                    maxWidth: 130,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {d.name}
-                </div>
-                <div
-                  style={{
-                    fontSize: 13,
-                    fontWeight: 700,
-                    color: d.winRate !== undefined ? winRateColor(d.winRate) : "#9aa0b4",
-                  }}
-                >
-                  {d.winRate !== undefined ? `${d.winRate}%` : `${d.percentage}%`}
-                </div>
+                <div style={{ width: 16, height: 1, background: "#a5b4fc" }} />
+                MATCHUPS
               </div>
-            ))}
-          </div>
-        )}
+              {distribution.map((d, i) => (
+                <div
+                  key={i}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    padding: "6px 14px",
+                    background: "rgba(26,29,58,0.65)",
+                    borderRadius: 999,
+                    border: "1px solid rgba(130,140,200,0.15)",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 7,
+                      height: 7,
+                      borderRadius: 999,
+                      background: CHIP_COLORS[i % CHIP_COLORS.length],
+                      boxShadow: `0 0 6px ${CHIP_COLORS[i % CHIP_COLORS.length]}`,
+                    }}
+                  />
+                  <div
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 400,
+                      color: "#d6dae8",
+                      maxWidth: 140,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {d.name}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: d.winRate !== undefined ? winRateColor(d.winRate) : "#9aa0b4",
+                      fontFamily: MONO_FONT,
+                    }}
+                  >
+                    {d.winRate !== undefined ? `${d.winRate}%` : `${d.percentage}%`}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
-        {/* Footer */}
-        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 14 }}>
-          <div style={{ fontSize: 11, fontWeight: 400, color: "#55586e", letterSpacing: 0.3 }}>
-            {appUrl}
+          {/* Footer */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              alignItems: "center",
+              marginTop: 12,
+            }}
+          >
+            <div
+              style={{
+                fontSize: 10,
+                fontWeight: 400,
+                color: "#55586e",
+                letterSpacing: 0.5,
+                fontFamily: MONO_FONT,
+              }}
+            >
+              {appUrl.replace(/^https?:\/\//, "")}
+            </div>
           </div>
         </div>
       </div>

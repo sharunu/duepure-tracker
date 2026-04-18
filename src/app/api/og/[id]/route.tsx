@@ -338,12 +338,18 @@ export async function GET(
 
   const { data: share } = await supabase
     .from("shares")
-    .select("share_type, share_data")
+    .select("share_type, share_data, image_url")
     .eq("id", id)
     .single();
 
   if (!share) {
     return new Response("Not found", { status: 404 });
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const storedImageUrl = (share as any).image_url as string | null | undefined;
+  if (storedImageUrl) {
+    return Response.redirect(storedImageUrl, 302);
   }
 
   const fonts = await getFonts();

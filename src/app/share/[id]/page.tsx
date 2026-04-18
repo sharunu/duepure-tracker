@@ -25,7 +25,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const { data: share } = await supabase
     .from("shares")
-    .select("share_type, share_data")
+    .select("share_type, share_data, image_url")
     .eq("id", id)
     .single();
 
@@ -34,7 +34,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   const appUrl = await resolveAppUrl();
-  const ogImageUrl = `${appUrl}/api/og/${id}`;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const imageUrl = (share as any).image_url as string | null | undefined;
+  const ogImageUrl = imageUrl ?? `${appUrl}/api/og/${id}`;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const d = share.share_data as any;
