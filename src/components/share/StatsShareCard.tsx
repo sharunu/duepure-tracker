@@ -7,20 +7,87 @@ type Props = {
   data: StatsShareData;
 };
 
-const DONUT_COLORS = ["#6366f1", "#818cf8", "#38bdf8", "#34d399", "#fbbf24", "#777"];
+const MONO = "ui-monospace, 'SF Mono', 'Monaco', 'Menlo', 'Consolas', monospace";
+const UI = "'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
 
-function buildConicGradient(distribution: { percentage: number }[]) {
-  const segments: string[] = [];
-  let cumulative = 0;
-  distribution.forEach((d, i) => {
-    const color = DONUT_COLORS[i % DONUT_COLORS.length];
-    segments.push(`${color} ${cumulative}% ${cumulative + d.percentage}%`);
-    cumulative += d.percentage;
-  });
-  if (cumulative < 100) {
-    segments.push(`#333 ${cumulative}% 100%`);
-  }
-  return `conic-gradient(${segments.join(", ")})`;
+function winRateColor(rate: number): string {
+  if (rate < 0) return "#55586e";
+  if (rate >= 50) return "#818cf8";
+  return "#f87171";
+}
+
+function StatColumn({
+  label,
+  wins,
+  losses,
+  total,
+  rate,
+}: {
+  label: string;
+  wins: number;
+  losses: number;
+  total: number;
+  rate: number;
+}) {
+  const rateColor = rate >= 0 ? winRateColor(rate) : "#55586e";
+  return (
+    <div
+      style={{
+        flex: 1,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        padding: "0 16px",
+      }}
+    >
+      <div
+        style={{
+          fontSize: 17,
+          fontWeight: 700,
+          color: "#e8eaf4",
+          fontFamily: UI,
+          letterSpacing: 2,
+        }}
+      >
+        {label}
+      </div>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "baseline",
+          gap: 8,
+          marginTop: 12,
+        }}
+      >
+        <div style={{ fontSize: 13, fontWeight: 400, color: "#8a8fa3", fontFamily: UI, letterSpacing: 1 }}>
+          勝率
+        </div>
+        <div
+          style={{
+            fontSize: 52,
+            fontWeight: 900,
+            color: rateColor,
+            fontFamily: MONO,
+            lineHeight: 1,
+            letterSpacing: -1,
+          }}
+        >
+          {rate >= 0 ? `${rate}%` : "—"}
+        </div>
+      </div>
+      <div
+        style={{
+          fontSize: 13,
+          color: "#8a8fa3",
+          fontFamily: MONO,
+          marginTop: 10,
+          letterSpacing: 0.3,
+        }}
+      >
+        {total > 0 ? `${wins}勝${losses}敗 / ${total}戦` : "0戦"}
+      </div>
+    </div>
+  );
 }
 
 export const StatsShareCard = forwardRef<HTMLDivElement, Props>(
@@ -28,8 +95,14 @@ export const StatsShareCard = forwardRef<HTMLDivElement, Props>(
     const totalBattles = data.totalWins + data.totalLosses;
     const firstTotal = data.firstWins + data.firstLosses;
     const secondTotal = data.secondWins + data.secondLosses;
-    const firstRate = firstTotal > 0 ? Math.round((data.firstWins / firstTotal) * 100) : 0;
-    const secondRate = secondTotal > 0 ? Math.round((data.secondWins / secondTotal) * 100) : 0;
+    const unknownTotal = data.unknownWins + data.unknownLosses;
+    const firstRate = firstTotal > 0 ? Math.round((data.firstWins / firstTotal) * 100) : -1;
+    const secondRate = secondTotal > 0 ? Math.round((data.secondWins / secondTotal) * 100) : -1;
+    const unknownRate = unknownTotal > 0 ? Math.round((data.unknownWins / unknownTotal) * 100) : -1;
+    const appUrl =
+      typeof window !== "undefined"
+        ? window.location.origin
+        : process.env.NEXT_PUBLIC_APP_URL ?? "";
 
     return (
       <div
@@ -37,118 +110,209 @@ export const StatsShareCard = forwardRef<HTMLDivElement, Props>(
         style={{
           width: 1200,
           height: 630,
-          background: "linear-gradient(135deg, #0f1129 0%, #1a1d3a 50%, #0f1129 100%)",
-          color: "#fff",
-          fontFamily: "'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif",
-          padding: "40px 48px",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "space-between",
           position: "absolute",
           left: -9999,
           top: -9999,
+          overflow: "hidden",
+          fontFamily: UI,
+          color: "#fff",
+          background:
+            "radial-gradient(circle at 50% 40%, rgba(99,102,241,0.18) 0%, transparent 55%), linear-gradient(180deg, #0a0b1f 0%, #13153a 60%, #0a0b1f 100%)",
+          boxSizing: "border-box",
+          display: "flex",
+          flexDirection: "column",
+          padding: "44px 64px 32px 64px",
         }}
       >
-        {/* Row 1: Header */}
+        {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ fontSize: 20, color: "#818cf8", fontWeight: 600 }}>戦績サマリー</div>
-          <div style={{ fontSize: 13, color: "#555" }}>{data.period} / {data.format}</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div
+              style={{
+                width: 8,
+                height: 26,
+                background: "linear-gradient(180deg, #a5b4fc 0%, #6366f1 100%)",
+                borderRadius: 2,
+              }}
+            />
+            <div
+              style={{
+                fontSize: 18,
+                fontWeight: 700,
+                color: "#e8eaf4",
+                letterSpacing: 1,
+              }}
+            >
+              デュエプレトラッカー
+            </div>
+          </div>
+          <div
+            style={{
+              fontSize: 14,
+              fontWeight: 400,
+              color: "#8a8fa3",
+              fontFamily: MONO,
+              letterSpacing: 0.5,
+            }}
+          >
+            {data.period} · {data.format}
+          </div>
         </div>
 
-        {/* Row 2: Win rate + Turn order cards */}
-        <div style={{ display: "flex", alignItems: "center", gap: 40, marginTop: 8 }}>
-          {/* Main win rate */}
-          <div style={{ textAlign: "center", minWidth: 220 }}>
-            <div style={{ fontSize: 72, fontWeight: 700, color: data.winRate >= 50 ? "#5b8def" : "#e85d75", lineHeight: 1 }}>
+        {/* Hero */}
+        <div
+          style={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            marginTop: -6,
+          }}
+        >
+          <div
+            style={{
+              fontSize: 20,
+              fontWeight: 400,
+              color: "#a5b4fc",
+              letterSpacing: 10,
+              fontFamily: UI,
+              marginBottom: -18,
+              paddingLeft: 10,
+            }}
+          >
+            勝率
+          </div>
+          <svg
+            width={700}
+            height={280}
+            viewBox="0 0 700 280"
+            style={{ display: "block", overflow: "visible" }}
+          >
+            <defs>
+              <linearGradient id="heroGrad" x1="0" y1="0" x2="1" y2="1">
+                {data.winRate >= 50 ? (
+                  <>
+                    <stop offset="0%" stopColor="#c7d2fe" />
+                    <stop offset="50%" stopColor="#818cf8" />
+                    <stop offset="100%" stopColor="#4338ca" />
+                  </>
+                ) : (
+                  <>
+                    <stop offset="0%" stopColor="#fca5a5" />
+                    <stop offset="100%" stopColor="#ef4444" />
+                  </>
+                )}
+              </linearGradient>
+            </defs>
+            <text
+              x="350"
+              y="225"
+              textAnchor="middle"
+              fontSize={240}
+              fontWeight={900}
+              fill="url(#heroGrad)"
+              fontFamily={MONO}
+              letterSpacing={-8}
+              style={{
+                filter:
+                  data.winRate >= 50
+                    ? "drop-shadow(0 8px 40px rgba(99,102,241,0.5))"
+                    : "drop-shadow(0 8px 32px rgba(239,68,68,0.4))",
+              }}
+            >
               {data.winRate}%
+            </text>
+          </svg>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "baseline",
+              gap: 12,
+              marginTop: -8,
+            }}
+          >
+            <div
+              style={{
+                fontSize: 28,
+                fontWeight: 700,
+                color: "#d6dae8",
+                fontFamily: UI,
+                letterSpacing: 1,
+              }}
+            >
+              {data.totalWins}勝 {data.totalLosses}敗
             </div>
-            <div style={{ fontSize: 18, color: "#888", marginTop: 8 }}>
-              {data.totalWins}勝 {data.totalLosses}敗 / {totalBattles}戦
-            </div>
-          </div>
-
-          {/* Turn order cards */}
-          <div style={{ display: "flex", gap: 16 }}>
-            <div style={{ background: "rgba(99,102,241,0.12)", borderRadius: 12, padding: "14px 24px", minWidth: 140, textAlign: "center", border: "1px solid rgba(99,102,241,0.2)" }}>
-              <div style={{ fontSize: 12, color: "#818cf8", fontWeight: 600, marginBottom: 6 }}>先攻</div>
-              <div style={{ fontSize: 32, fontWeight: 700, color: "#fff", lineHeight: 1 }}>{firstRate}%</div>
-              <div style={{ fontSize: 12, color: "#666", marginTop: 4 }}>{data.firstWins}勝 {data.firstLosses}敗</div>
-            </div>
-            <div style={{ background: "rgba(56,189,248,0.12)", borderRadius: 12, padding: "14px 24px", minWidth: 140, textAlign: "center", border: "1px solid rgba(56,189,248,0.2)" }}>
-              <div style={{ fontSize: 12, color: "#38bdf8", fontWeight: 600, marginBottom: 6 }}>後攻</div>
-              <div style={{ fontSize: 32, fontWeight: 700, color: "#fff", lineHeight: 1 }}>{secondRate}%</div>
-              <div style={{ fontSize: 12, color: "#666", marginTop: 4 }}>{data.secondWins}勝 {data.secondLosses}敗</div>
+            <div
+              style={{
+                fontSize: 18,
+                fontWeight: 400,
+                color: "#6a6e85",
+                fontFamily: MONO,
+              }}
+            >
+              / {totalBattles}戦
             </div>
           </div>
         </div>
 
-        {/* Row 3: Donut chart + Deck lists */}
-        <div style={{ display: "flex", gap: 36, flex: 1, alignItems: "center", marginTop: 12 }}>
-          {/* Donut chart */}
-          {data.encounterDistribution.length > 0 && (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: 240 }}>
-              <div style={{ fontSize: 13, color: "#818cf8", fontWeight: 600, marginBottom: 10 }}>対面分布</div>
-              <div style={{ position: "relative", width: 140, height: 140 }}>
-                <div style={{
-                  width: 140, height: 140, borderRadius: "50%",
-                  background: buildConicGradient(data.encounterDistribution),
-                }} />
-                <div style={{
-                  position: "absolute", top: 25, left: 25, width: 90, height: 90,
-                  borderRadius: "50%", background: "#151832",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 14, color: "#888",
-                }}>{totalBattles}戦</div>
-              </div>
-              {/* Legend */}
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 12px", marginTop: 8, maxWidth: 240, justifyContent: "center" }}>
-                {data.encounterDistribution.slice(0, 5).map((d, i) => (
-                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10, color: "#999" }}>
-                    <div style={{ width: 8, height: 8, borderRadius: 2, background: DONUT_COLORS[i % DONUT_COLORS.length], flexShrink: 0 }} />
-                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 80 }}>{d.name}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+        {/* Thin divider */}
+        <div
+          style={{
+            height: 1,
+            background:
+              "linear-gradient(90deg, transparent 0%, rgba(130,140,200,0.28) 20%, rgba(130,140,200,0.28) 80%, transparent 100%)",
+            marginTop: 18,
+            marginBottom: 24,
+          }}
+        />
 
-          {/* My decks Top3 */}
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13, color: "#818cf8", marginBottom: 10, fontWeight: 600 }}>使用デッキ Top3</div>
-            {data.topMyDecks.slice(0, 3).map((d, i) => (
-              <div key={i} style={{ marginBottom: 8 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, marginBottom: 3 }}>
-                  <span style={{ color: "#ccc", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 200 }}>{d.name}</span>
-                  <span style={{ fontWeight: 600, flexShrink: 0, marginLeft: 8 }}>{d.winRate}% <span style={{ color: "#666", fontSize: 11 }}>({d.wins}-{d.losses})</span></span>
-                </div>
-                <div style={{ height: 4, borderRadius: 2, background: "#1e2138", overflow: "hidden" }}>
-                  <div style={{ height: "100%", width: `${d.winRate}%`, borderRadius: 2, background: d.winRate >= 50 ? "#5b8def" : "#e85d75" }} />
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Opponent decks Top3 */}
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13, color: "#818cf8", marginBottom: 10, fontWeight: 600 }}>対面デッキ Top3</div>
-            {data.topOpponentDecks.slice(0, 3).map((d, i) => (
-              <div key={i} style={{ marginBottom: 8 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, marginBottom: 3 }}>
-                  <span style={{ color: "#ccc", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 200 }}>{d.name}</span>
-                  <span style={{ fontWeight: 600, flexShrink: 0, marginLeft: 8 }}>{d.winRate}% <span style={{ color: "#666", fontSize: 11 }}>({d.wins}-{d.losses})</span></span>
-                </div>
-                <div style={{ height: 4, borderRadius: 2, background: "#1e2138", overflow: "hidden" }}>
-                  <div style={{ height: "100%", width: `${d.winRate}%`, borderRadius: 2, background: d.winRate >= 50 ? "#5b8def" : "#e85d75" }} />
-                </div>
-              </div>
-            ))}
-          </div>
+        {/* Stats row */}
+        <div style={{ display: "flex", alignItems: "stretch" }}>
+          <StatColumn
+            label="先攻"
+            wins={data.firstWins}
+            losses={data.firstLosses}
+            total={firstTotal}
+            rate={firstRate}
+          />
+          <div style={{ width: 1, background: "rgba(130,140,200,0.14)" }} />
+          <StatColumn
+            label="後攻"
+            wins={data.secondWins}
+            losses={data.secondLosses}
+            total={secondTotal}
+            rate={secondRate}
+          />
+          <div style={{ width: 1, background: "rgba(130,140,200,0.14)" }} />
+          <StatColumn
+            label="先後不明"
+            wins={data.unknownWins}
+            losses={data.unknownLosses}
+            total={unknownTotal}
+            rate={unknownRate}
+          />
         </div>
 
         {/* Footer */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ fontSize: 16, fontWeight: 700, color: "#818cf8" }}>デュエプレトラッカー</div>
-          <div style={{ fontSize: 12, color: "#555" }}>{process.env.NEXT_PUBLIC_APP_URL ?? ""}</div>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            marginTop: 24,
+          }}
+        >
+          <div
+            style={{
+              fontSize: 11,
+              fontWeight: 400,
+              color: "#55586e",
+              fontFamily: MONO,
+              letterSpacing: 0.5,
+            }}
+          >
+            {appUrl.replace(/^https?:\/\//, "")}
+          </div>
         </div>
       </div>
     );

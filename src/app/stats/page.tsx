@@ -27,7 +27,7 @@ import { getWinRateColor } from "@/lib/stats-utils";
 import { TurnOrderCards } from "@/components/stats/TurnOrderCards";
 import { ShareButton } from "@/components/share/ShareButton";
 import type { StatsShareData } from "@/components/share/ShareButton";
-import { getUserStage, getAuthProvider } from "@/lib/actions/account-actions";
+import { getUserStage, getAuthProvider, getXConnectionStatus } from "@/lib/actions/account-actions";
 import { getPremiumUiVisible } from "@/lib/actions/admin-actions";
 
 function StatsPageInner() {
@@ -44,6 +44,7 @@ function StatsPageInner() {
   const [userStage, setUserStage] = useState<number>(2);
   const [premiumFilter, setPremiumFilter] = useState(false);
   const [premiumUiVisible, setPremiumUiVisible] = useState(true);
+  const [xConnected, setXConnected] = useState(false);
 
   // Safety: reset premiumFilter when admin hides UI
   useEffect(() => {
@@ -86,6 +87,7 @@ function StatsPageInner() {
     });
     getUserStage().then(setUserStage);
     getAuthProvider().then(p => setIsGuest(p === "anonymous"));
+    getXConnectionStatus().then(r => setXConnected(r.isConnected));
     getPremiumUiVisible().then(setPremiumUiVisible);
   }, []);
 
@@ -395,20 +397,24 @@ function StatsPageInner() {
                 firstLosses: stats.turnOrder.firstLosses,
                 secondWins: stats.turnOrder.secondWins,
                 secondLosses: stats.turnOrder.secondLosses,
-                topMyDecks: stats.myDeckStats.slice(0, 3).map(d => ({ name: d.deckName, wins: d.wins, losses: d.losses, winRate: d.winRate })),
-                topOpponentDecks: stats.opponentDeckStats.slice(0, 3).map(d => ({ name: d.deckName, wins: d.wins, losses: d.losses, winRate: d.winRate })),
+                unknownWins: stats.turnOrder.unknownWins,
+                unknownLosses: stats.turnOrder.unknownLosses,
                 encounterDistribution: (() => {
-                  const allOpponents = stats.opponentDeckStats.map(d => ({ name: d.deckName, count: d.wins + d.losses }));
+                  const allOpponents = stats.opponentDeckStats.map(d => ({ name: d.deckName, count: d.wins + d.losses, winRate: d.winRate }));
                   const topN = allOpponents.slice(0, 5);
-                  const otherCount = allOpponents.slice(5).reduce((s, d) => s + d.count, 0);
-                  if (otherCount > 0) topN.push({ name: "その他", count: otherCount });
+                  const otherWins = stats.opponentDeckStats.slice(5).reduce((s, d) => s + d.wins, 0);
+                  const otherLosses = stats.opponentDeckStats.slice(5).reduce((s, d) => s + d.losses, 0);
+                  const otherCount = otherWins + otherLosses;
+                  if (otherCount > 0) {
+                    topN.push({ name: "その他", count: otherCount, winRate: otherCount > 0 ? Math.round((otherWins / otherCount) * 100) : 0 });
+                  }
                   const total = topN.reduce((s, d) => s + d.count, 0);
-                  return topN.map(d => ({ name: d.name, count: d.count, percentage: total > 0 ? Math.round((d.count / total) * 100) : 0 }));
+                  return topN.map(d => ({ name: d.name, count: d.count, percentage: total > 0 ? Math.round((d.count / total) * 100) : 0, winRate: d.winRate }));
                 })(),
                 period: `${startDate} ~ ${endDate}`,
                 format,
               };
-              return <ShareButton type="stats" data={shareData} />;
+              return <ShareButton type="stats" data={shareData} xConnected={xConnected} />;
             })()}
           </div>
           <div className={!ready ? "invisible" : ""}>
