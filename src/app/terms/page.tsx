@@ -18,7 +18,7 @@ export default function TermsPage() {
       </div>
 
       <div className="bg-[#232640] rounded-[10px] px-4 py-5 space-y-5 text-[13px] text-gray-300 leading-relaxed">
-        <p className="text-[11px] text-gray-500">最終更新日: 2026年4月12日</p>
+        <p className="text-[11px] text-gray-500">最終更新日: 2026年4月18日</p>
 
         <section>
           <h2 className="text-[14px] font-medium text-white mb-2">非公式ツールについて</h2>
@@ -77,6 +77,31 @@ export default function TermsPage() {
           <p>
             運営者は、必要に応じて本規約を変更できるものとします。
             変更後の規約は、本サービス上に表示した時点で効力を生じます。
+          </p>
+        </section>
+
+        <section>
+          <h2 className="text-[14px] font-medium text-white mb-2">第7条（投稿コンテンツ）</h2>
+          <p>
+            ユーザーが本サービスに入力する対戦メモ等のコンテンツの権利はユーザーに帰属します。
+            ただし、運営者は本サービスの提供・改善および匿名化された統計情報の作成・利用のため、
+            これらを利用できるものとします。
+          </p>
+        </section>
+
+        <section>
+          <h2 className="text-[14px] font-medium text-white mb-2">第8条（未成年者の利用）</h2>
+          <p>
+            未成年のユーザーは、保護者の同意を得た上で本サービスを利用してください。
+            13歳未満の方は本サービスを利用できません。
+          </p>
+        </section>
+
+        <section>
+          <h2 className="text-[14px] font-medium text-white mb-2">第9条（準拠法・管轄）</h2>
+          <p>
+            本規約の解釈および本サービスの利用に関しては、日本法を準拠法とします。
+            本サービスに関する紛争については、運営者の所在地を管轄する裁判所を第一審の専属的合意管轄裁判所とします。
           </p>
         </section>
       </div>
