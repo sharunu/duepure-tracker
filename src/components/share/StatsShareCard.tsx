@@ -20,75 +20,110 @@ function winRateColor(rate: number): string {
 
 function TurnCard({
   label,
-  color,
+  accent,
   wins,
   losses,
   total,
   rate,
 }: {
   label: string;
-  color: string;
+  accent: string;
   wins: number;
   losses: number;
   total: number;
   rate: number;
 }) {
+  const barRate = rate >= 0 ? rate : 0;
+  const rateColor = rate >= 0 ? winRateColor(rate) : "#55586e";
   return (
     <div
       style={{
+        position: "relative",
         display: "flex",
-        alignItems: "center",
-        height: 92,
+        flexDirection: "column",
         background:
-          "linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(26,29,58,0.6) 50%, rgba(10,11,31,0.4) 100%)",
-        border: "1px solid rgba(130,140,200,0.15)",
-        borderLeft: `3px solid ${color}`,
+          "linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(26,29,58,0.75) 50%, rgba(10,11,31,0.55) 100%)",
+        border: "1px solid rgba(130,140,200,0.18)",
         borderRadius: 14,
-        padding: "0 26px 0 22px",
-        gap: 18,
+        padding: "16px 24px 14px 22px",
+        gap: 8,
+        overflow: "hidden",
         boxSizing: "border-box",
       }}
     >
+      {/* Left accent bar */}
       <div
         style={{
-          fontSize: 11,
-          fontWeight: 700,
-          letterSpacing: 2,
-          color: color,
-          minWidth: 46,
-          fontFamily: UI_FONT,
+          position: "absolute",
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: 5,
+          background: accent,
+          boxShadow: `0 0 12px ${accent}`,
         }}
-      >
-        {label}
-      </div>
-      <div
-        style={{
-          fontSize: 54,
-          fontWeight: 900,
-          color: winRateColor(rate),
-          lineHeight: 1,
-          fontFamily: MONO_FONT,
-          minWidth: 155,
-          letterSpacing: -1,
-        }}
-      >
-        {rate >= 0 ? `${rate}%` : "—"}
-      </div>
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          marginLeft: "auto",
-          alignItems: "flex-end",
-          gap: 2,
-        }}
-      >
-        <div style={{ fontSize: 18, fontWeight: 700, color: "#d6dae8", fontFamily: MONO_FONT, letterSpacing: 0.5 }}>
-          {total > 0 ? `${wins}-${losses}` : "—"}
+      />
+      <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+        <div
+          style={{
+            fontSize: 12,
+            fontWeight: 700,
+            letterSpacing: 1.5,
+            color: accent,
+            minWidth: 80,
+            fontFamily: UI_FONT,
+          }}
+        >
+          {label}
         </div>
-        <div style={{ fontSize: 11, fontWeight: 400, color: "#6a6e85", letterSpacing: 0.3 }}>
-          {total > 0 ? `${total} games` : "0 games"}
+        <div
+          style={{
+            fontSize: 48,
+            fontWeight: 900,
+            color: rateColor,
+            lineHeight: 1,
+            fontFamily: MONO_FONT,
+            minWidth: 135,
+            letterSpacing: -1,
+          }}
+        >
+          {rate >= 0 ? `${rate}%` : "—"}
         </div>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            marginLeft: "auto",
+            alignItems: "flex-end",
+            gap: 2,
+          }}
+        >
+          <div style={{ fontSize: 17, fontWeight: 700, color: "#d6dae8", fontFamily: MONO_FONT, letterSpacing: 0.5 }}>
+            {total > 0 ? `${wins}-${losses}` : "—"}
+          </div>
+          <div style={{ fontSize: 10, fontWeight: 400, color: "#6a6e85", letterSpacing: 0.3 }}>
+            {total > 0 ? `${total} games` : "0 games"}
+          </div>
+        </div>
+      </div>
+      {/* Progress bar */}
+      <div
+        style={{
+          height: 4,
+          background: "rgba(255,255,255,0.06)",
+          borderRadius: 999,
+          overflow: "hidden",
+          marginLeft: 6,
+        }}
+      >
+        <div
+          style={{
+            height: "100%",
+            width: `${barRate}%`,
+            background: rate >= 0 ? `linear-gradient(90deg, ${accent} 0%, ${rateColor} 100%)` : "transparent",
+            boxShadow: rate >= 0 ? `0 0 8px ${rateColor}` : "none",
+          }}
+        />
       </div>
     </div>
   );
@@ -104,12 +139,20 @@ export const StatsShareCard = forwardRef<HTMLDivElement, Props>(
     const secondRate = secondTotal > 0 ? Math.round((data.secondWins / secondTotal) * 100) : -1;
     const unknownRate = unknownTotal > 0 ? Math.round((data.unknownWins / unknownTotal) * 100) : -1;
 
-    const heroGlow = data.winRate >= 50 ? "rgba(99,102,241,0.45)" : "rgba(248,113,113,0.35)";
+    const heroGlow = data.winRate >= 50 ? "rgba(99,102,241,0.55)" : "rgba(248,113,113,0.45)";
+    const heroStroke = data.winRate >= 50 ? "#6366f1" : "#ef4444";
     const distribution = (data.encounterDistribution ?? []).slice(0, 5);
     const appUrl =
       typeof window !== "undefined"
         ? window.location.origin
         : process.env.NEXT_PUBLIC_APP_URL ?? "";
+
+    // Arc params for hero circular gauge
+    const GAUGE_CX = 220;
+    const GAUGE_CY = 200;
+    const GAUGE_R = 178;
+    const GAUGE_CIRCUMFERENCE = 2 * Math.PI * GAUGE_R;
+    const GAUGE_FILLED = (GAUGE_CIRCUMFERENCE * data.winRate) / 100;
 
     return (
       <div
@@ -124,34 +167,62 @@ export const StatsShareCard = forwardRef<HTMLDivElement, Props>(
           fontFamily: UI_FONT,
           color: "#fff",
           background:
-            "radial-gradient(circle at 18% 22%, rgba(99,102,241,0.38) 0%, transparent 45%), radial-gradient(circle at 88% 85%, rgba(232,93,117,0.22) 0%, transparent 48%), linear-gradient(160deg, #0a0b1f 0%, #141636 60%, #0a0b1f 100%)",
+            "radial-gradient(circle at 18% 22%, rgba(99,102,241,0.42) 0%, transparent 45%), radial-gradient(circle at 88% 85%, rgba(232,93,117,0.22) 0%, transparent 48%), linear-gradient(160deg, #07081a 0%, #13153a 55%, #07081a 100%)",
           boxSizing: "border-box",
         }}
       >
-        {/* Decorative grid overlay */}
+        {/* Top accent line */}
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 3,
+            background:
+              "linear-gradient(90deg, transparent 0%, #818cf8 18%, #6366f1 45%, #60a5fa 72%, transparent 100%)",
+            boxShadow: "0 0 18px rgba(99,102,241,0.45)",
+          }}
+        />
+        {/* Bottom accent line */}
+        <div
+          style={{
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: 2,
+            background:
+              "linear-gradient(90deg, transparent 0%, #f0a030 25%, #818cf8 55%, #8a8aa0 80%, transparent 100%)",
+            boxShadow: "0 0 12px rgba(129,140,248,0.3)",
+          }}
+        />
+
+        {/* Grid overlay */}
         <div
           style={{
             position: "absolute",
             inset: 0,
             pointerEvents: "none",
             backgroundImage:
-              "linear-gradient(rgba(130,140,200,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(130,140,200,0.035) 1px, transparent 1px)",
-            backgroundSize: "44px 44px",
+              "linear-gradient(rgba(130,140,200,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(130,140,200,0.04) 1px, transparent 1px)",
+            backgroundSize: "48px 48px",
             backgroundPosition: "center center",
+            opacity: 0.8,
           }}
         />
 
-        {/* Glow orb behind hero number */}
+        {/* Glow orb */}
         <div
           style={{
             position: "absolute",
             left: -40,
-            top: 180,
-            width: 560,
-            height: 300,
+            top: 160,
+            width: 600,
+            height: 340,
             background: `radial-gradient(ellipse at center, ${heroGlow} 0%, transparent 70%)`,
             pointerEvents: "none",
-            filter: "blur(20px)",
+            filter: "blur(22px)",
           }}
         />
 
@@ -163,7 +234,7 @@ export const StatsShareCard = forwardRef<HTMLDivElement, Props>(
             height: "100%",
             display: "flex",
             flexDirection: "column",
-            padding: "38px 56px 28px 56px",
+            padding: "36px 56px 30px 56px",
             boxSizing: "border-box",
           }}
         >
@@ -172,23 +243,39 @@ export const StatsShareCard = forwardRef<HTMLDivElement, Props>(
             <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
               <div
                 style={{
-                  width: 8,
-                  height: 28,
+                  width: 10,
+                  height: 30,
                   background: "linear-gradient(180deg, #a5b4fc 0%, #6366f1 100%)",
                   borderRadius: 2,
-                  boxShadow: "0 0 12px rgba(129,140,248,0.6)",
+                  boxShadow: "0 0 14px rgba(129,140,248,0.7)",
                 }}
               />
-              <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                <div style={{ fontSize: 16, fontWeight: 700, color: "#e8eaf4", letterSpacing: 0.5 }}>
-                  デュエプレトラッカー
-                </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                <svg width={280} height={26} viewBox="0 0 280 26" style={{ display: "block" }}>
+                  <defs>
+                    <linearGradient id="logoGrad" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="#e8eaf4" />
+                      <stop offset="100%" stopColor="#a5b4fc" />
+                    </linearGradient>
+                  </defs>
+                  <text
+                    x="0"
+                    y="20"
+                    fontSize={19}
+                    fontWeight={700}
+                    fill="url(#logoGrad)"
+                    fontFamily={UI_FONT}
+                    letterSpacing={0.5}
+                  >
+                    デュエプレトラッカー
+                  </text>
+                </svg>
                 <div
                   style={{
                     fontSize: 10,
                     fontWeight: 700,
                     color: "#818cf8",
-                    letterSpacing: 3,
+                    letterSpacing: 3.5,
                     fontFamily: MONO_FONT,
                   }}
                 >
@@ -198,21 +285,44 @@ export const StatsShareCard = forwardRef<HTMLDivElement, Props>(
             </div>
             <div
               style={{
-                fontSize: 13,
-                fontWeight: 400,
-                color: "#8a8fa3",
-                letterSpacing: 0.5,
-                fontFamily: MONO_FONT,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "flex-end",
+                gap: 3,
               }}
             >
-              {data.period} · {data.format}
+              <div
+                style={{
+                  fontSize: 13,
+                  fontWeight: 400,
+                  color: "#8a8fa3",
+                  letterSpacing: 0.5,
+                  fontFamily: MONO_FONT,
+                }}
+              >
+                {data.period}
+              </div>
+              <div
+                style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  color: "#a5b4fc",
+                  letterSpacing: 3.5,
+                  fontFamily: MONO_FONT,
+                  padding: "2px 8px",
+                  border: "1px solid rgba(165,180,252,0.35)",
+                  borderRadius: 4,
+                }}
+              >
+                {data.format}
+              </div>
             </div>
           </div>
 
           {/* Main body */}
-          <div style={{ display: "flex", flex: 1, gap: 52, marginTop: 16, alignItems: "center" }}>
-            {/* Hero win rate */}
-            <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
+          <div style={{ display: "flex", flex: 1, gap: 52, marginTop: 14, alignItems: "center" }}>
+            {/* Hero section with circular gauge */}
+            <div style={{ display: "flex", flexDirection: "column", flex: 1, position: "relative" }}>
               <div
                 style={{
                   display: "flex",
@@ -222,7 +332,7 @@ export const StatsShareCard = forwardRef<HTMLDivElement, Props>(
                   fontWeight: 700,
                   letterSpacing: 4,
                   color: "#a5b4fc",
-                  marginBottom: 4,
+                  marginBottom: 2,
                   fontFamily: MONO_FONT,
                 }}
               >
@@ -230,11 +340,12 @@ export const StatsShareCard = forwardRef<HTMLDivElement, Props>(
                 WIN RATE
                 <div style={{ width: 20, height: 1, background: "#a5b4fc" }} />
               </div>
+              {/* SVG with circular gauge BG + gradient hero text */}
               <svg
-                width={580}
-                height={210}
-                viewBox="0 0 580 210"
-                style={{ display: "block", overflow: "visible", marginTop: 4 }}
+                width={460}
+                height={260}
+                viewBox="0 0 460 260"
+                style={{ display: "block", overflow: "visible", marginTop: 0, marginLeft: -20 }}
               >
                 <defs>
                   <linearGradient id="heroRateGrad" x1="0" y1="0" x2="1" y2="1">
@@ -253,69 +364,102 @@ export const StatsShareCard = forwardRef<HTMLDivElement, Props>(
                       </>
                     )}
                   </linearGradient>
+                  <linearGradient id="gaugeStroke" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stopColor={heroStroke} stopOpacity={0.15} />
+                    <stop offset="100%" stopColor={heroStroke} stopOpacity={0.5} />
+                  </linearGradient>
                 </defs>
+                {/* Background circle (full) */}
+                <circle
+                  cx={GAUGE_CX}
+                  cy={GAUGE_CY}
+                  r={GAUGE_R}
+                  fill="none"
+                  stroke="rgba(130,140,200,0.12)"
+                  strokeWidth={3}
+                />
+                {/* Progress arc */}
+                <circle
+                  cx={GAUGE_CX}
+                  cy={GAUGE_CY}
+                  r={GAUGE_R}
+                  fill="none"
+                  stroke="url(#gaugeStroke)"
+                  strokeWidth={6}
+                  strokeDasharray={`${GAUGE_FILLED} ${GAUGE_CIRCUMFERENCE - GAUGE_FILLED}`}
+                  strokeLinecap="round"
+                  transform={`rotate(-90 ${GAUGE_CX} ${GAUGE_CY})`}
+                  style={{ filter: `drop-shadow(0 0 8px ${heroGlow})` }}
+                />
+                {/* Big percent text */}
                 <text
                   x="0"
-                  y="175"
+                  y="215"
                   fontSize={228}
                   fontWeight={900}
                   fill="url(#heroRateGrad)"
                   fontFamily={MONO_FONT}
                   letterSpacing={-10}
-                  style={{
-                    filter: `drop-shadow(0 8px 40px ${heroGlow})`,
-                  }}
+                  style={{ filter: `drop-shadow(0 6px 24px ${heroGlow})` }}
                 >
                   {data.winRate}%
                 </text>
               </svg>
-              <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginTop: 18 }}>
+
+              <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginTop: 6 }}>
                 <div
                   style={{
-                    fontSize: 32,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 4,
+                    fontSize: 30,
                     fontWeight: 900,
                     color: "#e8eaf4",
                     fontFamily: MONO_FONT,
                     letterSpacing: 0.5,
                   }}
                 >
-                  {data.totalWins}W {data.totalLosses}L
+                  <span>{data.totalWins}</span>
+                  <span style={{ color: "#6a6e85", fontSize: 18, fontWeight: 700, marginLeft: -2 }}>W</span>
+                  <span style={{ color: "#3a3d55", margin: "0 6px", fontSize: 20 }}>·</span>
+                  <span>{data.totalLosses}</span>
+                  <span style={{ color: "#6a6e85", fontSize: 18, fontWeight: 700, marginLeft: -2 }}>L</span>
                 </div>
                 <div
                   style={{
-                    fontSize: 16,
+                    fontSize: 14,
                     fontWeight: 400,
                     color: "#6a6e85",
                     fontFamily: MONO_FONT,
                     letterSpacing: 0.5,
                   }}
                 >
-                  / {totalBattles} games
+                  / {totalBattles} GAMES
                 </div>
               </div>
             </div>
 
             {/* Turn cards */}
-            <div style={{ width: 516, display: "flex", flexDirection: "column", gap: 12 }}>
+            <div style={{ width: 540, display: "flex", flexDirection: "column", gap: 12 }}>
               <TurnCard
-                label="先攻 · 1ST"
-                color="#f0a030"
+                label="先攻"
+                accent="#f0a030"
                 wins={data.firstWins}
                 losses={data.firstLosses}
                 total={firstTotal}
                 rate={firstRate}
               />
               <TurnCard
-                label="後攻 · 2ND"
-                color="#5b8def"
+                label="後攻"
+                accent="#5b8def"
                 wins={data.secondWins}
                 losses={data.secondLosses}
                 total={secondTotal}
                 rate={secondRate}
               />
               <TurnCard
-                label="不明 · N/A"
-                color="#8a8aa0"
+                label="先後不明"
+                accent="#a78bfa"
                 wins={data.unknownWins}
                 losses={data.unknownLosses}
                 total={unknownTotal}
@@ -330,7 +474,7 @@ export const StatsShareCard = forwardRef<HTMLDivElement, Props>(
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: 14,
+                gap: 12,
                 marginTop: 18,
                 flexWrap: "wrap",
               }}
@@ -343,60 +487,63 @@ export const StatsShareCard = forwardRef<HTMLDivElement, Props>(
                   fontSize: 10,
                   fontWeight: 700,
                   color: "#a5b4fc",
-                  letterSpacing: 3,
+                  letterSpacing: 3.5,
                   fontFamily: MONO_FONT,
                 }}
               >
                 <div style={{ width: 16, height: 1, background: "#a5b4fc" }} />
                 MATCHUPS
               </div>
-              {distribution.map((d, i) => (
-                <div
-                  key={i}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    padding: "6px 14px",
-                    background: "rgba(26,29,58,0.65)",
-                    borderRadius: 999,
-                    border: "1px solid rgba(130,140,200,0.15)",
-                  }}
-                >
+              {distribution.map((d, i) => {
+                const c = CHIP_COLORS[i % CHIP_COLORS.length];
+                return (
                   <div
+                    key={i}
                     style={{
-                      width: 7,
-                      height: 7,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                      padding: "8px 14px 8px 10px",
+                      background: "rgba(26,29,58,0.7)",
                       borderRadius: 999,
-                      background: CHIP_COLORS[i % CHIP_COLORS.length],
-                      boxShadow: `0 0 6px ${CHIP_COLORS[i % CHIP_COLORS.length]}`,
-                    }}
-                  />
-                  <div
-                    style={{
-                      fontSize: 12,
-                      fontWeight: 400,
-                      color: "#d6dae8",
-                      maxWidth: 140,
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
+                      border: "1px solid rgba(130,140,200,0.18)",
                     }}
                   >
-                    {d.name}
+                    <div
+                      style={{
+                        width: 3,
+                        height: 14,
+                        borderRadius: 2,
+                        background: c,
+                        boxShadow: `0 0 8px ${c}`,
+                      }}
+                    />
+                    <div
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 400,
+                        color: "#e8eaf4",
+                        maxWidth: 140,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {d.name}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 700,
+                        color: d.winRate !== undefined ? winRateColor(d.winRate) : "#9aa0b4",
+                        fontFamily: MONO_FONT,
+                      }}
+                    >
+                      {d.winRate !== undefined ? `${d.winRate}%` : `${d.percentage}%`}
+                    </div>
                   </div>
-                  <div
-                    style={{
-                      fontSize: 12,
-                      fontWeight: 700,
-                      color: d.winRate !== undefined ? winRateColor(d.winRate) : "#9aa0b4",
-                      fontFamily: MONO_FONT,
-                    }}
-                  >
-                    {d.winRate !== undefined ? `${d.winRate}%` : `${d.percentage}%`}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
 
@@ -404,14 +551,25 @@ export const StatsShareCard = forwardRef<HTMLDivElement, Props>(
           <div
             style={{
               display: "flex",
-              justifyContent: "flex-end",
+              justifyContent: "space-between",
               alignItems: "center",
-              marginTop: 12,
+              marginTop: 14,
             }}
           >
             <div
               style={{
-                fontSize: 10,
+                fontSize: 9,
+                fontWeight: 700,
+                color: "#3a3d55",
+                letterSpacing: 2.5,
+                fontFamily: MONO_FONT,
+              }}
+            >
+              SHARED VIA
+            </div>
+            <div
+              style={{
+                fontSize: 11,
                 fontWeight: 400,
                 color: "#55586e",
                 letterSpacing: 0.5,
