@@ -7,7 +7,7 @@ type Props = {
   data: StatsShareData;
 };
 
-const DONUT_COLORS = ["#6366f1", "#818cf8", "#38bdf8", "#34d399", "#fbbf24", "#777"];
+const DONUT_COLORS = ["#6366f1", "#818cf8", "#38bdf8", "#34d399", "#fbbf24", "#64748b"];
 
 function buildConicGradient(distribution: { percentage: number }[]) {
   const segments: string[] = [];
@@ -28,8 +28,18 @@ export const StatsShareCard = forwardRef<HTMLDivElement, Props>(
     const totalBattles = data.totalWins + data.totalLosses;
     const firstTotal = data.firstWins + data.firstLosses;
     const secondTotal = data.secondWins + data.secondLosses;
-    const firstRate = firstTotal > 0 ? Math.round((data.firstWins / firstTotal) * 100) : 0;
-    const secondRate = secondTotal > 0 ? Math.round((data.secondWins / secondTotal) * 100) : 0;
+    const unknownTotal = data.unknownWins + data.unknownLosses;
+    const firstRate = firstTotal > 0 ? Math.round((data.firstWins / firstTotal) * 100) : -1;
+    const secondRate = secondTotal > 0 ? Math.round((data.secondWins / secondTotal) * 100) : -1;
+    const unknownRate = unknownTotal > 0 ? Math.round((data.unknownWins / unknownTotal) * 100) : -1;
+
+    const turnCards = [
+      { label: "先攻", color: "#f0a030", wins: data.firstWins, losses: data.firstLosses, total: firstTotal, rate: firstRate },
+      { label: "後攻", color: "#5b8def", wins: data.secondWins, losses: data.secondLosses, total: secondTotal, rate: secondRate },
+      { label: "不明", color: "#666688", wins: data.unknownWins, losses: data.unknownLosses, total: unknownTotal, rate: unknownRate },
+    ];
+
+    const winRateColor = data.winRate >= 50 ? "#5b8def" : "#e85d75";
 
     return (
       <div
@@ -40,7 +50,7 @@ export const StatsShareCard = forwardRef<HTMLDivElement, Props>(
           background: "linear-gradient(135deg, #0f1129 0%, #1a1d3a 50%, #0f1129 100%)",
           color: "#fff",
           fontFamily: "'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif",
-          padding: "40px 48px",
+          padding: "32px 48px",
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
@@ -49,100 +59,134 @@ export const StatsShareCard = forwardRef<HTMLDivElement, Props>(
           top: -9999,
         }}
       >
-        {/* Row 1: Header */}
+        {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ fontSize: 20, color: "#818cf8", fontWeight: 600 }}>戦績サマリー</div>
-          <div style={{ fontSize: 13, color: "#555" }}>{data.period} / {data.format}</div>
+          <div style={{ fontSize: 22, color: "#818cf8", fontWeight: 700 }}>戦績サマリー</div>
+          <div style={{ fontSize: 14, color: "#666" }}>{data.period} / {data.format}</div>
         </div>
 
-        {/* Row 2: Win rate + Turn order cards */}
-        <div style={{ display: "flex", alignItems: "center", gap: 40, marginTop: 8 }}>
-          {/* Main win rate */}
-          <div style={{ textAlign: "center", minWidth: 220 }}>
-            <div style={{ fontSize: 72, fontWeight: 700, color: data.winRate >= 50 ? "#5b8def" : "#e85d75", lineHeight: 1 }}>
-              {data.winRate}%
-            </div>
-            <div style={{ fontSize: 18, color: "#888", marginTop: 8 }}>
-              {data.totalWins}勝 {data.totalLosses}敗 / {totalBattles}戦
-            </div>
-          </div>
-
-          {/* Turn order cards */}
-          <div style={{ display: "flex", gap: 16 }}>
-            <div style={{ background: "rgba(99,102,241,0.12)", borderRadius: 12, padding: "14px 24px", minWidth: 140, textAlign: "center", border: "1px solid rgba(99,102,241,0.2)" }}>
-              <div style={{ fontSize: 12, color: "#818cf8", fontWeight: 600, marginBottom: 6 }}>先攻</div>
-              <div style={{ fontSize: 32, fontWeight: 700, color: "#fff", lineHeight: 1 }}>{firstRate}%</div>
-              <div style={{ fontSize: 12, color: "#666", marginTop: 4 }}>{data.firstWins}勝 {data.firstLosses}敗</div>
-            </div>
-            <div style={{ background: "rgba(56,189,248,0.12)", borderRadius: 12, padding: "14px 24px", minWidth: 140, textAlign: "center", border: "1px solid rgba(56,189,248,0.2)" }}>
-              <div style={{ fontSize: 12, color: "#38bdf8", fontWeight: 600, marginBottom: 6 }}>後攻</div>
-              <div style={{ fontSize: 32, fontWeight: 700, color: "#fff", lineHeight: 1 }}>{secondRate}%</div>
-              <div style={{ fontSize: 12, color: "#666", marginTop: 4 }}>{data.secondWins}勝 {data.secondLosses}敗</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Row 3: Donut chart + Deck lists */}
-        <div style={{ display: "flex", gap: 36, flex: 1, alignItems: "center", marginTop: 12 }}>
-          {/* Donut chart */}
-          {data.encounterDistribution.length > 0 && (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: 240 }}>
-              <div style={{ fontSize: 13, color: "#818cf8", fontWeight: 600, marginBottom: 10 }}>対面分布</div>
-              <div style={{ position: "relative", width: 140, height: 140 }}>
-                <div style={{
-                  width: 140, height: 140, borderRadius: "50%",
-                  background: buildConicGradient(data.encounterDistribution),
-                }} />
-                <div style={{
-                  position: "absolute", top: 25, left: 25, width: 90, height: 90,
-                  borderRadius: "50%", background: "#151832",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 14, color: "#888",
-                }}>{totalBattles}戦</div>
-              </div>
-              {/* Legend */}
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 12px", marginTop: 8, maxWidth: 240, justifyContent: "center" }}>
-                {data.encounterDistribution.slice(0, 5).map((d, i) => (
-                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10, color: "#999" }}>
-                    <div style={{ width: 8, height: 8, borderRadius: 2, background: DONUT_COLORS[i % DONUT_COLORS.length], flexShrink: 0 }} />
-                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 80 }}>{d.name}</span>
+        {/* Body: Donut chart + legend */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 48, flex: 1, marginTop: 4 }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+            <div style={{ fontSize: 14, color: "#818cf8", fontWeight: 700, marginBottom: 10 }}>対面デッキ分布</div>
+            <div style={{ position: "relative", width: 240, height: 240 }}>
+              {data.encounterDistribution.length > 0 ? (
+                <>
+                  <div
+                    style={{
+                      width: 240,
+                      height: 240,
+                      borderRadius: "50%",
+                      background: buildConicGradient(data.encounterDistribution),
+                    }}
+                  />
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: 40,
+                      left: 40,
+                      width: 160,
+                      height: 160,
+                      borderRadius: "50%",
+                      background: "#0f1129",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <div style={{ fontSize: 14, color: "#888" }}>勝率</div>
+                    <div style={{ fontSize: 42, fontWeight: 700, color: winRateColor, lineHeight: 1 }}>{data.winRate}%</div>
+                    <div style={{ fontSize: 12, color: "#888", marginTop: 6 }}>
+                      {data.totalWins}勝{data.totalLosses}敗 / {totalBattles}戦
+                    </div>
                   </div>
-                ))}
-              </div>
+                </>
+              ) : (
+                <div
+                  style={{
+                    width: 240,
+                    height: 240,
+                    borderRadius: "50%",
+                    background: "#232640",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#666",
+                    fontSize: 14,
+                  }}
+                >
+                  データなし
+                </div>
+              )}
+            </div>
+          </div>
+
+          {data.encounterDistribution.length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 280, maxWidth: 360 }}>
+              {data.encounterDistribution.slice(0, 6).map((d, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}>
+                  <div
+                    style={{
+                      width: 12,
+                      height: 12,
+                      borderRadius: 3,
+                      background: DONUT_COLORS[i % DONUT_COLORS.length],
+                      flexShrink: 0,
+                    }}
+                  />
+                  <span
+                    style={{
+                      color: "#ccc",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      maxWidth: 220,
+                    }}
+                  >
+                    {d.name}
+                  </span>
+                  <span style={{ color: "#999", marginLeft: "auto", fontWeight: 700 }}>{d.percentage}%</span>
+                </div>
+              ))}
             </div>
           )}
+        </div>
 
-          {/* My decks Top3 */}
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13, color: "#818cf8", marginBottom: 10, fontWeight: 600 }}>使用デッキ Top3</div>
-            {data.topMyDecks.slice(0, 3).map((d, i) => (
-              <div key={i} style={{ marginBottom: 8 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, marginBottom: 3 }}>
-                  <span style={{ color: "#ccc", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 200 }}>{d.name}</span>
-                  <span style={{ fontWeight: 600, flexShrink: 0, marginLeft: 8 }}>{d.winRate}% <span style={{ color: "#666", fontSize: 11 }}>({d.wins}-{d.losses})</span></span>
-                </div>
-                <div style={{ height: 4, borderRadius: 2, background: "#1e2138", overflow: "hidden" }}>
-                  <div style={{ height: "100%", width: `${d.winRate}%`, borderRadius: 2, background: d.winRate >= 50 ? "#5b8def" : "#e85d75" }} />
-                </div>
+        {/* Turn order cards */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14 }}>
+          {turnCards.map((c) => (
+            <div
+              key={c.label}
+              style={{
+                background: "#232640",
+                borderRadius: 10,
+                padding: "14px 16px",
+                textAlign: "center",
+                borderTop: "3px solid " + c.color,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+              }}
+            >
+              <div style={{ fontSize: 13, fontWeight: 700, color: c.color, marginBottom: 4 }}>{c.label}</div>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
+                <span style={{ fontSize: 11, color: "#8888aa" }}>勝率</span>
+                <span
+                  style={{
+                    fontSize: 28,
+                    fontWeight: 700,
+                    color: c.rate >= 0 ? (c.rate >= 50 ? "#5b8def" : "#e85d75") : "#8888aa",
+                  }}
+                >
+                  {c.rate >= 0 ? c.rate + "%" : "-"}
+                </span>
               </div>
-            ))}
-          </div>
-
-          {/* Opponent decks Top3 */}
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13, color: "#818cf8", marginBottom: 10, fontWeight: 600 }}>対面デッキ Top3</div>
-            {data.topOpponentDecks.slice(0, 3).map((d, i) => (
-              <div key={i} style={{ marginBottom: 8 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, marginBottom: 3 }}>
-                  <span style={{ color: "#ccc", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 200 }}>{d.name}</span>
-                  <span style={{ fontWeight: 600, flexShrink: 0, marginLeft: 8 }}>{d.winRate}% <span style={{ color: "#666", fontSize: 11 }}>({d.wins}-{d.losses})</span></span>
-                </div>
-                <div style={{ height: 4, borderRadius: 2, background: "#1e2138", overflow: "hidden" }}>
-                  <div style={{ height: "100%", width: `${d.winRate}%`, borderRadius: 2, background: d.winRate >= 50 ? "#5b8def" : "#e85d75" }} />
-                </div>
+              <div style={{ fontSize: 11, color: "#8888aa", marginTop: 2 }}>
+                {c.total > 0 ? c.wins + "勝" + c.losses + "敗 / " + c.total + "戦" : "0戦"}
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
 
         {/* Footer */}
