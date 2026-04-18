@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   DndContext,
   closestCenter,
@@ -268,22 +268,7 @@ export function OpponentDeckManager({
     savedStatsDecksRef.current = [];
   }, [initialDecks, initialSettings]);
 
-  // Load stats when switching to auto mode
-  useEffect(() => {
-    if (mode === "auto" && !statsLoaded) {
-      loadStats();
-    }
-  }, [mode, statsLoaded]);
-
-  // Warn on browser navigation when dirty
-  useEffect(() => {
-    if (!dirty) return;
-    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); };
-    window.addEventListener("beforeunload", handler);
-    return () => window.removeEventListener("beforeunload", handler);
-  }, [dirty]);
-
-  const loadStats = async () => {
+  const loadStats = useCallback(async () => {
     try {
       const result = await getOpponentDeckStatsForAdmin(format);
       const d = result.decks as DeckWithStats[];
@@ -294,7 +279,22 @@ export function OpponentDeckManager({
       console.error(e);
       alert("操作に失敗しました");
     }
-  };
+  }, [format]);
+
+  // Load stats when switching to auto mode
+  useEffect(() => {
+    if (mode === "auto" && !statsLoaded) {
+      loadStats();
+    }
+  }, [mode, statsLoaded, loadStats]);
+
+  // Warn on browser navigation when dirty
+  useEffect(() => {
+    if (!dirty) return;
+    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [dirty]);
 
   // Parse string settings to numbers
   const parseSettings = () => ({

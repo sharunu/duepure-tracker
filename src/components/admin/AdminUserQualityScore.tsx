@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   getQualityScoreSnapshot,
   getQualityAdminBonus,
@@ -46,7 +46,7 @@ export function AdminUserQualityScore({ userId }: { userId: string }) {
   const [savingBonus, setSavingBonus] = useState(false);
   const [message, setMessage] = useState("");
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const [snap, bon, thr] = await Promise.all([
         getQualityScoreSnapshot(userId),
@@ -69,9 +69,9 @@ export function AdminUserQualityScore({ userId }: { userId: string }) {
       // error
     }
     setLoading(false);
-  };
+  }, [userId]);
 
-  useEffect(() => { loadData(); }, [userId]);
+  useEffect(() => { loadData(); }, [loadData]);
 
   const handleRecalculate = async () => {
     setRecalculating(true);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, Settings, Play } from "lucide-react";
 import { getDetectionAlerts, resolveDetectionAlert, runDetectionScan, getAdminUserList } from "@/lib/actions/admin-actions";
@@ -29,7 +29,7 @@ export default function DetectionPage() {
   const [scanning, setScanning] = useState(false);
   const [scanResult, setScanResult] = useState<string | null>(null);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const [alertData, users] = await Promise.all([
@@ -46,9 +46,9 @@ export default function DetectionPage() {
       // error
     }
     setLoading(false);
-  };
+  }, [showResolved]);
 
-  useEffect(() => { loadData(); }, [showResolved]);
+  useEffect(() => { loadData(); }, [loadData]);
 
   const handleResolve = async (alertId: string) => {
     await resolveDetectionAlert(alertId);

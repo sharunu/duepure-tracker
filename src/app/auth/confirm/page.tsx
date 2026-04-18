@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 export default function AuthConfirmPage() {
   const [error, setError] = useState("");
+  const errorSetRef = useRef(false);
 
   useEffect(() => {
     const supabase = createClient();
@@ -15,6 +16,7 @@ export default function AuthConfirmPage() {
     if (code) {
       supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
         if (error) {
+          errorSetRef.current = true;
           setError("リンクが無効または期限切れです。もう一度パスワードリセットをお試しください。");
         }
       });
@@ -38,6 +40,7 @@ export default function AuthConfirmPage() {
     if (hash.includes("error=")) {
       const params = new URLSearchParams(hash.substring(1));
       const errorDesc = params.get("error_description");
+      errorSetRef.current = true;
       setError(errorDesc
         ? "リンクが無効または期限切れです。もう一度パスワードリセットをお試しください。"
         : "エラーが発生しました。");
@@ -45,11 +48,12 @@ export default function AuthConfirmPage() {
 
     // Fallback timeout
     const timeout = setTimeout(async () => {
-      if (error) return; // Already showing error
+      if (errorSetRef.current) return; // Already showing error
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         window.location.href = "/account";
       } else {
+        errorSetRef.current = true;
         setError("リンクが無効または期限切れです。もう一度パスワードリセットをお試しください。");
       }
     }, 5000);
