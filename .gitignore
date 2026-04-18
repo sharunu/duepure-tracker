@@ -42,3 +42,9 @@ next-env.d.ts
 
 # claude code
 CLAUDE.md
+
+# cloudflare / opennext
+.open-next
+.wrangler
+.dev.vars
+cloudflare-env.d.ts
