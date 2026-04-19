@@ -8,9 +8,19 @@ import { getDiscordConnection, getMyTeamsWithVisibility, getTeamMembers, getTeam
 import type { DiscordConnection, TeamWithVisibility, TeamMember, TeamMemberSummary } from "@/lib/actions/team-actions";
 import { useActiveTeam } from "@/hooks/use-active-team";
 import { BottomNav } from "@/components/layout/BottomNav";
+import { GameSelector } from "@/components/ui/GameSelector";
 import { MemberAvatarStack } from "@/components/ui/MemberAvatarStack";
 import { MemberAvatar } from "@/components/ui/MemberAvatar";
 import { getWinRateColor } from "@/lib/stats-utils";
+
+
+// base64url エンコード: btoa の出力から '+'→'-', '/'→'_', '='→'' へ置換
+function base64urlEncode(input: string): string {
+  if (typeof btoa === "function") {
+    return btoa(input).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+  }
+  return "";
+}
 
 function HomePageInner() {
   const router = useRouter();
@@ -150,7 +160,7 @@ function HomePageInner() {
       redirect_uri: `${window.location.origin}/api/discord/callback`,
       response_type: "code",
       scope: "identify guilds",
-      state: session.access_token,
+      state: base64urlEncode(JSON.stringify({ t: session.access_token, g: "dm" })),
     });
 
     window.location.href = `https://discord.com/oauth2/authorize?${params.toString()}`;
@@ -350,6 +360,8 @@ function HomePageInner() {
     <>
       <div className="min-h-screen pb-20 px-4 pt-6 max-w-lg mx-auto space-y-4">
         <h1 className="text-xl font-bold">ホーム</h1>
+
+        <GameSelector currentGame="dm" size="large" />
 
         {discordStatus === "connected" && (
           <div className="rounded-lg bg-green-500/10 border border-green-500/30 px-4 py-3 text-sm text-green-400">

@@ -2,6 +2,8 @@ import { Metadata } from "next";
 import { createClient } from "@supabase/supabase-js";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { getGameMetaBySlug } from "@/lib/games/server";
+import { APP_BRAND } from "@/lib/games";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -25,12 +27,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const { data: share } = await supabase
     .from("shares")
-    .select("share_type, share_data, image_url")
+    .select("share_type, share_data, image_url, game_title")
     .eq("id", id)
     .single();
 
   if (!share) {
-    return { title: "デュエプレトラッカー" };
+    return { title: APP_BRAND.name };
   }
 
   const appUrl = await resolveAppUrl();
@@ -40,6 +42,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const d = share.share_data as any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const gameTitle = (share as any).game_title as string | null | undefined;
+  const gameMeta = getGameMetaBySlug(gameTitle);
   let title: string;
   let description: string;
 
@@ -55,7 +60,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   return {
-    title: `${title} | デュエプレトラッカー`,
+    title: `${title} | ${gameMeta.trackerName}`,
     description,
     openGraph: {
       title,

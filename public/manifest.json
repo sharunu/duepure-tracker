@@ -1,8 +1,8 @@
 {
-  "name": "デュエプレトラッカー",
-  "short_name": "DPTracker",
-  "description": "デュエルマスターズプレイスの対戦記録・環境分析ツール",
-  "start_url": "/battle",
+  "name": "ゲーム戦績トラッカー",
+  "short_name": "GameTracker",
+  "description": "各ゲームの対戦記録・環境分析ツール",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#6366f1",

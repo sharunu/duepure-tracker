@@ -5,13 +5,15 @@ import { getAdminUserBattles, getAdminUserDailyBattleCounts } from "@/lib/action
 import { DateRangeCalendar } from "@/components/battle/DateRangeCalendar";
 import { DeckFilter } from "@/components/battle/DeckFilter";
 import { BattleHistoryList } from "@/components/battle/BattleHistoryList";
+import { DEFAULT_GAME, type GameSlug } from "@/lib/games";
 
 type Props = {
   userId: string;
   format: string;
+  game?: GameSlug;
 };
 
-export function AdminUserBattles({ userId, format }: Props) {
+export function AdminUserBattles({ userId, format, game = DEFAULT_GAME }: Props) {
   const [startDate, setStartDate] = useState(() => {
     const d = new Date();
     d.setMonth(d.getMonth() - 1);
@@ -28,18 +30,18 @@ export function AdminUserBattles({ userId, format }: Props) {
     setLoading(true);
     setError(null);
     try {
-      const data = await getAdminUserBattles(userId, format, startDate, endDate);
+      const data = await getAdminUserBattles(userId, format, startDate, endDate, game);
       setBattles(data);
     } catch {
       setError("データの読み込みに失敗しました");
     } finally {
       setLoading(false);
     }
-  }, [userId, format, startDate, endDate]);
+  }, [userId, format, startDate, endDate, game]);
 
   const loadCounts = useCallback((year: number, month: number) => {
-    getAdminUserDailyBattleCounts(userId, format, year, month).then(setBattleCounts).catch(() => {});
-  }, [userId, format]);
+    getAdminUserDailyBattleCounts(userId, format, year, month, game).then(setBattleCounts).catch(() => {});
+  }, [userId, format, game]);
 
   useEffect(() => {
     loadBattles();

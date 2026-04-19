@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { recordBattle, getMiniStats, getAllBattles, getOpponentMemoSuggestions, deleteOpponentMemoSuggestion } from "@/lib/actions/battle-actions";
+import { useGame } from "@/lib/games/context";
 import { MemoSuggestionButton } from "./MemoSuggestionButton";
 import { OpponentDeckSelector } from "./OpponentDeckSelector";
 import { BattleIntervalModal } from "./BattleIntervalModal";
@@ -64,6 +65,7 @@ export function BattleRecordForm({
   format,
   setFormat,
 }: Props) {
+  const { slug: game } = useGame();
   const [selectedValue, setSelectedValue] = useState<string>("");
   const [opponentDeck, setOpponentDeck] = useState("");
   const [opponentMemo, setOpponentMemo] = useState("");
@@ -88,7 +90,7 @@ export function BattleRecordForm({
   // When measureSince changes, refresh stats
   useEffect(() => {
     if (measureSince !== null) {
-      getMiniStats(format, measureSince).then(setMiniStats);
+      getMiniStats(format, measureSince, game).then(setMiniStats);
     }
   }, [measureSince, format]);
 
@@ -132,7 +134,7 @@ export function BattleRecordForm({
   // Fetch memo suggestions when opponent deck changes
   useEffect(() => {
     if (opponentDeck.trim()) {
-      getOpponentMemoSuggestions(opponentDeck.trim()).then(setMemoSuggestions);
+      getOpponentMemoSuggestions(opponentDeck.trim(), game).then(setMemoSuggestions);
     } else {
       setMemoSuggestions([]);
       setShowMemo(false);
@@ -146,6 +148,7 @@ export function BattleRecordForm({
     setSubmitting(true);
     try {
       await recordBattle({
+        game,
         myDeckId: deckId,
         myDeckName: deckNameMap.get(deckId) ?? "",
         opponentDeckName: opponentDeck.trim(),
@@ -163,7 +166,7 @@ export function BattleRecordForm({
       setShowMemo(false);
       setTurnOrder(null);
       setTimeout(() => setLastResult(null), 1500);
-      const updatedStats = await getMiniStats(format, measureSince ?? undefined);
+      const updatedStats = await getMiniStats(format, measureSince ?? undefined, game);
       setMiniStats(updatedStats);
     } catch (e) {
       console.error(e);
@@ -174,7 +177,7 @@ export function BattleRecordForm({
   };
 
   const handleOpenIntervalModal = async () => {
-    const battles = await getAllBattles(format);
+    const battles = await getAllBattles(format, game);
     setModalBattles(battles);
     setShowIntervalModal(true);
   };
@@ -183,7 +186,7 @@ export function BattleRecordForm({
     if (timestamp === null) {
       localStorage.removeItem(`measureSince_${format}`);
       setMeasureSince(null);
-      getMiniStats(format).then(setMiniStats);
+      getMiniStats(format, undefined, game).then(setMiniStats);
     } else {
       localStorage.setItem(`measureSince_${format}`, timestamp);
       setMeasureSince(timestamp);
@@ -334,7 +337,7 @@ export function BattleRecordForm({
                         isSelected={opponentMemo === s}
                         onSelect={setOpponentMemo}
                         onDelete={async (memo) => {
-                          await deleteOpponentMemoSuggestion(opponentDeck.trim(), memo);
+                          await deleteOpponentMemoSuggestion(opponentDeck.trim(), memo, game);
                           setMemoSuggestions(prev => prev.filter(m => m !== memo));
                           if (opponentMemo === memo) setOpponentMemo("");
                         }}

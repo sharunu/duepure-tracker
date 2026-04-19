@@ -1,4 +1,5 @@
 "use client";
+import { useGame } from "@/lib/games/context";
 
 import { forwardRef } from "react";
 import type { StatsShareData } from "./ShareButton";
@@ -92,6 +93,7 @@ function StatColumn({
 
 export const StatsShareCard = forwardRef<HTMLDivElement, Props>(
   function StatsShareCard({ data }, ref) {
+    const { trackerName } = useGame();
     const totalBattles = data.totalWins + data.totalLosses;
     const firstTotal = data.firstWins + data.firstLosses;
     const secondTotal = data.secondWins + data.secondLosses;
@@ -143,7 +145,7 @@ export const StatsShareCard = forwardRef<HTMLDivElement, Props>(
                 letterSpacing: 1,
               }}
             >
-              デュエプレトラッカー
+              {trackerName}
             </div>
           </div>
           <div

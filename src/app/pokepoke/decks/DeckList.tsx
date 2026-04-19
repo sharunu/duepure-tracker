@@ -1,0 +1,662 @@
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import {
+  createDeck,
+  updateDeck,
+  archiveDeck,
+  getDecks,
+  createTuning,
+  updateTuning,
+  deleteTuning,
+} from "@/lib/actions/deck-actions";
+
+type Tuning = {
+  id: string;
+  name: string;
+  sort_order: number;
+};
+
+type Deck = {
+  id: string;
+  name: string;
+  sort_order: number;
+  deck_tunings: Tuning[];
+};
+
+const PencilIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+    <path d="m15 5 4 4" />
+  </svg>
+);
+
+const XIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M18 6 6 18" />
+    <path d="m6 6 12 12" />
+  </svg>
+);
+
+const SearchIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#666688" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="11" cy="11" r="8" />
+    <path d="m21 21-4.3-4.3" />
+  </svg>
+);
+
+export function DeckList({
+  initialDecks,
+  format,
+  suggestions = { major: [], minor: [], other: [] },
+}: {
+  initialDecks: Deck[];
+  format: string;
+  suggestions?: { major: string[]; minor: string[]; other: string[] };
+}) {
+  const [decks, setDecks] = useState(initialDecks);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [freeInput, setFreeInput] = useState("");
+  const [showMoreOther, setShowMoreOther] = useState(false);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const [toastVisible, setToastVisible] = useState(false);
+
+  const [deckError, setDeckError] = useState<string | null>(null);
+  const [tuningError, setTuningError] = useState<string | null>(null);
+
+  // Tuning state
+  const [expandedDecks, setExpandedDecks] = useState<Set<string>>(new Set());
+  const [newTuningName, setNewTuningName] = useState("");
+  const [editingTuningId, setEditingTuningId] = useState<string | null>(null);
+  const [editTuningName, setEditTuningName] = useState("");
+
+  const registeredNames = new Set(decks.map(d => d.name));
+
+  const showToast = useCallback((msg: string) => {
+    setToastMsg(msg);
+    setToastVisible(true);
+    setTimeout(() => setToastVisible(false), 1700);
+    setTimeout(() => setToastMsg(null), 2000);
+  }, []);
+
+  const toggleExpanded = (deckId: string) => {
+    setExpandedDecks((prev) => {
+      const next = new Set(prev);
+      if (next.has(deckId)) {
+        next.delete(deckId);
+      } else {
+        next.add(deckId);
+      }
+      return next;
+    });
+  };
+
+  // Filter chips by search query
+  const filterByQuery = (items: string[]) => {
+    if (!searchQuery) return items;
+    const q = searchQuery.toLowerCase();
+    return items.filter(s => s.toLowerCase().includes(q));
+  };
+
+  const filteredMajor = filterByQuery(suggestions.major);
+  const filteredMinor = filterByQuery(suggestions.minor);
+  const filteredOther = filterByQuery(suggestions.other);
+  const noResults = searchQuery && filteredMajor.length === 0 && filteredMinor.length === 0 && filteredOther.length === 0;
+
+  // Chip create handler
+  const handleChipCreate = async (deckName: string) => {
+    if (registeredNames.has(deckName)) return;
+    setLoading(true);
+    setDeckError(null);
+    try {
+      const newDeck = await createDeck(deckName, format, "pokepoke");
+      if (newDeck) {
+        setDecks((prev) => [...prev, { ...newDeck, deck_tunings: newDeck.deck_tunings ?? [] }]);
+      } else {
+        const updated = await getDecks(format, "pokepoke");
+        setDecks(updated);
+      }
+      showToast(`${deckName}を追加しました`);
+    } catch (e) {
+      setDeckError(e instanceof Error ? e.message : "エラーが発生しました");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Free input create handler
+  const handleFreeCreate = async () => {
+    const name = freeInput.trim();
+    if (!name) return;
+    if (registeredNames.has(name)) {
+      setDeckError("同名のデッキが既に登録されています");
+      return;
+    }
+    setLoading(true);
+    setDeckError(null);
+    try {
+      const newDeck = await createDeck(name, format, "pokepoke");
+      setFreeInput("");
+      if (newDeck) {
+        setDecks((prev) => [...prev, { ...newDeck, deck_tunings: newDeck.deck_tunings ?? [] }]);
+      } else {
+        const updated = await getDecks(format, "pokepoke");
+        setDecks(updated);
+      }
+      showToast(`${name}を追加しました`);
+    } catch (e) {
+      setDeckError(e instanceof Error ? e.message : "エラーが発生しました");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdate = async (id: string) => {
+    if (!editName.trim()) return;
+    setLoading(true);
+    setDeckError(null);
+    try {
+      await updateDeck(id, editName.trim());
+      setDecks(
+        decks.map((d) => (d.id === id ? { ...d, name: editName.trim() } : d))
+      );
+      setEditingId(null);
+    } catch (e) {
+      setDeckError(e instanceof Error ? e.message : "エラーが発生しました");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleArchive = async (id: string) => {
+    setLoading(true);
+    try {
+      await archiveDeck(id);
+      setDecks(decks.filter((d) => d.id !== id));
+    } catch (e) {
+      console.error(e);
+      alert("デッキの削除に失敗しました");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Tuning handlers
+  const handleCreateTuning = async (deckId: string) => {
+    if (!newTuningName.trim()) return;
+    setTuningError(null);
+    try {
+      const tuning = await createTuning(deckId, newTuningName.trim());
+      setDecks(decks.map(d => d.id === deckId ? {
+        ...d,
+        deck_tunings: [...d.deck_tunings, tuning],
+      } : d));
+      setNewTuningName("");
+    } catch (e) {
+      setTuningError(e instanceof Error ? e.message : "エラーが発生しました");
+    }
+  };
+
+  const handleUpdateTuning = async (deckId: string, tuningId: string) => {
+    if (!editTuningName.trim()) return;
+    setTuningError(null);
+    try {
+      await updateTuning(tuningId, editTuningName.trim());
+      setDecks(decks.map(d => d.id === deckId ? {
+        ...d,
+        deck_tunings: d.deck_tunings.map(t => t.id === tuningId ? { ...t, name: editTuningName.trim() } : t),
+      } : d));
+      setEditingTuningId(null);
+    } catch (e) {
+      setTuningError(e instanceof Error ? e.message : "エラーが発生しました");
+    }
+  };
+
+  const handleDeleteTuning = async (deckId: string, tuningId: string) => {
+    try {
+      await deleteTuning(tuningId);
+      setDecks(decks.map(d => d.id === deckId ? {
+        ...d,
+        deck_tunings: d.deck_tunings.filter(t => t.id !== tuningId),
+      } : d));
+    } catch (e) {
+      console.error(e);
+      alert("チューニングの削除に失敗しました");
+    }
+  };
+
+  const isExpanded = (deckId: string) => expandedDecks.has(deckId);
+
+  return (
+    <div>
+      {/* Upper area: registered decks */}
+      <div style={{ fontSize: 13, fontWeight: 500, color: "#ccccdd", marginBottom: 10 }}>
+        登録済みデッキ
+      </div>
+
+      {decks.length === 0 ? (
+        <p className="text-center text-gray-500 py-6 text-sm">
+          デッキを追加してください
+        </p>
+      ) : (
+        <div className="space-y-3">
+          {decks.map((deck) => (
+            <div key={deck.id} className="rounded-[10px] bg-[#232640] overflow-hidden">
+              {/* Card header */}
+              <div
+                className="flex items-center gap-2 px-4 py-3 cursor-pointer"
+                onClick={() => {
+                  if (editingId !== deck.id) toggleExpanded(deck.id);
+                }}
+              >
+                {editingId === deck.id ? (
+                  <div className="flex items-center gap-2 flex-1">
+                    <input
+                      type="text"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.nativeEvent.isComposing) handleUpdate(deck.id);
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      className="flex-1 bg-transparent border-b border-[#5b8def] text-sm text-white focus:outline-none"
+                      autoFocus
+                    />
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleUpdate(deck.id); }}
+                      className="text-sm text-[#5b8def]"
+                    >
+                      保存
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setEditingId(null); }}
+                      className="text-sm text-gray-400"
+                    >
+                      取消
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[14px] font-medium text-white truncate">{deck.name}</div>
+                      <div className="text-[11px] text-gray-500">チューニング {deck.deck_tunings.length}件</div>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingId(deck.id);
+                        setEditName(deck.name);
+                      }}
+                      className="w-8 h-8 flex items-center justify-center rounded-md"
+                      style={{ backgroundColor: "rgba(91,141,239,0.1)", color: "#5b8def" }}
+                    >
+                      <PencilIcon />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        if (!window.confirm(`「${deck.name}」を削除しますか？`)) { e.stopPropagation(); return; }
+                        e.stopPropagation();
+                        handleArchive(deck.id);
+                      }}
+                      className="w-8 h-8 flex items-center justify-center rounded-md"
+                      style={{ backgroundColor: "rgba(232,93,117,0.1)", color: "#e85d75" }}
+                    >
+                      <XIcon />
+                    </button>
+                    <span className="text-gray-500 text-sm ml-1 w-4 text-center select-none">
+                      {isExpanded(deck.id) ? "▾" : "▸"}
+                    </span>
+                  </>
+                )}
+              </div>
+
+              {/* Expanded tuning section */}
+              {isExpanded(deck.id) && (
+                <div className="bg-[#1e2138] border-t border-[#333355]">
+                    <div style={{ fontSize: 10, color: "#666688", padding: "8px 16px 0 16px" }}>構築の調整パターンを追加できます</div>
+                  {deck.deck_tunings.map((tuning, idx) => (
+                    <div
+                      key={tuning.id}
+                      className={"flex items-center gap-3 px-4 py-2.5" + (idx < deck.deck_tunings.length - 1 ? " border-b border-[#333355]" : "")}
+                    >
+                      {editingTuningId === tuning.id ? (
+                        <>
+                          <div className="w-[3px] self-stretch rounded-sm bg-[#5b8def] flex-shrink-0" />
+                          <input
+                            type="text"
+                            value={editTuningName}
+                            onChange={(e) => setEditTuningName(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && !e.nativeEvent.isComposing) handleUpdateTuning(deck.id, tuning.id);
+                            }}
+                            className="flex-1 bg-transparent border-b border-[#5b8def] text-[13px] text-white focus:outline-none"
+                            autoFocus
+                          />
+                          <button onClick={() => handleUpdateTuning(deck.id, tuning.id)} className="text-xs text-[#5b8def]">保存</button>
+                          <button onClick={() => setEditingTuningId(null)} className="text-xs text-gray-400">取消</button>
+                        </>
+                      ) : (
+                        <>
+                          <div className="w-[3px] self-stretch rounded-sm bg-[#5b8def] flex-shrink-0" />
+                          <span className="flex-1 text-[13px] text-gray-300">{tuning.name}</span>
+                          <button
+                            onClick={() => { setEditingTuningId(tuning.id); setEditTuningName(tuning.name); }}
+                            className="text-xs text-[#5b8def]"
+                          >
+                            編集
+                          </button>
+                          <button
+                            onClick={() => { if (!window.confirm(`「${tuning.name}」を削除しますか？`)) return; handleDeleteTuning(deck.id, tuning.id); }}
+                            className="text-xs text-[#e85d75]"
+                          >
+                            削除
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  ))}
+
+                  <div className="flex gap-2 px-4 py-3 border-t border-[#333355]">
+                    <input
+                      type="text"
+                      placeholder="例：スパーク入り、クロック型"
+                      value={newTuningName}
+                      onChange={(e) => setNewTuningName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.nativeEvent.isComposing) handleCreateTuning(deck.id);
+                      }}
+                      className="flex-1 rounded-md bg-[#282b48] border-[0.5px] border-[#333355] px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-[#5b8def]"
+                    />
+                    <button
+                      onClick={() => handleCreateTuning(deck.id)}
+                      disabled={!newTuningName.trim()}
+                      className="rounded-md px-3 py-2 text-xs font-medium disabled:opacity-50"
+                      style={{ backgroundColor: "rgba(91,141,239,0.15)", color: "#5b8def" }}
+                    >
+                      追加
+                    </button>
+                  </div>
+                  {tuningError && isExpanded(deck.id) && (
+                    <p className="text-xs text-[#e85d75] px-4 pb-2">{tuningError}</p>
+                  )}
+                    <div style={{ fontSize: 10, color: "#666688", padding: "4px 16px 8px 16px" }}>※対戦記録登録時サーバー内で共有されます（他ユーザーには非公開）</div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {deckError && (
+        <p className="text-sm text-[#e85d75] mt-2">{deckError}</p>
+      )}
+
+      {/* Border separator */}
+      <div style={{ borderTop: "0.5px solid #2a2d48", margin: "20px 0" }} />
+
+      {/* Lower area: add deck */}
+      <div style={{ fontSize: 13, fontWeight: 500, color: "#ccccdd", marginBottom: 4 }}>
+        デッキを追加
+      </div>
+      <div style={{ fontSize: 10, color: "#666688", marginBottom: 14 }}>
+        タップしてデッキを登録できます
+      </div>
+
+      {/* Search filter */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          background: "#1e2138",
+          borderRadius: 8,
+          border: "0.5px solid #333355",
+          padding: "8px 12px",
+          marginBottom: 14,
+        }}
+      >
+        <SearchIcon />
+        <input
+          type="text"
+          placeholder="デッキを検索..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          style={{
+            flex: 1,
+            background: "transparent",
+            border: "none",
+            outline: "none",
+            color: "#e8e8ec",
+            fontSize: 13,
+          }}
+        />
+        {searchQuery && (
+          <button
+            onClick={() => setSearchQuery("")}
+            style={{ color: "#666688", fontSize: 14, lineHeight: 1 }}
+          >
+            ✕
+          </button>
+        )}
+      </div>
+
+      {noResults ? (
+        <p style={{ fontSize: 12, color: "#666688", textAlign: "center", padding: "12px 0" }}>
+          該当するデッキがありません。自由入力で追加してください。
+        </p>
+      ) : (
+        <>
+          {/* Major decks */}
+          {filteredMajor.length > 0 && (
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 10, color: "#666688", fontWeight: 500, marginBottom: 8 }}>
+                よく使われているデッキ
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {filteredMajor.map((name) => {
+                  const isRegistered = registeredNames.has(name);
+                  return (
+                    <button
+                      key={name}
+                      onClick={() => handleChipCreate(name)}
+                      disabled={loading || isRegistered}
+                      style={{
+                        padding: "7px 14px",
+                        fontSize: 12,
+                        background: isRegistered ? "#232640" : "#232640",
+                        border: isRegistered ? "0.5px solid #333355" : "0.5px solid #333355",
+                        borderRadius: 8,
+                        color: isRegistered ? "#ccccdd" : "#ccccdd",
+                        opacity: isRegistered ? 0.35 : 1,
+                        pointerEvents: isRegistered ? "none" : "auto",
+                        cursor: isRegistered ? "default" : "pointer",
+                        transition: "all 0.15s",
+                      }}
+                      onMouseDown={(e) => e.preventDefault()}
+                    >
+                      {name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Minor decks */}
+          {filteredMinor.length > 0 && (
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 10, color: "#666688", fontWeight: 500, marginBottom: 8 }}>
+                その他のデッキ
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 6,
+                  maxHeight: 120,
+                  overflowY: "auto",
+                }}
+              >
+                {filteredMinor.map((name) => {
+                  const isRegistered = registeredNames.has(name);
+                  return (
+                    <button
+                      key={name}
+                      onClick={() => handleChipCreate(name)}
+                      disabled={loading || isRegistered}
+                      style={{
+                        padding: "6px 12px",
+                        fontSize: 11,
+                        background: "#232640",
+                        border: "0.5px solid #333355",
+                        borderRadius: 8,
+                        color: "#ccccdd",
+                        opacity: isRegistered ? 0.35 : 1,
+                        pointerEvents: isRegistered ? "none" : "auto",
+                        cursor: isRegistered ? "default" : "pointer",
+                        transition: "all 0.15s",
+                      }}
+                      onMouseDown={(e) => e.preventDefault()}
+                    >
+                      {name}
+                    </button>
+                  );
+                })}
+              </div>
+              {!searchQuery && suggestions.other.length > 0 && (
+                <button
+                  onClick={() => setShowMoreOther((prev) => !prev)}
+                  style={{
+                    marginTop: 8,
+                    padding: "6px 14px",
+                    fontSize: 11,
+                    borderRadius: 8,
+                    background: "#232640",
+                    border: "1px dashed rgba(100,100,150,0.4)",
+                    color: "#999",
+                    cursor: "pointer",
+                  }}
+                >
+                  さらに表示{showMoreOther ? " ▴" : "..."}
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Other decks (shown when searching or showMoreOther) */}
+          {(searchQuery ? filteredOther.length > 0 : showMoreOther && suggestions.other.length > 0) && (
+            <div style={{ marginBottom: 14 }}>
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 6,
+                  maxHeight: 120,
+                  overflowY: "auto",
+                }}
+              >
+                {(searchQuery ? filteredOther : suggestions.other).map((name) => {
+                  const isRegistered = registeredNames.has(name);
+                  return (
+                    <button
+                      key={name}
+                      onClick={() => handleChipCreate(name)}
+                      disabled={loading || isRegistered}
+                      style={{
+                        padding: "6px 12px",
+                        fontSize: 11,
+                        background: "#232640",
+                        border: "0.5px solid #333355",
+                        borderRadius: 8,
+                        color: "#ccccdd",
+                        opacity: isRegistered ? 0.35 : 1,
+                        pointerEvents: isRegistered ? "none" : "auto",
+                        cursor: isRegistered ? "default" : "pointer",
+                        transition: "all 0.15s",
+                      }}
+                      onMouseDown={(e) => e.preventDefault()}
+                    >
+                      {name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Free input section */}
+      <div style={{ borderTop: "0.5px solid #2a2d48", margin: "16px 0", paddingTop: 16 }}>
+        <div style={{ display: "flex", gap: 8 }}>
+          <input
+            type="text"
+            placeholder="リストにないデッキ名を入力..."
+            value={freeInput}
+            onChange={(e) => { setFreeInput(e.target.value); setDeckError(null); }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.nativeEvent.isComposing) handleFreeCreate();
+            }}
+            style={{
+              flex: 1,
+              background: "#1e2138",
+              borderRadius: 8,
+              border: "0.5px solid #333355",
+              padding: "10px 14px",
+              color: "#e8e8ec",
+              fontSize: 13,
+              outline: "none",
+            }}
+          />
+          <button
+            onClick={handleFreeCreate}
+            disabled={loading || !freeInput.trim()}
+            style={{
+              background: "#3d4070",
+              borderRadius: 8,
+              color: "#e8e8ec",
+              padding: "10px 18px",
+              fontSize: 13,
+              fontWeight: 500,
+              border: "none",
+              cursor: freeInput.trim() ? "pointer" : "default",
+              opacity: freeInput.trim() ? 1 : 0.5,
+            }}
+          >
+            追加
+          </button>
+        </div>
+        <div style={{ fontSize: 10, color: "#666688", marginTop: 8 }}>
+          同じデッキの構築調整は、デッキカードを開いてチューニングとして追加できます
+        </div>
+      </div>
+
+      {/* Toast notification */}
+      {toastMsg && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: 80,
+            left: "50%",
+            transform: "translateX(-50%)",
+            background: "rgba(35,38,64,0.95)",
+            border: "1px solid #333355",
+            borderRadius: 10,
+            padding: "10px 20px",
+            fontSize: 13,
+            color: "#e8e8ec",
+            zIndex: 9999,
+            opacity: toastVisible ? 1 : 0,
+            transition: "opacity 0.3s",
+            pointerEvents: "none",
+          }}
+        >
+          {toastMsg}
+        </div>
+      )}
+    </div>
+  );
+}

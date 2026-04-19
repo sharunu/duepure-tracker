@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { DEFAULT_GAME, type GameSlug } from "@/lib/games";
 import type { DetailedPersonalStats, TurnOrderSummary, OpponentDetail, TrendRow } from "@/lib/actions/stats-actions";
 
 async function requireAdmin() {
@@ -36,11 +37,12 @@ export async function checkIsAdmin(): Promise<boolean> {
 
 // === 対面デッキ管理（既存） ===
 
-export async function getOpponentDeckMasterList(format?: string) {
+export async function getOpponentDeckMasterList(format?: string, game: GameSlug = DEFAULT_GAME) {
   const supabase = await requireAdmin();
   let query = supabase
     .from("opponent_deck_master")
-    .select("*");
+    .select("*")
+    .eq("game_title", game);
 
   if (format) {
     query = query.eq("format", format);
@@ -54,7 +56,7 @@ export async function getOpponentDeckMasterList(format?: string) {
   return data ?? [];
 }
 
-export async function addOpponentDeck(name: string, format: string = "ND", category: string = "major") {
+export async function addOpponentDeck(name: string, format: string = "ND", category: string = "major", game: GameSlug = DEFAULT_GAME) {
   const supabase = await requireAdmin();
 
   const { data: maxOrder } = await supabase
@@ -71,6 +73,7 @@ export async function addOpponentDeck(name: string, format: string = "ND", categ
     sort_order: nextOrder,
     format,
     category,
+    game_title: game,
   });
 
   if (error) throw new Error(error.message);
@@ -101,12 +104,13 @@ export async function deleteOpponentDeck(id: string) {
 
 // === 設定関連 ===
 
-export async function getOpponentDeckSettings(format: string) {
+export async function getOpponentDeckSettings(format: string, game: GameSlug = DEFAULT_GAME) {
   const supabase = createClient();
   const { data } = await supabase
     .from("opponent_deck_settings")
     .select("*")
     .eq("format", format)
+    .eq("game_title", game)
     .single();
   return data;
 }
@@ -119,22 +123,25 @@ export async function updateOpponentDeckSettings(
     minor_threshold?: number;
     usage_period_days?: number;
     disable_period_days?: number;
-  }
+  },
+  game: GameSlug = DEFAULT_GAME
 ) {
   const supabase = await requireAdmin();
   const { error } = await supabase
     .from("opponent_deck_settings")
     .update({ ...updates, updated_at: new Date().toISOString() })
-    .eq("format", format);
+    .eq("format", format)
+    .eq("game_title", game);
   if (error) throw new Error(error.message);
 }
 
 // === 即時再計算 ===
 
-export async function recalculateOpponentDecks(format: string) {
+export async function recalculateOpponentDecks(format: string, game: GameSlug = DEFAULT_GAME) {
   const supabase = await requireAdmin();
   const { error } = await supabase.rpc("recalculate_opponent_decks", {
     p_format: format,
+    p_game_title: game,
   });
   if (error) throw new Error(error.message);
 }
@@ -162,13 +169,14 @@ export async function updateAdminBonusCount(id: string, count: number) {
 
 // === モード2用: デッキ一覧+統計取得 ===
 
-export async function getOpponentDeckStatsForAdmin(format: string) {
+export async function getOpponentDeckStatsForAdmin(format: string, game: GameSlug = DEFAULT_GAME) {
   const supabase = await requireAdmin();
 
   const { data: settings } = await supabase
     .from("opponent_deck_settings")
     .select("*")
     .eq("format", format)
+    .eq("game_title", game)
     .single();
 
   const usagePeriod = settings?.usage_period_days ?? 14;
@@ -179,6 +187,7 @@ export async function getOpponentDeckStatsForAdmin(format: string) {
     .from("opponent_deck_master")
     .select("*")
     .eq("format", format)
+    .eq("game_title", game)
     .order("sort_order", { ascending: true })
     .order("name", { ascending: true });
 
@@ -186,6 +195,7 @@ export async function getOpponentDeckStatsForAdmin(format: string) {
     .from("battles")
     .select("opponent_deck_name")
     .eq("format", format)
+    .eq("game_title", game)
     .gte("fought_at", startDate.toISOString());
 
   const battleCounts: Record<string, number> = {};
@@ -214,7 +224,7 @@ export async function getOpponentDeckStatsForAdmin(format: string) {
   };
 }
 
-export async function getBattleCountsForPeriod(format: string, periodDays: number) {
+export async function getBattleCountsForPeriod(format: string, periodDays: number, game: GameSlug = DEFAULT_GAME) {
   const supabase = await requireAdmin();
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - periodDays);
@@ -222,6 +232,7 @@ export async function getBattleCountsForPeriod(format: string, periodDays: numbe
     .from("battles")
     .select("opponent_deck_name")
     .eq("format", format)
+    .eq("game_title", game)
     .gte("fought_at", startDate.toISOString());
   const counts: Record<string, number> = {};
   for (const b of battles ?? []) {
@@ -259,13 +270,14 @@ export async function getAdminUserList(): Promise<AdminUserListRow[]> {
 
 // === ユーザーのデッキ取得 ===
 
-export async function getAdminUserDecks(userId: string, format: string) {
+export async function getAdminUserDecks(userId: string, format: string, game: GameSlug = DEFAULT_GAME) {
   await requireAdmin();
   const supabase = createClient();
   const { data } = await supabase
     .from("decks")
     .select("id, name, sort_order, deck_tunings(id, name, sort_order)")
     .eq("user_id", userId)
+    .eq("game_title", game)
     .eq("format", format)
     .eq("is_archived", false)
     .order("sort_order", { ascending: true });
@@ -281,7 +293,7 @@ export async function getAdminUserDecks(userId: string, format: string) {
 // === ユーザーの戦績取得 ===
 
 export async function getAdminUserBattles(
-  userId: string, format: string, startDate: string, endDate: string
+  userId: string, format: string, startDate: string, endDate: string, game: GameSlug = DEFAULT_GAME
 ) {
   await requireAdmin();
   const supabase = createClient();
@@ -291,6 +303,7 @@ export async function getAdminUserBattles(
     .from("battles")
     .select("*")
     .eq("user_id", userId)
+    .eq("game_title", game)
     .eq("format", format)
     .gte("fought_at", startDate)
     .lt("fought_at", endPlusOne.toISOString().split("T")[0])
@@ -301,7 +314,7 @@ export async function getAdminUserBattles(
 // === ユーザーの個人統計 ===
 
 export async function getAdminUserPersonalStats(
-  userId: string, format: string, startDate?: string, endDate?: string
+  userId: string, format: string, startDate?: string, endDate?: string, game: GameSlug = DEFAULT_GAME
 ): Promise<DetailedPersonalStats> {
   await requireAdmin();
   const supabase = createClient();
@@ -315,6 +328,7 @@ export async function getAdminUserPersonalStats(
     .from("battles")
     .select("my_deck_name, opponent_deck_name, result, turn_order, fought_at")
     .eq("user_id", userId)
+    .eq("game_title", game)
     .eq("format", format);
 
   if (startDate) query = query.gte("fought_at", startDate);
@@ -406,10 +420,11 @@ export async function getAdminUserPersonalStats(
 // === ユーザーのデッキ推移 ===
 
 export async function getAdminUserDeckTrend(
-  userId: string, startDate: string, endDate: string, format: string
+  userId: string, startDate: string, endDate: string, format: string, _game: GameSlug = DEFAULT_GAME
 ): Promise<TrendRow[]> {
   await requireAdmin();
   const supabase = createClient();
+  // get_deck_trend_range は format コードがゲーム間で重複しないため format フィルタで正しく絞り込まれる
   const { data, error } = await supabase.rpc("get_deck_trend_range", {
     p_start_date: startDate,
     p_end_date: endDate,
@@ -428,7 +443,7 @@ export async function getAdminUserDeckTrend(
 // === ユーザーの日別戦績数（カレンダー用） ===
 
 export async function getAdminUserDailyBattleCounts(
-  userId: string, format: string, year: number, month: number
+  userId: string, format: string, year: number, month: number, game: GameSlug = DEFAULT_GAME
 ): Promise<Record<string, number>> {
   await requireAdmin();
   const supabase = createClient();
@@ -439,6 +454,7 @@ export async function getAdminUserDailyBattleCounts(
     .from("battles")
     .select("fought_at")
     .eq("user_id", userId)
+    .eq("game_title", game)
     .eq("format", format)
     .gte("fought_at", startDate)
     .lt("fought_at", endDate);
@@ -548,7 +564,7 @@ export async function updateDetectionRule(
 // 検知アラート管理
 // =============================================
 
-export async function getDetectionAlerts(resolvedOnly: boolean = false) {
+export async function getDetectionAlerts(resolvedOnly: boolean = false, game?: GameSlug) {
   await requireAdmin();
   const supabase = createClient();
   let query = supabase
@@ -559,18 +575,25 @@ export async function getDetectionAlerts(resolvedOnly: boolean = false) {
   if (!resolvedOnly) {
     query = query.eq("is_resolved", false);
   }
+  if (game) {
+    query = query.eq("game_title", game);
+  }
 
   const { data } = await query;
   return data ?? [];
 }
 
-export async function getDetectionAlertCount(): Promise<number> {
+export async function getDetectionAlertCount(game?: GameSlug): Promise<number> {
   await requireAdmin();
   const supabase = createClient();
-  const { count } = await supabase
+  let query = supabase
     .from("detection_alerts")
     .select("*", { count: "exact", head: true })
     .eq("is_resolved", false);
+  if (game) {
+    query = query.eq("game_title", game);
+  }
+  const { count } = await query;
   return count ?? 0;
 }
 

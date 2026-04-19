@@ -113,7 +113,7 @@ export default function AuthPage() {
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center">
           <h1 className="text-[24px] font-bold text-white">
-            デュエプレトラッカー
+            ゲーム戦績トラッカー
           </h1>
           <p className="text-[13px] text-gray-400 mt-2">
             対戦記録・環境分析ツール

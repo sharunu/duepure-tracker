@@ -1,8 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { DEFAULT_GAME, isGameSlug } from "@/lib/games";
 
 export async function POST(request: NextRequest) {
   try {
+    let bodyGame: string | undefined;
+    try {
+      const body = await request.json();
+      bodyGame = typeof body?.game === "string" ? body.game : undefined;
+    } catch {
+      bodyGame = undefined;
+    }
+    const game = isGameSlug(bodyGame) ? bodyGame : DEFAULT_GAME;
     // Verify user via Supabase JWT in Authorization header
     const authHeader = request.headers.get("authorization");
     const jwt = authHeader?.replace("Bearer ", "");
@@ -25,7 +34,8 @@ export async function POST(request: NextRequest) {
       .from("discord_connections")
       .select("discord_username, access_token, refresh_token, token_expires_at")
       .eq("user_id", user.id)
-      .single();
+      .eq("game_title", game)
+      .maybeSingle();
 
     if (!conn) {
       return NextResponse.json({ error: "no discord connection" }, { status: 404 });
@@ -86,7 +96,8 @@ export async function POST(request: NextRequest) {
         await supabaseAdmin
           .from("discord_connections")
           .update({ discord_username: discordUsername, updated_at: new Date().toISOString() })
-          .eq("user_id", user.id);
+          .eq("user_id", user.id)
+          .eq("game_title", game);
       }
     }
 
@@ -111,6 +122,7 @@ export async function POST(request: NextRequest) {
       p_user_id: user.id,
       p_discord_username: discordUsername,
       p_guilds: guildData,
+      p_game_title: game,
     });
 
     if (syncError) {

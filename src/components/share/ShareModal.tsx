@@ -1,4 +1,5 @@
 "use client";
+import { useGame } from "@/lib/games/context";
 
 import { useState, useEffect, useRef } from "react";
 import { X, Download, ExternalLink, Loader2 } from "lucide-react";
@@ -15,6 +16,7 @@ type Props = {
 };
 
 export function ShareModal({ type, data, onClose }: Props) {
+  const { trackerName, slug: game } = useGame();
   const cardRef = useRef<HTMLDivElement>(null);
   const [imageBlob, setImageBlob] = useState<Blob | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -27,7 +29,7 @@ export function ShareModal({ type, data, onClose }: Props) {
   const shareText = (() => {
     if (type === "stats") {
       const d = data as StatsShareData;
-      return `デュエプレトラッカーで戦績を記録中！\n勝率 ${d.winRate}%（${d.totalWins}勝${d.totalLosses}敗）`;
+      return `${trackerName}で戦績を記録中！\n勝率 ${d.winRate}%（${d.totalWins}勝${d.totalLosses}敗）`;
     } else if (type === "deck") {
       const d = data as DeckShareData;
       return `【${d.deckName}】勝率 ${d.winRate}%（${d.totalWins}勝${d.totalLosses}敗）`;
@@ -132,6 +134,7 @@ export function ShareModal({ type, data, onClose }: Props) {
         share_type: type,
         share_data: data as unknown as import("@/lib/supabase/database.types").Json,
         user_id: user.id,
+        game_title: game,
       };
       if (imageUrl) insertPayload.image_url = imageUrl;
 

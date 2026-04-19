@@ -43,6 +43,7 @@ export type Database = {
         Row: {
           format: string
           fought_at: string
+          game_title: string
           id: string
           my_deck_id: string
           my_deck_name: string
@@ -57,6 +58,7 @@ export type Database = {
         Insert: {
           format?: string
           fought_at?: string
+          game_title?: string
           id?: string
           my_deck_id: string
           my_deck_name: string
@@ -71,6 +73,7 @@ export type Database = {
         Update: {
           format?: string
           fought_at?: string
+          game_title?: string
           id?: string
           my_deck_id?: string
           my_deck_name?: string
@@ -110,6 +113,7 @@ export type Database = {
         Row: {
           created_at: string
           deck_id: string
+          game_title: string
           id: string
           name: string
           sort_order: number
@@ -117,6 +121,7 @@ export type Database = {
         Insert: {
           created_at?: string
           deck_id: string
+          game_title?: string
           id?: string
           name: string
           sort_order?: number
@@ -124,6 +129,7 @@ export type Database = {
         Update: {
           created_at?: string
           deck_id?: string
+          game_title?: string
           id?: string
           name?: string
           sort_order?: number
@@ -142,6 +148,7 @@ export type Database = {
         Row: {
           created_at: string
           format: string
+          game_title: string
           id: string
           is_archived: boolean
           name: string
@@ -151,6 +158,7 @@ export type Database = {
         Insert: {
           created_at?: string
           format?: string
+          game_title?: string
           id?: string
           is_archived?: boolean
           name: string
@@ -160,6 +168,7 @@ export type Database = {
         Update: {
           created_at?: string
           format?: string
+          game_title?: string
           id?: string
           is_archived?: boolean
           name?: string
@@ -180,6 +189,7 @@ export type Database = {
         Row: {
           created_at: string
           details: Json | null
+          game_title: string
           id: string
           is_resolved: boolean
           resolved_at: string | null
@@ -190,6 +200,7 @@ export type Database = {
         Insert: {
           created_at?: string
           details?: Json | null
+          game_title?: string
           id?: string
           is_resolved?: boolean
           resolved_at?: string | null
@@ -200,6 +211,7 @@ export type Database = {
         Update: {
           created_at?: string
           details?: Json | null
+          game_title?: string
           id?: string
           is_resolved?: boolean
           resolved_at?: string | null
@@ -263,6 +275,7 @@ export type Database = {
           created_at: string
           discord_id: string
           discord_username: string
+          game_title: string
           id: string
           refresh_token: string | null
           token_expires_at: string | null
@@ -274,6 +287,7 @@ export type Database = {
           created_at?: string
           discord_id: string
           discord_username: string
+          game_title?: string
           id?: string
           refresh_token?: string | null
           token_expires_at?: string | null
@@ -285,6 +299,7 @@ export type Database = {
           created_at?: string
           discord_id?: string
           discord_username?: string
+          game_title?: string
           id?: string
           refresh_token?: string | null
           token_expires_at?: string | null
@@ -334,6 +349,7 @@ export type Database = {
           category: string
           created_at: string
           format: string
+          game_title: string
           id: string
           is_active: boolean
           last_used_at: string | null
@@ -345,6 +361,7 @@ export type Database = {
           category?: string
           created_at?: string
           format?: string
+          game_title?: string
           id?: string
           is_active?: boolean
           last_used_at?: string | null
@@ -356,6 +373,7 @@ export type Database = {
           category?: string
           created_at?: string
           format?: string
+          game_title?: string
           id?: string
           is_active?: boolean
           last_used_at?: string | null
@@ -368,6 +386,7 @@ export type Database = {
         Row: {
           disable_period_days: number
           format: string
+          game_title: string
           id: string
           major_threshold: number
           management_mode: string
@@ -378,6 +397,7 @@ export type Database = {
         Insert: {
           disable_period_days?: number
           format: string
+          game_title?: string
           id?: string
           major_threshold?: number
           management_mode?: string
@@ -388,6 +408,7 @@ export type Database = {
         Update: {
           disable_period_days?: number
           format?: string
+          game_title?: string
           id?: string
           major_threshold?: number
           management_mode?: string
@@ -567,21 +588,27 @@ export type Database = {
       shares: {
         Row: {
           created_at: string
+          game_title: string
           id: string
+          image_url: string | null
           share_data: Json
           share_type: string
           user_id: string | null
         }
         Insert: {
           created_at?: string
+          game_title?: string
           id: string
+          image_url?: string | null
           share_data: Json
           share_type: string
           user_id?: string | null
         }
         Update: {
           created_at?: string
+          game_title?: string
           id?: string
+          image_url?: string | null
           share_data?: Json
           share_type?: string
           user_id?: string | null
@@ -642,6 +669,7 @@ export type Database = {
         Row: {
           created_at: string
           discord_guild_id: string
+          game_title: string
           icon_url: string | null
           id: string
           name: string
@@ -650,6 +678,7 @@ export type Database = {
         Insert: {
           created_at?: string
           discord_guild_id: string
+          game_title?: string
           icon_url?: string | null
           id?: string
           name: string
@@ -658,6 +687,7 @@ export type Database = {
         Update: {
           created_at?: string
           discord_guild_id?: string
+          game_title?: string
           icon_url?: string | null
           id?: string
           name?: string
@@ -715,10 +745,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      auto_add_opponent_deck: {
-        Args: { p_deck_name: string; p_format: string }
-        Returns: undefined
-      }
+      auto_add_opponent_deck:
+        | {
+            Args: { p_deck_name: string; p_format: string }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_deck_name: string
+              p_format: string
+              p_game_title?: string
+            }
+            Returns: undefined
+          }
       calculate_quality_score: { Args: { p_user_id: string }; Returns: Json }
       delete_own_account: { Args: never; Returns: undefined }
       detect_extreme_winrate: {
@@ -1054,17 +1093,33 @@ export type Database = {
         Args: { p_team_id: string; p_user_id: string }
         Returns: boolean
       }
-      recalculate_opponent_decks: {
-        Args: { p_format: string }
-        Returns: undefined
-      }
+      recalculate_opponent_decks:
+        | { Args: { p_format: string }; Returns: undefined }
+        | {
+            Args: { p_format: string; p_game_title?: string }
+            Returns: undefined
+          }
       run_daily_opponent_deck_batch: { Args: never; Returns: undefined }
       run_detection_scan: { Args: never; Returns: number }
       run_quality_scoring: { Args: { p_auto_update?: boolean }; Returns: Json }
-      sync_team_membership: {
-        Args: { p_discord_username: string; p_guilds: Json; p_user_id: string }
-        Returns: undefined
-      }
+      sync_team_membership:
+        | {
+            Args: {
+              p_discord_username: string
+              p_guilds: Json
+              p_user_id: string
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_discord_username: string
+              p_game_title?: string
+              p_guilds: Json
+              p_user_id: string
+            }
+            Returns: undefined
+          }
       update_feedback_status: {
         Args: { p_feedback_id: string; p_status: string }
         Returns: undefined

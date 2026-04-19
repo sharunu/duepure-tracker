@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { getAdminUserDecks } from "@/lib/actions/admin-actions";
+import { DEFAULT_GAME, type GameSlug } from "@/lib/games";
 
 type Tuning = { id: string; name: string; sort_order: number };
 type Deck = { id: string; name: string; sort_order: number; deck_tunings: Tuning[] };
@@ -10,9 +11,10 @@ type Deck = { id: string; name: string; sort_order: number; deck_tunings: Tuning
 type Props = {
   userId: string;
   format: string;
+  game?: GameSlug;
 };
 
-export function AdminUserDecks({ userId, format }: Props) {
+export function AdminUserDecks({ userId, format, game = DEFAULT_GAME }: Props) {
   const [decks, setDecks] = useState<Deck[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -21,14 +23,14 @@ export function AdminUserDecks({ userId, format }: Props) {
   useEffect(() => {
     setLoading(true);
     setError(null);
-    getAdminUserDecks(userId, format).then((data) => {
+    getAdminUserDecks(userId, format, game).then((data) => {
       setDecks(data as Deck[]);
       setLoading(false);
     }).catch(() => {
       setError("データの読み込みに失敗しました");
       setLoading(false);
     });
-  }, [userId, format]);
+  }, [userId, format, game]);
 
   if (error) {
     return <p className="text-center text-red-400 py-12 text-sm">{error}</p>;

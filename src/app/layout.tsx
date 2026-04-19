@@ -17,8 +17,8 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const SITE_NAME = "デュエプレトラッカー";
-const SITE_DESCRIPTION = "デュエルマスターズプレイスの対戦記録・環境分析ツール";
+const SITE_NAME = "ゲーム戦績トラッカー";
+const SITE_DESCRIPTION = "各ゲームの対戦記録・環境分析ツール";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
