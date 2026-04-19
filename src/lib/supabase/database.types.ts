@@ -1,8 +1,3 @@
-WARN: environment variable is unset: SUPABASE_AUTH_EXTERNAL_TWITTER_CLIENT_ID
-WARN: environment variable is unset: SUPABASE_AUTH_EXTERNAL_TWITTER_SECRET
-WARN: environment variable is unset: SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID
-WARN: environment variable is unset: SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET
-Initialising login role...
 export type Json =
   | string
   | number
