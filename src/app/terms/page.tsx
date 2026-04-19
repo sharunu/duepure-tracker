@@ -32,7 +32,7 @@ export default function TermsPage() {
         <section>
           <h2 className="text-[14px] font-medium text-white mb-2">第1条（適用）</h2>
           <p>
-            本規約は、デュエプレトラッカー（以下「本サービス」）の利用に関する条件を定めるものです。
+            本規約は、ゲーム戦績トラッカー（以下「本サービス」）の利用に関する条件を定めるものです。
             ユーザーは本サービスを利用することにより、本規約に同意したものとみなします。
           </p>
         </section>

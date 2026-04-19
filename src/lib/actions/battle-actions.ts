@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { DEFAULT_GAME, type GameSlug } from "@/lib/games";
 
 export async function recordBattle(formData: {
   myDeckId: string;
@@ -7,6 +8,7 @@ export async function recordBattle(formData: {
   result: "win" | "loss";
   turnOrder: "first" | "second" | null;
   format: string;
+  game?: GameSlug;
   tuningId?: string | null;
   tuningName?: string | null;
   opponentMemo?: string | null;
@@ -17,6 +19,8 @@ export async function recordBattle(formData: {
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
 
+  const game: GameSlug = formData.game ?? DEFAULT_GAME;
+
   const { error } = await supabase.from("battles").insert({
     user_id: user.id,
     my_deck_id: formData.myDeckId,
@@ -25,6 +29,7 @@ export async function recordBattle(formData: {
     result: formData.result,
     turn_order: formData.turnOrder,
     format: formData.format,
+    game_title: game,
     tuning_id: formData.tuningId ?? null,
     tuning_name: formData.tuningName ?? null,
     opponent_memo: formData.opponentMemo || null,
@@ -36,6 +41,7 @@ export async function recordBattle(formData: {
   await supabase.rpc('auto_add_opponent_deck', {
     p_deck_name: formData.opponentDeckName,
     p_format: formData.format,
+    p_game_title: game,
   });
 }
 
@@ -96,7 +102,7 @@ export async function deleteBattle(id: string) {
   if (error) throw new Error(error.message);
 }
 
-export async function getRecentBattles(limit = 50, format: string = "ND") {
+export async function getRecentBattles(limit = 50, format: string, game: GameSlug = DEFAULT_GAME) {
   const supabase = createClient();
   const {
     data: { user },
@@ -107,6 +113,7 @@ export async function getRecentBattles(limit = 50, format: string = "ND") {
     .from("battles")
     .select("*")
     .eq("user_id", user.id)
+    .eq("game_title", game)
     .eq("format", format)
     .order("fought_at", { ascending: false })
     .limit(limit);
@@ -116,8 +123,9 @@ export async function getRecentBattles(limit = 50, format: string = "ND") {
 
 export type DeckSuggestions = { major: string[]; minor: string[]; other: string[] };
 
-export async function getOpponentDeckSuggestions(format: string = "ND") {
+export async function getOpponentDeckSuggestions(format: string, _game: GameSlug = DEFAULT_GAME) {
   const supabase = createClient();
+  // format コードがゲーム間で重複しないため、p_format フィルタのみで正しく絞り込まれる
   const { data } = await supabase.rpc("get_opponent_deck_suggestions", {
     p_format: format,
   });
@@ -129,7 +137,7 @@ export async function getOpponentDeckSuggestions(format: string = "ND") {
   };
 }
 
-export async function getMiniStats(format: string = "ND", sinceTimestamp?: string) {
+export async function getMiniStats(format: string, sinceTimestamp?: string, game: GameSlug = DEFAULT_GAME) {
   const supabase = createClient();
   const {
     data: { user },
@@ -140,6 +148,7 @@ export async function getMiniStats(format: string = "ND", sinceTimestamp?: strin
     .from("battles")
     .select("result, fought_at")
     .eq("user_id", user.id)
+    .eq("game_title", game)
     .eq("format", format)
     .order("fought_at", { ascending: false });
 
@@ -154,7 +163,6 @@ export async function getMiniStats(format: string = "ND", sinceTimestamp?: strin
   const wins = battles.filter((b) => b.result === "win").length;
   const total = battles.length;
 
-  // Win streak (current)
   let streak = 0;
   for (const b of battles) {
     if (b.result === "win") streak++;
@@ -164,7 +172,7 @@ export async function getMiniStats(format: string = "ND", sinceTimestamp?: strin
   return { wins, losses: total - wins, total, streak };
 }
 
-export async function getAllBattles(format: string = "ND") {
+export async function getAllBattles(format: string, game: GameSlug = DEFAULT_GAME) {
   const supabase = createClient();
   const {
     data: { user },
@@ -175,13 +183,14 @@ export async function getAllBattles(format: string = "ND") {
     .from("battles")
     .select("id, opponent_deck_name, result, fought_at, my_deck_name")
     .eq("user_id", user.id)
+    .eq("game_title", game)
     .eq("format", format)
     .order("fought_at", { ascending: false });
 
   return data ?? [];
 }
 
-export async function getBattlesByDateRange(format: string, startDate: string, endDate: string) {
+export async function getBattlesByDateRange(format: string, startDate: string, endDate: string, game: GameSlug = DEFAULT_GAME) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return [];
@@ -191,6 +200,7 @@ export async function getBattlesByDateRange(format: string, startDate: string, e
     .from("battles")
     .select("*")
     .eq("user_id", user.id)
+    .eq("game_title", game)
     .eq("format", format)
     .gte("fought_at", startDate)
     .lt("fought_at", endPlusOne.toISOString().split("T")[0])
@@ -198,7 +208,7 @@ export async function getBattlesByDateRange(format: string, startDate: string, e
   return data ?? [];
 }
 
-export async function hasAnyBattles(format: string = "ND"): Promise<boolean> {
+export async function hasAnyBattles(format: string, game: GameSlug = DEFAULT_GAME): Promise<boolean> {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return false;
@@ -206,11 +216,12 @@ export async function hasAnyBattles(format: string = "ND"): Promise<boolean> {
     .from("battles")
     .select("id", { count: "exact", head: true })
     .eq("user_id", user.id)
+    .eq("game_title", game)
     .eq("format", format);
   return (count ?? 0) > 0;
 }
 
-export async function getOpponentMemoSuggestions(opponentDeckName: string): Promise<string[]> {
+export async function getOpponentMemoSuggestions(opponentDeckName: string, game: GameSlug = DEFAULT_GAME): Promise<string[]> {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return [];
@@ -218,6 +229,7 @@ export async function getOpponentMemoSuggestions(opponentDeckName: string): Prom
     .from("battles")
     .select("opponent_memo")
     .eq("user_id", user.id)
+    .eq("game_title", game)
     .eq("opponent_deck_name", opponentDeckName)
     .not("opponent_memo", "is", null)
     .order("fought_at", { ascending: false });
@@ -231,7 +243,7 @@ export async function getOpponentMemoSuggestions(opponentDeckName: string): Prom
   return result;
 }
 
-export async function deleteOpponentMemoSuggestion(opponentDeckName: string, memoText: string): Promise<boolean> {
+export async function deleteOpponentMemoSuggestion(opponentDeckName: string, memoText: string, game: GameSlug = DEFAULT_GAME): Promise<boolean> {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return false;
@@ -239,12 +251,13 @@ export async function deleteOpponentMemoSuggestion(opponentDeckName: string, mem
     .from("battles")
     .update({ opponent_memo: null })
     .eq("user_id", user.id)
+    .eq("game_title", game)
     .eq("opponent_deck_name", opponentDeckName)
     .eq("opponent_memo", memoText);
   return !error;
 }
 
-export async function getDailyBattleCounts(format: string, year: number, month: number) {
+export async function getDailyBattleCounts(format: string, year: number, month: number, game: GameSlug = DEFAULT_GAME) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return {};
@@ -255,6 +268,7 @@ export async function getDailyBattleCounts(format: string, year: number, month: 
     .from("battles")
     .select("fought_at")
     .eq("user_id", user.id)
+    .eq("game_title", game)
     .eq("format", format)
     .gte("fought_at", startDate)
     .lt("fought_at", endDate);

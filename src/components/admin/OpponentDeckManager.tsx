@@ -1,5 +1,6 @@
 "use client";
 
+import { DEFAULT_GAME, type GameSlug } from "@/lib/games";
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
   DndContext,
@@ -198,6 +199,7 @@ function SortableCategoryList({
 export function OpponentDeckManager({
   initialDecks,
   format,
+  game = DEFAULT_GAME,
   initialSettings,
   onDirtyChange,
   onApplyingChange,
@@ -205,6 +207,7 @@ export function OpponentDeckManager({
 }: {
   initialDecks: Deck[];
   format: string;
+  game?: GameSlug;
   initialSettings: Settings | null;
   onDirtyChange?: (dirty: boolean) => void;
   onApplyingChange?: (applying: boolean) => void;
@@ -270,7 +273,7 @@ export function OpponentDeckManager({
 
   const loadStats = useCallback(async () => {
     try {
-      const result = await getOpponentDeckStatsForAdmin(format);
+      const result = await getOpponentDeckStatsForAdmin(format, game);
       const d = result.decks as DeckWithStats[];
       setStatsDecks(d);
       savedStatsDecksRef.current = d;
@@ -385,7 +388,7 @@ export function OpponentDeckManager({
       const { majorThreshold, minorThreshold, usagePeriod } = parseSettings();
 
       // 1. Fetch battle counts for the specified period (read-only, no DB writes)
-      const battleCounts = await getBattleCountsForPeriod(format, usagePeriod);
+      const battleCounts = await getBattleCountsForPeriod(format, usagePeriod, game);
 
       // 2. Calculate denominator with local bonus counts
       const totalBattles = Object.values(battleCounts).reduce((a, b) => a + b, 0);
@@ -437,7 +440,7 @@ export function OpponentDeckManager({
         minor_threshold: minorThreshold,
         usage_period_days: usagePeriod,
         disable_period_days: disablePeriod,
-      });
+      }, game);
 
       // 2. Delete
       for (const id of deletedDeckIdsRef.current) {
@@ -447,7 +450,7 @@ export function OpponentDeckManager({
       // 3. Add
       for (const deck of decks) {
         if (addedDeckIdsRef.current.has(deck.id)) {
-          await addOpponentDeck(deck.name, format, deck.category);
+          await addOpponentDeck(deck.name, format, deck.category, game);
         }
       }
 
@@ -492,11 +495,11 @@ export function OpponentDeckManager({
 
       // 7. Recalculate (auto mode)
       if (mode === "auto") {
-        await recalculateOpponentDecks(format);
+        await recalculateOpponentDecks(format, game);
       }
 
       // 8. Reload
-      const freshDecks = await getOpponentDeckMasterList(format);
+      const freshDecks = await getOpponentDeckMasterList(format, game);
       setDecks(freshDecks);
       savedDecksRef.current = freshDecks;
       savedModeRef.current = mode;
@@ -509,7 +512,7 @@ export function OpponentDeckManager({
       };
 
       if (mode === "auto") {
-        const result = await getOpponentDeckStatsForAdmin(format);
+        const result = await getOpponentDeckStatsForAdmin(format, game);
         const freshStats = result.decks as DeckWithStats[];
         setStatsDecks(freshStats);
         savedStatsDecksRef.current = freshStats;

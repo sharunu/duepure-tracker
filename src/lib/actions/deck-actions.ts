@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/client";
+import { DEFAULT_GAME, type GameSlug } from "@/lib/games";
 
-export async function getDecks(format: string = "ND") {
+export async function getDecks(format: string, game: GameSlug = DEFAULT_GAME) {
   const supabase = createClient();
   const {
     data: { user },
@@ -12,18 +13,18 @@ export async function getDecks(format: string = "ND") {
     .select("*, deck_tunings(id, name, sort_order)")
     .eq("user_id", user.id)
     .eq("is_archived", false)
+    .eq("game_title", game)
     .eq("format", format)
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: true });
 
-  // Sort tunings within each deck
   return (data ?? []).map((d) => ({
     ...d,
     deck_tunings: (d.deck_tunings ?? []).sort((a, b) => a.sort_order - b.sort_order),
   }));
 }
 
-export async function createDeck(name: string, format: string = "ND") {
+export async function createDeck(name: string, format: string, game: GameSlug = DEFAULT_GAME) {
   const supabase = createClient();
   const {
     data: { user },
@@ -34,6 +35,7 @@ export async function createDeck(name: string, format: string = "ND") {
     .from("decks")
     .select("id")
     .eq("user_id", user.id)
+    .eq("game_title", game)
     .eq("name", name)
     .eq("format", format)
     .eq("is_archived", false)
@@ -45,7 +47,7 @@ export async function createDeck(name: string, format: string = "ND") {
 
   const { data, error } = await supabase
     .from("decks")
-    .insert({ user_id: user.id, name, format })
+    .insert({ user_id: user.id, name, format, game_title: game })
     .select("*, deck_tunings(id, name, sort_order)")
     .single();
 
@@ -58,13 +60,14 @@ export async function updateDeck(id: string, name: string) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
 
-  const { data: deck } = await supabase.from("decks").select("format").eq("id", id).single();
+  const { data: deck } = await supabase.from("decks").select("format, game_title").eq("id", id).single();
   if (!deck) throw new Error("Deck not found");
 
   const { data: dup } = await supabase
     .from("decks")
     .select("id")
     .eq("user_id", user.id)
+    .eq("game_title", deck.game_title)
     .eq("name", name)
     .eq("format", deck.format)
     .eq("is_archived", false)
@@ -115,7 +118,6 @@ export async function createTuning(deckId: string, name: string) {
     throw new Error("同じ名前のチューニングが既に登録されています");
   }
 
-  // Get max sort_order for this deck
   const { data: existing } = await supabase
     .from("deck_tunings")
     .select("sort_order")

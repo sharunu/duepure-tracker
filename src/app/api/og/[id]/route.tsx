@@ -1,3 +1,4 @@
+import { getGameMetaBySlug } from "@/lib/games/server";
 import { ImageResponse } from "next/og";
 import { createClient } from "@supabase/supabase-js";
 
@@ -118,7 +119,7 @@ function TurnRow({ label, color, wins, losses, total, rate }: { label: string; c
   );
 }
 
-function renderStatsOg(d: StatsData, appUrl: string) {
+function renderStatsOg(d: StatsData, appUrl: string, trackerName: string) {
   const totalBattles = d.totalWins + d.totalLosses;
   const firstTotal = d.firstWins + d.firstLosses;
   const secondTotal = d.secondWins + d.secondLosses;
@@ -157,7 +158,7 @@ function renderStatsOg(d: StatsData, appUrl: string) {
             }}
           />
           <div style={{ fontSize: 18, fontWeight: 700, color: "#cbd0e0", letterSpacing: 0.5 }}>
-            デュエプレトラッカー
+            {trackerName}
           </div>
           <div style={{ width: 1, height: 18, background: "#3a3d55" }} />
           <div style={{ fontSize: 15, fontWeight: 400, color: "#8a8fa3" }}>戦績サマリー</div>
@@ -263,7 +264,7 @@ function renderStatsOg(d: StatsData, appUrl: string) {
   );
 }
 
-function renderDeckOg(d: DeckData, shareType: string, appUrl: string) {
+function renderDeckOg(d: DeckData, shareType: string, appUrl: string, trackerName: string) {
   const totalBattles = d.totalWins + d.totalLosses;
   const firstTotal = d.firstWins + d.firstLosses;
   const secondTotal = d.secondWins + d.secondLosses;
@@ -315,7 +316,7 @@ function renderDeckOg(d: DeckData, shareType: string, appUrl: string) {
       </div>
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "auto" }}>
-        <div style={{ fontSize: 18, fontWeight: 700, color: "#818cf8" }}>デュエプレトラッカー</div>
+        <div style={{ fontSize: 18, fontWeight: 700, color: "#818cf8" }}>{trackerName}</div>
         <div style={{ fontSize: 13, fontWeight: 400, color: "#555" }}>{appUrl}</div>
       </div>
     </div>
@@ -338,7 +339,7 @@ export async function GET(
 
   const { data: share } = await supabase
     .from("shares")
-    .select("share_type, share_data, image_url")
+    .select("share_type, share_data, image_url, game_title")
     .eq("id", id)
     .single();
 
@@ -354,10 +355,15 @@ export async function GET(
 
   const fonts = await getFonts();
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const gameTitle = (share as any).game_title as string | null | undefined;
+  const gameMeta = getGameMetaBySlug(gameTitle);
+  const trackerName = gameMeta.trackerName;
+
   const element =
     share.share_type === "stats"
-      ? renderStatsOg(share.share_data as unknown as StatsData, appUrl)
-      : renderDeckOg(share.share_data as unknown as DeckData, share.share_type, appUrl);
+      ? renderStatsOg(share.share_data as unknown as StatsData, appUrl, trackerName)
+      : renderDeckOg(share.share_data as unknown as DeckData, share.share_type, appUrl, trackerName);
 
   return new ImageResponse(element, {
     width: 1200,

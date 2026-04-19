@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { DEFAULT_GAME, type GameSlug } from "@/lib/games";
 
 export type DiscordConnection = {
   id: string;
@@ -20,7 +21,7 @@ export type TeamMember = {
   discord_username: string;
 };
 
-export async function getDiscordConnection(): Promise<DiscordConnection | null> {
+export async function getDiscordConnection(game: GameSlug = DEFAULT_GAME): Promise<DiscordConnection | null> {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
@@ -29,12 +30,13 @@ export async function getDiscordConnection(): Promise<DiscordConnection | null> 
     .from("discord_connections")
     .select("id, discord_id, discord_username")
     .eq("user_id", user.id)
-    .single();
+    .eq("game_title", game)
+    .maybeSingle();
 
   return data;
 }
 
-export async function getMyTeams(): Promise<Team[]> {
+export async function getMyTeams(game: GameSlug = DEFAULT_GAME): Promise<Team[]> {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return [];
@@ -51,12 +53,13 @@ export async function getMyTeams(): Promise<Team[]> {
     .from("teams")
     .select("id, discord_guild_id, name, icon_url")
     .in("id", teamIds)
+    .eq("game_title", game)
     .order("name");
 
   return teams ?? [];
 }
 
-export async function getMyTeamsWithVisibility(): Promise<TeamWithVisibility[]> {
+export async function getMyTeamsWithVisibility(game: GameSlug = DEFAULT_GAME): Promise<TeamWithVisibility[]> {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return [];
@@ -73,6 +76,7 @@ export async function getMyTeamsWithVisibility(): Promise<TeamWithVisibility[]> 
     .from("teams")
     .select("id, discord_guild_id, name, icon_url")
     .in("id", teamIds)
+    .eq("game_title", game)
     .order("name");
 
   if (!teams) return [];
@@ -105,27 +109,37 @@ export async function getTeamMembers(teamId: string): Promise<TeamMember[]> {
   return (data as TeamMember[]) ?? [];
 }
 
-export async function disconnectDiscord(): Promise<boolean> {
+export async function disconnectDiscord(game: GameSlug = DEFAULT_GAME): Promise<boolean> {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return false;
 
-  // Delete all team memberships first
-  await supabase
-    .from("team_members")
-    .delete()
-    .eq("user_id", user.id);
+  // このゲームで所属するチームのメンバーシップだけ削除
+  const { data: gameTeams } = await supabase
+    .from("teams")
+    .select("id")
+    .eq("game_title", game);
 
-  // Then delete discord connection
+  if (gameTeams && gameTeams.length > 0) {
+    const gameTeamIds = gameTeams.map((t) => t.id);
+    await supabase
+      .from("team_members")
+      .delete()
+      .eq("user_id", user.id)
+      .in("team_id", gameTeamIds);
+  }
+
+  // このゲームの Discord 接続のみ削除
   const { error } = await supabase
     .from("discord_connections")
     .delete()
-    .eq("user_id", user.id);
+    .eq("user_id", user.id)
+    .eq("game_title", game);
 
   return !error;
 }
 
-export async function refreshGuilds(): Promise<boolean> {
+export async function refreshGuilds(game: GameSlug = DEFAULT_GAME): Promise<boolean> {
   const supabase = createClient();
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) return false;
@@ -137,7 +151,7 @@ export async function refreshGuilds(): Promise<boolean> {
         "Content-Type": "application/json",
         Authorization: `Bearer ${session.access_token}`,
       },
-      body: JSON.stringify({ accessToken: session.access_token }),
+      body: JSON.stringify({ accessToken: session.access_token, game }),
     });
     return res.ok;
   } catch {

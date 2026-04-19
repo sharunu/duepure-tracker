@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { DEFAULT_GAME, resolveGameFromPath } from "@/lib/games";
 
 function IconHome({ className }: { className?: string }) {
   return (
@@ -47,16 +48,28 @@ function IconAccount({ className }: { className?: string }) {
   );
 }
 
-const navItems = [
-  { href: "/home", label: "ホーム", Icon: IconHome },
-  { href: "/stats", label: "分析", Icon: IconStats },
-  { href: "/battle", label: "記録", Icon: IconRecord },
-  { href: "/battles", label: "履歴", Icon: IconHistory },
-  { href: "/account", label: "アカウント", Icon: IconAccount },
+/**
+ * ゲームスコープ下のタブ。各リンクは現ゲームのスラッグを先頭に付与する。
+ * /account は全ゲーム共通なのでスラッグ非依存。
+ */
+const gameScopedItems = [
+  { suffix: "/home", label: "ホーム", Icon: IconHome },
+  { suffix: "/stats", label: "分析", Icon: IconStats },
+  { suffix: "/battle", label: "記録", Icon: IconRecord },
+  { suffix: "/battles", label: "履歴", Icon: IconHistory },
 ];
 
 export function BottomNav() {
   const pathname = usePathname();
+  // 現在のゲーム: パスから取得。共有ページ (/account 等) では cookie fallback
+  const fromPath = resolveGameFromPath(pathname);
+  let game = fromPath ?? DEFAULT_GAME;
+  if (!fromPath && typeof document !== "undefined") {
+    const match = document.cookie.match(/(?:^|; )selectedGame=([^;]+)/);
+    if (match && (match[1] === "dm" || match[1] === "pokepoke")) {
+      game = match[1];
+    }
+  }
 
   return (
     <nav
@@ -67,17 +80,15 @@ export function BottomNav() {
       }}
     >
       <div className="flex justify-around items-center h-[60px] max-w-lg mx-auto">
-        {navItems.map((item) => {
-          const isActive =
-            pathname === item.href || pathname?.startsWith(item.href + "/");
+        {gameScopedItems.map((item) => {
+          const href = `/${game}${item.suffix}`;
+          const isActive = pathname === href || pathname?.startsWith(href + "/");
           return (
             <Link
-              key={item.href}
-              href={item.href}
+              key={item.suffix}
+              href={href}
               className={`flex flex-col items-center justify-center min-w-[52px] min-h-[44px] transition-colors ${
-                isActive
-                  ? "text-[#818cf8] font-medium"
-                  : "text-gray-500 hover:text-gray-300"
+                isActive ? "text-[#818cf8] font-medium" : "text-gray-500 hover:text-gray-300"
               }`}
             >
               <item.Icon />
@@ -88,6 +99,21 @@ export function BottomNav() {
             </Link>
           );
         })}
+        {/* アカウントは全ゲーム共通 */}
+        <Link
+          href="/account"
+          className={`flex flex-col items-center justify-center min-w-[52px] min-h-[44px] transition-colors ${
+            pathname === "/account" || pathname?.startsWith("/account/")
+              ? "text-[#818cf8] font-medium"
+              : "text-gray-500 hover:text-gray-300"
+          }`}
+        >
+          <IconAccount />
+          <span className="text-[10px] mt-1">アカウント</span>
+          {(pathname === "/account" || pathname?.startsWith("/account/")) && (
+            <span className="w-1 h-1 rounded-full bg-[#6366f1] mt-0.5" />
+          )}
+        </Link>
       </div>
     </nav>
   );

@@ -1,3 +1,4 @@
+import { useGame } from "@/lib/games/context";
 "use client";
 
 import { forwardRef } from "react";
@@ -93,6 +94,7 @@ function StatColumn({
 
 export const DeckShareCard = forwardRef<HTMLDivElement, Props>(
   function DeckShareCard({ data, type }, ref) {
+    const { trackerName } = useGame();
     const totalBattles = data.totalWins + data.totalLosses;
     const firstTotal = data.firstWins + data.firstLosses;
     const secondTotal = data.secondWins + data.secondLosses;
@@ -145,7 +147,7 @@ export const DeckShareCard = forwardRef<HTMLDivElement, Props>(
                 letterSpacing: 1,
               }}
             >
-              デュエプレトラッカー
+              {trackerName}
             </div>
           </div>
           <div

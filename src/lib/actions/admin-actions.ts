@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { DEFAULT_GAME, type GameSlug } from "@/lib/games";
 import type { DetailedPersonalStats, TurnOrderSummary, OpponentDetail, TrendRow } from "@/lib/actions/stats-actions";
 
 async function requireAdmin() {
@@ -36,11 +37,12 @@ export async function checkIsAdmin(): Promise<boolean> {
 
 // === 対面デッキ管理（既存） ===
 
-export async function getOpponentDeckMasterList(format?: string) {
+export async function getOpponentDeckMasterList(format?: string, game: GameSlug = DEFAULT_GAME) {
   const supabase = await requireAdmin();
   let query = supabase
     .from("opponent_deck_master")
-    .select("*");
+    .select("*")
+    .eq("game_title", game);
 
   if (format) {
     query = query.eq("format", format);
@@ -54,7 +56,7 @@ export async function getOpponentDeckMasterList(format?: string) {
   return data ?? [];
 }
 
-export async function addOpponentDeck(name: string, format: string = "ND", category: string = "major") {
+export async function addOpponentDeck(name: string, format: string = "ND", category: string = "major", game: GameSlug = DEFAULT_GAME) {
   const supabase = await requireAdmin();
 
   const { data: maxOrder } = await supabase
@@ -71,6 +73,7 @@ export async function addOpponentDeck(name: string, format: string = "ND", categ
     sort_order: nextOrder,
     format,
     category,
+    game_title: game,
   });
 
   if (error) throw new Error(error.message);
@@ -101,12 +104,13 @@ export async function deleteOpponentDeck(id: string) {
 
 // === 設定関連 ===
 
-export async function getOpponentDeckSettings(format: string) {
+export async function getOpponentDeckSettings(format: string, game: GameSlug = DEFAULT_GAME) {
   const supabase = createClient();
   const { data } = await supabase
     .from("opponent_deck_settings")
     .select("*")
     .eq("format", format)
+    .eq("game_title", game)
     .single();
   return data;
 }
@@ -119,22 +123,25 @@ export async function updateOpponentDeckSettings(
     minor_threshold?: number;
     usage_period_days?: number;
     disable_period_days?: number;
-  }
+  },
+  game: GameSlug = DEFAULT_GAME
 ) {
   const supabase = await requireAdmin();
   const { error } = await supabase
     .from("opponent_deck_settings")
     .update({ ...updates, updated_at: new Date().toISOString() })
-    .eq("format", format);
+    .eq("format", format)
+    .eq("game_title", game);
   if (error) throw new Error(error.message);
 }
 
 // === 即時再計算 ===
 
-export async function recalculateOpponentDecks(format: string) {
+export async function recalculateOpponentDecks(format: string, game: GameSlug = DEFAULT_GAME) {
   const supabase = await requireAdmin();
   const { error } = await supabase.rpc("recalculate_opponent_decks", {
     p_format: format,
+    p_game_title: game,
   });
   if (error) throw new Error(error.message);
 }
@@ -162,13 +169,14 @@ export async function updateAdminBonusCount(id: string, count: number) {
 
 // === モード2用: デッキ一覧+統計取得 ===
 
-export async function getOpponentDeckStatsForAdmin(format: string) {
+export async function getOpponentDeckStatsForAdmin(format: string, game: GameSlug = DEFAULT_GAME) {
   const supabase = await requireAdmin();
 
   const { data: settings } = await supabase
     .from("opponent_deck_settings")
     .select("*")
     .eq("format", format)
+    .eq("game_title", game)
     .single();
 
   const usagePeriod = settings?.usage_period_days ?? 14;
@@ -179,6 +187,7 @@ export async function getOpponentDeckStatsForAdmin(format: string) {
     .from("opponent_deck_master")
     .select("*")
     .eq("format", format)
+    .eq("game_title", game)
     .order("sort_order", { ascending: true })
     .order("name", { ascending: true });
 
@@ -186,6 +195,7 @@ export async function getOpponentDeckStatsForAdmin(format: string) {
     .from("battles")
     .select("opponent_deck_name")
     .eq("format", format)
+    .eq("game_title", game)
     .gte("fought_at", startDate.toISOString());
 
   const battleCounts: Record<string, number> = {};
@@ -214,7 +224,7 @@ export async function getOpponentDeckStatsForAdmin(format: string) {
   };
 }
 
-export async function getBattleCountsForPeriod(format: string, periodDays: number) {
+export async function getBattleCountsForPeriod(format: string, periodDays: number, game: GameSlug = DEFAULT_GAME) {
   const supabase = await requireAdmin();
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - periodDays);
@@ -222,6 +232,7 @@ export async function getBattleCountsForPeriod(format: string, periodDays: numbe
     .from("battles")
     .select("opponent_deck_name")
     .eq("format", format)
+    .eq("game_title", game)
     .gte("fought_at", startDate.toISOString());
   const counts: Record<string, number> = {};
   for (const b of battles ?? []) {

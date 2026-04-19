@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { DEFAULT_GAME, isGameSlug } from "@/lib/games";
 
 export async function POST(request: NextRequest) {
   try {
-    const { accessToken } = await request.json();
+    const { accessToken, game: bodyGame } = await request.json();
+    const game = isGameSlug(bodyGame) ? bodyGame : DEFAULT_GAME;
     if (!accessToken) {
       return NextResponse.json({ error: "missing accessToken" }, { status: 400 });
     }

@@ -1,27 +1,37 @@
 "use client";
 
-import type { Format } from "@/hooks/use-format";
+import { DEFAULT_GAME, GAMES, type GameSlug } from "@/lib/games";
+import { useGameOptional } from "@/lib/games/context";
 
 type Props = {
-  format: Format;
-  setFormat: (f: Format) => void;
+  format: string;
+  setFormat: (f: string) => void;
+  /** 省略時は GameProvider または DEFAULT_GAME を使う */
+  game?: GameSlug;
 };
 
-export function FormatSelector({ format, setFormat }: Props) {
+export function FormatSelector({ format, setFormat, game }: Props) {
+  const ctx = useGameOptional();
+  const gameSlug: GameSlug = game ?? ctx?.slug ?? DEFAULT_GAME;
+  const formats = GAMES[gameSlug].formats;
+
+  // ゲームにフォーマット概念がない場合は何も描画しない
+  if (formats.length === 0) return null;
+
   return (
     <div className="inline-flex rounded-full border border-border overflow-hidden">
-      {(["ND", "AD"] as const).map((f) => (
+      {formats.map((f) => (
         <button
-          key={f}
+          key={f.code}
           type="button"
-          onClick={() => setFormat(f)}
+          onClick={() => setFormat(f.code)}
           className={`px-3 py-1 text-xs font-medium transition-colors ${
-            format === f
+            format === f.code
               ? "bg-primary text-primary-foreground"
               : "bg-card hover:bg-muted text-muted-foreground"
           }`}
         >
-          {f}
+          {f.label}
         </button>
       ))}
     </div>
