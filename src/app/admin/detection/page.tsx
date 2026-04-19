@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useCallback, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft, Settings, Play } from "lucide-react";
 import { getDetectionAlerts, resolveDetectionAlert, runDetectionScan, getAdminUserList } from "@/lib/actions/admin-actions";
+import { GAMES, GAME_SLUGS, isGameSlug, type GameSlug } from "@/lib/games";
 
 type Alert = {
   id: string;
@@ -20,8 +21,15 @@ const ruleLabels: Record<string, string> = {
   repetitive_pattern: "同一結果の連続",
 };
 
-export default function DetectionPage() {
+type GameFilter = GameSlug | "all";
+
+function DetectionPageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const rawGame = searchParams.get("game");
+  const gameFilter: GameFilter = rawGame === "all" ? "all" : (isGameSlug(rawGame) ? rawGame : "all");
+  const selectedGame: GameSlug | undefined = gameFilter === "all" ? undefined : gameFilter;
+
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [userMap, setUserMap] = useState<Record<string, string>>({});
   const [showResolved, setShowResolved] = useState(false);
@@ -29,11 +37,17 @@ export default function DetectionPage() {
   const [scanning, setScanning] = useState(false);
   const [scanResult, setScanResult] = useState<string | null>(null);
 
+  const changeGame = (g: GameFilter) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("game", g);
+    router.push(`/admin/detection?${params.toString()}`);
+  };
+
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const [alertData, users] = await Promise.all([
-        getDetectionAlerts(showResolved),
+        getDetectionAlerts(showResolved, selectedGame),
         getAdminUserList(),
       ]);
       setAlerts(alertData as Alert[]);
@@ -46,7 +60,7 @@ export default function DetectionPage() {
       // error
     }
     setLoading(false);
-  }, [showResolved]);
+  }, [showResolved, selectedGame]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -75,6 +89,38 @@ export default function DetectionPage() {
           <ChevronLeft size={20} />
         </button>
         <h1 className="text-[20px] font-medium">検知アラート</h1>
+      </div>
+
+      {/* ゲームタブ */}
+      <div className="flex gap-1 mb-4 border-b border-[#232640]">
+        <button
+          type="button"
+          onClick={() => changeGame("all")}
+          className={`px-4 py-2 text-sm transition-colors -mb-px border-b-2 ${
+            gameFilter === "all"
+              ? "border-[#818cf8] text-white font-medium"
+              : "border-transparent text-gray-500 hover:text-gray-300"
+          }`}
+        >
+          全ゲーム
+        </button>
+        {GAME_SLUGS.map((g) => {
+          const isActive = g === gameFilter;
+          return (
+            <button
+              key={g}
+              type="button"
+              onClick={() => changeGame(g)}
+              className={`px-4 py-2 text-sm transition-colors -mb-px border-b-2 ${
+                isActive
+                  ? "border-[#818cf8] text-white font-medium"
+                  : "border-transparent text-gray-500 hover:text-gray-300"
+              }`}
+            >
+              {GAMES[g].shortName}
+            </button>
+          );
+        })}
       </div>
 
       {/* アクションバー */}
@@ -168,5 +214,13 @@ export default function DetectionPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function DetectionPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen px-4 pt-6 pb-8 max-w-lg mx-auto"><p className="text-gray-500 text-sm">読み込み中...</p></div>}>
+      <DetectionPageInner />
+    </Suspense>
   );
 }

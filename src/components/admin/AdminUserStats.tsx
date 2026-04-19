@@ -14,13 +14,15 @@ import { OpponentDeckStatsSection } from "@/components/stats/OpponentDeckStatsSe
 import { TrendChart } from "@/components/stats/TrendChart";
 import { TrendHeatmap } from "@/components/stats/TrendHeatmap";
 import { getWinRateColor } from "@/lib/stats-utils";
+import { DEFAULT_GAME, type GameSlug } from "@/lib/games";
 
 type Props = {
   userId: string;
   format: string;
+  game?: GameSlug;
 };
 
-export function AdminUserStats({ userId, format }: Props) {
+export function AdminUserStats({ userId, format, game = DEFAULT_GAME }: Props) {
   const [view, setView] = useState<View>("stats");
   const [loading, setLoading] = useState(true);
   const [startDate, setStartDate] = useState(() => {
@@ -40,8 +42,8 @@ export function AdminUserStats({ userId, format }: Props) {
   const [deckCategories, setDeckCategories] = useState<{ major: string[]; minor: string[]; other: string[] }>({ major: [], minor: [], other: [] });
 
   useEffect(() => {
-    getOpponentDeckSuggestions(format).then(setDeckCategories);
-  }, [format]);
+    getOpponentDeckSuggestions(format, game).then(setDeckCategories);
+  }, [format, game]);
 
   const categoryMap = useMemo(() => {
     const m = new Map<string, "major" | "minor" | "other">();
@@ -95,10 +97,10 @@ export function AdminUserStats({ userId, format }: Props) {
     setLoading(true);
     try {
       if (view === "stats") {
-        const s = await getAdminUserPersonalStats(userId, format, startDate, endDate);
+        const s = await getAdminUserPersonalStats(userId, format, startDate, endDate, game);
         setStats(s);
       } else {
-        const t = await getAdminUserDeckTrend(userId, startDate, endDate, format);
+        const t = await getAdminUserDeckTrend(userId, startDate, endDate, format, game);
         setTrendData(t);
       }
     } catch {
@@ -106,11 +108,11 @@ export function AdminUserStats({ userId, format }: Props) {
     } finally {
       setLoading(false);
     }
-  }, [userId, format, startDate, endDate, view]);
+  }, [userId, format, startDate, endDate, view, game]);
 
   const loadCounts = useCallback((year: number, month: number) => {
-    getAdminUserDailyBattleCounts(userId, format, year, month).then(setBattleCounts);
-  }, [userId, format]);
+    getAdminUserDailyBattleCounts(userId, format, year, month, game).then(setBattleCounts);
+  }, [userId, format, game]);
 
   useEffect(() => { loadData(); }, [loadData]);
   useEffect(() => {

@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { DEFAULT_GAME, resolveGameFromPath } from "@/lib/games";
+import { useEffect, useState } from "react";
+import { DEFAULT_GAME, isGameSlug, resolveGameFromPath, type GameSlug } from "@/lib/games";
 
 function IconHome({ className }: { className?: string }) {
   return (
@@ -61,15 +62,20 @@ const gameScopedItems = [
 
 export function BottomNav() {
   const pathname = usePathname();
-  // 現在のゲーム: パスから取得。共有ページ (/account 等) では cookie fallback
+  // 現在のゲーム: パスから取れれば即確定（SSR/CSR 一致）、共有ページでは
+  // マウント後に cookie を読んで state を更新（hydration mismatch 回避）
   const fromPath = resolveGameFromPath(pathname);
-  let game = fromPath ?? DEFAULT_GAME;
-  if (!fromPath && typeof document !== "undefined") {
+  const [cookieGame, setCookieGame] = useState<GameSlug | null>(null);
+
+  useEffect(() => {
+    if (fromPath) return; // URL で確定している場合は不要
     const match = document.cookie.match(/(?:^|; )selectedGame=([^;]+)/);
-    if (match && (match[1] === "dm" || match[1] === "pokepoke")) {
-      game = match[1];
+    if (match && isGameSlug(match[1])) {
+      setCookieGame(match[1]);
     }
-  }
+  }, [fromPath]);
+
+  const game: GameSlug = fromPath ?? cookieGame ?? DEFAULT_GAME;
 
   return (
     <nav

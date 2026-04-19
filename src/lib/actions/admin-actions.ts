@@ -270,13 +270,14 @@ export async function getAdminUserList(): Promise<AdminUserListRow[]> {
 
 // === ユーザーのデッキ取得 ===
 
-export async function getAdminUserDecks(userId: string, format: string) {
+export async function getAdminUserDecks(userId: string, format: string, game: GameSlug = DEFAULT_GAME) {
   await requireAdmin();
   const supabase = createClient();
   const { data } = await supabase
     .from("decks")
     .select("id, name, sort_order, deck_tunings(id, name, sort_order)")
     .eq("user_id", userId)
+    .eq("game_title", game)
     .eq("format", format)
     .eq("is_archived", false)
     .order("sort_order", { ascending: true });
@@ -292,7 +293,7 @@ export async function getAdminUserDecks(userId: string, format: string) {
 // === ユーザーの戦績取得 ===
 
 export async function getAdminUserBattles(
-  userId: string, format: string, startDate: string, endDate: string
+  userId: string, format: string, startDate: string, endDate: string, game: GameSlug = DEFAULT_GAME
 ) {
   await requireAdmin();
   const supabase = createClient();
@@ -302,6 +303,7 @@ export async function getAdminUserBattles(
     .from("battles")
     .select("*")
     .eq("user_id", userId)
+    .eq("game_title", game)
     .eq("format", format)
     .gte("fought_at", startDate)
     .lt("fought_at", endPlusOne.toISOString().split("T")[0])
@@ -312,7 +314,7 @@ export async function getAdminUserBattles(
 // === ユーザーの個人統計 ===
 
 export async function getAdminUserPersonalStats(
-  userId: string, format: string, startDate?: string, endDate?: string
+  userId: string, format: string, startDate?: string, endDate?: string, game: GameSlug = DEFAULT_GAME
 ): Promise<DetailedPersonalStats> {
   await requireAdmin();
   const supabase = createClient();
@@ -326,6 +328,7 @@ export async function getAdminUserPersonalStats(
     .from("battles")
     .select("my_deck_name, opponent_deck_name, result, turn_order, fought_at")
     .eq("user_id", userId)
+    .eq("game_title", game)
     .eq("format", format);
 
   if (startDate) query = query.gte("fought_at", startDate);
@@ -417,10 +420,11 @@ export async function getAdminUserPersonalStats(
 // === ユーザーのデッキ推移 ===
 
 export async function getAdminUserDeckTrend(
-  userId: string, startDate: string, endDate: string, format: string
+  userId: string, startDate: string, endDate: string, format: string, _game: GameSlug = DEFAULT_GAME
 ): Promise<TrendRow[]> {
   await requireAdmin();
   const supabase = createClient();
+  // get_deck_trend_range は format コードがゲーム間で重複しないため format フィルタで正しく絞り込まれる
   const { data, error } = await supabase.rpc("get_deck_trend_range", {
     p_start_date: startDate,
     p_end_date: endDate,
@@ -439,7 +443,7 @@ export async function getAdminUserDeckTrend(
 // === ユーザーの日別戦績数（カレンダー用） ===
 
 export async function getAdminUserDailyBattleCounts(
-  userId: string, format: string, year: number, month: number
+  userId: string, format: string, year: number, month: number, game: GameSlug = DEFAULT_GAME
 ): Promise<Record<string, number>> {
   await requireAdmin();
   const supabase = createClient();
@@ -450,6 +454,7 @@ export async function getAdminUserDailyBattleCounts(
     .from("battles")
     .select("fought_at")
     .eq("user_id", userId)
+    .eq("game_title", game)
     .eq("format", format)
     .gte("fought_at", startDate)
     .lt("fought_at", endDate);
@@ -559,7 +564,7 @@ export async function updateDetectionRule(
 // 検知アラート管理
 // =============================================
 
-export async function getDetectionAlerts(resolvedOnly: boolean = false) {
+export async function getDetectionAlerts(resolvedOnly: boolean = false, game?: GameSlug) {
   await requireAdmin();
   const supabase = createClient();
   let query = supabase
@@ -570,18 +575,25 @@ export async function getDetectionAlerts(resolvedOnly: boolean = false) {
   if (!resolvedOnly) {
     query = query.eq("is_resolved", false);
   }
+  if (game) {
+    query = query.eq("game_title", game);
+  }
 
   const { data } = await query;
   return data ?? [];
 }
 
-export async function getDetectionAlertCount(): Promise<number> {
+export async function getDetectionAlertCount(game?: GameSlug): Promise<number> {
   await requireAdmin();
   const supabase = createClient();
-  const { count } = await supabase
+  let query = supabase
     .from("detection_alerts")
     .select("*", { count: "exact", head: true })
     .eq("is_resolved", false);
+  if (game) {
+    query = query.eq("game_title", game);
+  }
+  const { count } = await query;
   return count ?? 0;
 }
 
