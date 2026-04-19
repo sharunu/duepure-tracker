@@ -1,5 +1,5 @@
-import { useGame } from "@/lib/games/context";
 "use client";
+import { useGame } from "@/lib/games/context";
 
 import { useState, useEffect, useRef } from "react";
 import { X, Download, ExternalLink, Loader2 } from "lucide-react";

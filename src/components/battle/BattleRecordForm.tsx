@@ -59,13 +59,13 @@ const MemoIcon = ({ active, hasMemo }: { active: boolean; hasMemo: boolean }) =>
 );
 
 export function BattleRecordForm({
-  const { slug: game } = useGame();
   decks,
   suggestions,
   miniStats: initialMiniStats,
   format,
   setFormat,
 }: Props) {
+  const { slug: game } = useGame();
   const [selectedValue, setSelectedValue] = useState<string>("");
   const [opponentDeck, setOpponentDeck] = useState("");
   const [opponentMemo, setOpponentMemo] = useState("");

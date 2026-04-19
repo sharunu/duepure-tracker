@@ -1,5 +1,5 @@
-import { useGame } from "@/lib/games/context";
 "use client";
+import { useGame } from "@/lib/games/context";
 
 import { forwardRef } from "react";
 import type { DeckShareData } from "./ShareButton";
