@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { getBattlesByDateRange, getDailyBattleCounts, getOpponentDeckSuggestions, hasAnyBattles } from "@/lib/actions/battle-actions";
 import { getDecks } from "@/lib/actions/deck-actions";
+import { getOpponentDeckNameMap, type OpponentDeckNameMap } from "@/lib/actions/opponent-deck-display";
 import { useFormat } from "@/hooks/use-format";
 import { FormatSelector } from "@/components/ui/FormatSelector";
 import { DateRangeCalendar } from "@/components/battle/DateRangeCalendar";
@@ -32,6 +33,7 @@ export default function BattlesPage() {
   const [battles, setBattles] = useState<Battle[]>([]);
   const [decks, setDecks] = useState<Deck[]>([]);
   const [suggestions, setSuggestions] = useState<{ major: string[]; minor: string[]; other: string[] }>({ major: [], minor: [], other: [] });
+  const [nameMap, setNameMap] = useState<OpponentDeckNameMap>({});
   const [selectedDeck, setSelectedDeck] = useState<string | null>(null);
   const [battleCounts, setBattleCounts] = useState<Record<string, number>>({});
   const [hasAny, setHasAny] = useState<boolean | null>(null);
@@ -50,11 +52,13 @@ export default function BattlesPage() {
       getDecks(format, "pokepoke"),
       getOpponentDeckSuggestions(format, "pokepoke"),
       hasAnyBattles(format, "pokepoke"),
-    ]).then(([battlesData, decksData, suggestionsData, anyData]) => {
+      getOpponentDeckNameMap(format, "pokepoke"),
+    ]).then(([battlesData, decksData, suggestionsData, anyData, nameMapData]) => {
       setBattles(battlesData as Battle[]);
       setDecks(decksData as Deck[]);
       setSuggestions(suggestionsData);
       setHasAny(anyData);
+      setNameMap(nameMapData);
       setPageLoading(false);
     }).catch(() => {
       setError("データの読み込みに失敗しました");
@@ -160,6 +164,7 @@ export default function BattlesPage() {
               decks={decks}
               suggestions={suggestions}
               onRefresh={loadBattles}
+              opponentDeckNameMap={nameMap}
             />
           </>
         )}

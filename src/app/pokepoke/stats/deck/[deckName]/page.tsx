@@ -5,6 +5,7 @@ import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { getDeckDetailStats, getGlobalDeckDetailStats, getTeamDeckDetailStats, getGlobalDeckDetailStatsMulti } from "@/lib/actions/stats-actions";
 import type { DeckDetailStats } from "@/lib/actions/stats-actions";
 import { getDailyBattleCounts, getOpponentDeckSuggestions } from "@/lib/actions/battle-actions";
+import { getOpponentDeckNameMap, type OpponentDeckNameMap } from "@/lib/actions/opponent-deck-display";
 import { useFormat } from "@/hooks/use-format";
 import { FormatSelector } from "@/components/ui/FormatSelector";
 import { DateRangeCalendar } from "@/components/battle/DateRangeCalendar";
@@ -45,6 +46,7 @@ export default function DeckDetailPage() {
   const [sortBy, setSortBy] = useState<"count" | "winRate">("count");
   const [viewMode, setViewMode] = useState<"visual" | "table">("visual");
   const [deckCategories, setDeckCategories] = useState<{ major: string[]; minor: string[]; other: string[] }>({ major: [], minor: [], other: [] });
+  const [opponentDeckNameMap, setOpponentDeckNameMap] = useState<OpponentDeckNameMap>({});
 
   const [startDate, setStartDate] = useState(() => {
     return searchParams.get("start") || (() => {
@@ -61,6 +63,7 @@ export default function DeckDetailPage() {
   useEffect(() => {
     if (ready) {
       getOpponentDeckSuggestions(format, "pokepoke").then(setDeckCategories);
+      getOpponentDeckNameMap(format, "pokepoke").then(setOpponentDeckNameMap);
     }
   }, [format, ready]);
 
@@ -236,6 +239,7 @@ export default function DeckDetailPage() {
                     overallWins={stats.overallWins}
                     overallLosses={stats.overallLosses}
                     overallTotal={stats.overallTotal}
+                    opponentDeckNameMap={opponentDeckNameMap}
                   />
 
                   {(() => {
@@ -296,13 +300,14 @@ export default function DeckDetailPage() {
                   {viewMode === "visual" ? (
                     <div className="space-y-2">
                       {sortedOverall.map((opp) => (
-                        <MatchupCard key={opp.opponentName} name={opp.opponentName} namePrefix="vs " detail={opp} />
+                        <MatchupCard key={opp.opponentName} name={opp.opponentName} namePrefix="vs " detail={opp} opponentDeckNameMap={opponentDeckNameMap} />
                       ))}
                     </div>
                   ) : (
                     <MatchupTable
                       rows={sortedOverall.map((opp) => ({ ...opp, name: opp.opponentName, namePrefix: "vs " }))}
                       showTotal
+                      opponentDeckNameMap={opponentDeckNameMap}
                     />
                   )}
                 </>

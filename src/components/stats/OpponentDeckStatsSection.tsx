@@ -4,10 +4,14 @@ import { useRouter } from "next/navigation";
 import type { DetailedPersonalStats } from "@/lib/actions/stats-actions";
 import { getWinRateColor } from "@/lib/stats-utils";
 import { BattleCountBadge } from "@/components/ui/BattleCountBadge";
+import {
+  displayDeckName,
+  type OpponentDeckNameMap,
+} from "@/lib/actions/opponent-deck-display";
 
 type OpponentRow = DetailedPersonalStats["opponentDeckStats"][number];
 
-export function OpponentDeckStatsSection({ stats, startDate, endDate, scope, teamId, memberId, memberName, premiumFilter, disableLinks }: { stats: OpponentRow[]; startDate?: string; endDate?: string; scope?: "personal" | "global" | "team"; teamId?: string; memberId?: string | null; memberName?: string | null; premiumFilter?: boolean; disableLinks?: boolean }) {
+export function OpponentDeckStatsSection({ stats, startDate, endDate, scope, teamId, memberId, memberName, premiumFilter, disableLinks, opponentDeckNameMap }: { stats: OpponentRow[]; startDate?: string; endDate?: string; scope?: "personal" | "global" | "team"; teamId?: string; memberId?: string | null; memberName?: string | null; premiumFilter?: boolean; disableLinks?: boolean; opponentDeckNameMap?: OpponentDeckNameMap }) {
   const router = useRouter();
 
   if (stats.length === 0) {
@@ -48,7 +52,7 @@ export function OpponentDeckStatsSection({ stats, startDate, endDate, scope, tea
             >
               <div className="flex items-center justify-between mb-2">
                 <span className="flex items-center gap-1.5">
-                  <span className="font-medium">{row.deckName}</span>
+                  <span className="font-medium">{displayDeckName(row.deckName, opponentDeckNameMap)}</span>
                   <BattleCountBadge count={row.total} />
                 </span>
                 <span className="flex items-center gap-2">

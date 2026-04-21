@@ -1,5 +1,10 @@
 "use client";
 
+import {
+  displayDeckName,
+  type OpponentDeckNameMap,
+} from "@/lib/actions/opponent-deck-display";
+
 type Battle = {
   id: string;
   opponent_deck_name: string;
@@ -14,9 +19,10 @@ type Props = {
   battles: Battle[];
   onSelect: (timestamp: string | null) => void;
   currentTimestamp: string | null;
+  opponentDeckNameMap?: OpponentDeckNameMap;
 };
 
-export function BattleIntervalModal({ open, onClose, battles, onSelect, currentTimestamp }: Props) {
+export function BattleIntervalModal({ open, onClose, battles, onSelect, currentTimestamp, opponentDeckNameMap }: Props) {
   if (!open) return null;
 
   const formatDate = (iso: string) => {
@@ -69,7 +75,7 @@ export function BattleIntervalModal({ open, onClose, battles, onSelect, currentT
                       {b.result === "win" ? "勝" : "敗"}
                     </span>
                     <span className="truncate">
-                      {b.my_deck_name ?? "?"} vs {b.opponent_deck_name}
+                      {b.my_deck_name ?? "?"} vs {displayDeckName(b.opponent_deck_name, opponentDeckNameMap)}
                     </span>
                   </div>
                   <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">

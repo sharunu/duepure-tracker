@@ -2,12 +2,17 @@
 
 import type { OpponentDetail } from "@/lib/actions/stats-actions";
 import { getWinRateColor } from "@/lib/stats-utils";
+import {
+  displayDeckName,
+  type OpponentDeckNameMap,
+} from "@/lib/actions/opponent-deck-display";
 
 type MatchupTableRow = { name: string; namePrefix?: string } & OpponentDetail;
 
 type MatchupTableProps = {
   rows: MatchupTableRow[];
   showTotal?: boolean;
+  opponentDeckNameMap?: OpponentDeckNameMap;
 };
 
 type SubRow = {
@@ -44,7 +49,7 @@ function calcOverall(rows: MatchupTableRow[]): OpponentDetail {
   return o;
 }
 
-export function MatchupTable({ rows, showTotal = true }: MatchupTableProps) {
+export function MatchupTable({ rows, showTotal = true, opponentDeckNameMap }: MatchupTableProps) {
   const overall = showTotal ? calcOverall(rows) : null;
   const overallSubs = overall ? buildSubRows(overall) : [];
 
@@ -69,7 +74,7 @@ export function MatchupTable({ rows, showTotal = true }: MatchupTableProps) {
               <tr key={`${row.name}-${sub.label}`} style={{ background: bg, borderTop: si === 0 && gi > 0 ? "1px solid #2a2d48" : undefined }}>
                 {si === 0 && (
                   <td rowSpan={subs.length} style={{ padding: "4px 6px", fontSize: 12, fontWeight: 500, verticalAlign: "top", position: "sticky", left: 0, zIndex: 1, background: bg, whiteSpace: "nowrap" }}>
-                    {row.namePrefix}{row.name}
+                    {row.namePrefix}{displayDeckName(row.name, opponentDeckNameMap)}
                   </td>
                 )}
                 <td style={{ padding: "4px 6px", color: sub.labelColor, fontSize: 10, whiteSpace: "nowrap" }}>{sub.label}</td>

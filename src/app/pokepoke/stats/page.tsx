@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { getDetailedPersonalStats, getGlobalStatsByRange, getDeckTrendByRange, getTeamStatsByRange, getTeamDeckTrendByRange } from "@/lib/actions/stats-actions";
 import type { DetailedPersonalStats, TrendRow } from "@/lib/actions/stats-actions";
 import { getDailyBattleCounts, getOpponentDeckSuggestions } from "@/lib/actions/battle-actions";
+import { getOpponentDeckNameMap, type OpponentDeckNameMap } from "@/lib/actions/opponent-deck-display";
 import { getTeamMembers, getMyTeamsWithVisibility } from "@/lib/actions/team-actions";
 import type { TeamMember, TeamWithVisibility } from "@/lib/actions/team-actions";
 import { useFormat } from "@/hooks/use-format";
@@ -70,6 +71,7 @@ function StatsPageInner() {
   const [teamStats, setTeamStats] = useState<DetailedPersonalStats>({ myDeckStats: [], opponentDeckStats: [], turnOrder: { firstWins: 0, firstLosses: 0, secondWins: 0, secondLosses: 0, unknownWins: 0, unknownLosses: 0 } });
   const [trendData, setTrendData] = useState<TrendRow[]>([]);
   const [deckCategories, setDeckCategories] = useState<{ major: string[]; minor: string[]; other: string[] }>({ major: [], minor: [], other: [] });
+  const [opponentDeckNameMap, setOpponentDeckNameMap] = useState<OpponentDeckNameMap>({});
   const [trendMode, setTrendMode] = useState<"line" | "heatmap">("line");
   const [trendCalcMode, setTrendCalcMode] = useState<"daily" | "cumulative">("daily");
 
@@ -111,6 +113,7 @@ function StatsPageInner() {
   useEffect(() => {
     if (!ready) return;
     getOpponentDeckSuggestions(format, "pokepoke").then(setDeckCategories);
+    getOpponentDeckNameMap(format, "pokepoke").then(setOpponentDeckNameMap);
   }, [format, ready]);
 
   const categoryMap = useMemo(() => {
@@ -310,6 +313,7 @@ function StatsPageInner() {
                 overallWins={totalWins}
                 overallLosses={totalLosses}
                 overallTotal={totalBattles}
+                opponentDeckNameMap={opponentDeckNameMap}
               />
             ) : (
               <p className="text-center text-muted-foreground py-4 text-sm">データがありません</p>
@@ -332,7 +336,7 @@ function StatsPageInner() {
           </div>
           <div>
             <h2 className="text-base font-bold mb-2">対面デッキ別</h2>
-            <OpponentDeckStatsSection stats={stats.opponentDeckStats} startDate={startDate} endDate={endDate} scope={scope} teamId={activeTeamId ?? undefined} memberId={selectedMemberId} memberName={selectedMemberId ? (teamMembers.find(m => m.user_id === selectedMemberId)?.discord_username ?? null) : null} premiumFilter={premiumFilter} />
+            <OpponentDeckStatsSection stats={stats.opponentDeckStats} startDate={startDate} endDate={endDate} scope={scope} teamId={activeTeamId ?? undefined} memberId={selectedMemberId} memberName={selectedMemberId ? (teamMembers.find(m => m.user_id === selectedMemberId)?.discord_username ?? null) : null} premiumFilter={premiumFilter} opponentDeckNameMap={opponentDeckNameMap} />
           </div>
         </>
       );
@@ -367,7 +371,7 @@ function StatsPageInner() {
             <p className="text-xs text-muted-foreground">※ 使用率の高いデッキのみ表示されています</p>
           )}
           {trendMode === "line"
-            ? <TrendChart data={filteredTrendData} />
+            ? <TrendChart data={filteredTrendData} opponentDeckNameMap={opponentDeckNameMap} />
             : <TrendHeatmap data={filteredTrendData} />
           }
         </>

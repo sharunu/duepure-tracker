@@ -10,6 +10,10 @@ import {
   CartesianGrid,
   Tooltip,
 } from "recharts";
+import {
+  displayDeckName,
+  type OpponentDeckNameMap,
+} from "@/lib/actions/opponent-deck-display";
 
 const COLORS = [
   "#6366f1",
@@ -38,12 +42,14 @@ function CustomTrendTooltip({
   label,
   highlightedDeck,
   deckColorMap,
+  opponentDeckNameMap,
 }: {
   active?: boolean;
   payload?: any[];
   label?: string;
   highlightedDeck: string | null;
   deckColorMap: Map<string, string>;
+  opponentDeckNameMap?: OpponentDeckNameMap;
 }) {
   if (!active || !payload || payload.length === 0) return null;
 
@@ -86,7 +92,7 @@ function CustomTrendTooltip({
                   flexShrink: 0,
                 }}
               />
-              <span style={{ fontWeight: 500 }}>{entry.dataKey}</span>
+              <span style={{ fontWeight: 500 }}>{displayDeckName(entry.dataKey, opponentDeckNameMap)}</span>
             </div>
             <div style={{ color: "#aaaacc", marginLeft: 12, marginTop: 1 }}>
               {label} &nbsp;{entry.value}%
@@ -102,7 +108,7 @@ function CustomTrendTooltip({
 }
 
 /* ── Main Component ── */
-export function TrendChart({ data }: { data: TrendDataPoint[] }) {
+export function TrendChart({ data, opponentDeckNameMap }: { data: TrendDataPoint[]; opponentDeckNameMap?: OpponentDeckNameMap }) {
   const [highlightedDeck, setHighlightedDeck] = useState<string | null>(null);
 
   if (data.length === 0) {
@@ -196,6 +202,7 @@ export function TrendChart({ data }: { data: TrendDataPoint[] }) {
                   <CustomTrendTooltip
                     highlightedDeck={highlightedDeck}
                     deckColorMap={deckColorMap}
+                    opponentDeckNameMap={opponentDeckNameMap}
                   />
                 }
               />
@@ -289,7 +296,7 @@ export function TrendChart({ data }: { data: TrendDataPoint[] }) {
                   opacity: hasHighlight && !isHighlighted ? 0.4 : 1,
                 }}
               />
-              <span>{deck}</span>
+              <span>{displayDeckName(deck, opponentDeckNameMap)}</span>
               {latestPct != null && (
                 <span style={{ fontWeight: 500 }}>{latestPct}%</span>
               )}

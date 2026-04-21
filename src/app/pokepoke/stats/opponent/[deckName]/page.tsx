@@ -5,6 +5,7 @@ import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { getOpponentDeckDetailStats, getGlobalOpponentDeckDetailStats, getTeamOpponentDeckDetailStats } from "@/lib/actions/stats-actions";
 import type { OpponentDeckDetailStats } from "@/lib/actions/stats-actions";
 import { getDailyBattleCounts } from "@/lib/actions/battle-actions";
+import { getOpponentDeckNameMap, displayDeckName, type OpponentDeckNameMap } from "@/lib/actions/opponent-deck-display";
 import { useFormat } from "@/hooks/use-format";
 import { FormatSelector } from "@/components/ui/FormatSelector";
 import { DateRangeCalendar } from "@/components/battle/DateRangeCalendar";
@@ -33,6 +34,7 @@ export default function OpponentDeckDetailPage() {
 
   const [stats, setStats] = useState<OpponentDeckDetailStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [opponentDeckNameMap, setOpponentDeckNameMap] = useState<OpponentDeckNameMap>({});
   const [battleCounts, setBattleCounts] = useState<Record<string, number>>({});
   const [sortBy, setSortBy] = useState<"count" | "winRate">("count");
   const [viewMode, setViewMode] = useState<"visual" | "table">("visual");
@@ -69,6 +71,12 @@ export default function OpponentDeckDetailPage() {
   const loadCounts = useCallback((year: number, month: number) => {
     if (!ready) return;
     getDailyBattleCounts(format, year, month, "pokepoke").then(setBattleCounts);
+  }, [format, ready]);
+
+  useEffect(() => {
+    if (ready) {
+      getOpponentDeckNameMap(format, "pokepoke").then(setOpponentDeckNameMap);
+    }
   }, [format, ready]);
 
   useEffect(() => {
@@ -128,7 +136,7 @@ export default function OpponentDeckDetailPage() {
 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold">{`vs ${deckName}${titleSuffix}`}</h1>
+            <h1 className="text-xl font-bold">{`vs ${displayDeckName(deckName, opponentDeckNameMap)}${titleSuffix}`}</h1>
             {scope === "personal" && stats && stats.overallTotal > 0 && (() => {
               const fW = stats.overall.reduce((s, o) => s + o.firstWins, 0);
               const fL = stats.overall.reduce((s, o) => s + o.firstLosses, 0);
