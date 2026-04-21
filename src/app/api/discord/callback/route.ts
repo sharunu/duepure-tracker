@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { DISCORD_REDIRECT_URI } from "@/lib/discord/config";
 import { DEFAULT_GAME, isGameSlug, type GameSlug } from "@/lib/games";
 
 /**
@@ -64,7 +63,7 @@ export async function GET(request: NextRequest) {
         client_secret: process.env.DISCORD_CLIENT_SECRET ?? "",
         grant_type: "authorization_code",
         code,
-        redirect_uri: DISCORD_REDIRECT_URI,
+        redirect_uri: `${origin}/api/discord/callback`,
       }),
     });
 
