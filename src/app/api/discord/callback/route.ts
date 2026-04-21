@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
   const origin = `${protocol}://${host}`;
 
   if (!code || !state) {
-    return NextResponse.redirect(new URL("/home?discord=error", origin));
+    return NextResponse.redirect(new URL("/home?discord=error&reason=missing_params", origin));
   }
 
   const { token: accessTokenSupabase, game } = parseState(state);
@@ -68,8 +68,9 @@ export async function GET(request: NextRequest) {
     });
 
     if (!tokenRes.ok) {
-      console.error("Discord token exchange failed:", await tokenRes.text());
-      return NextResponse.redirect(new URL(`/${game}/home?discord=error`, origin));
+      const tokErrBody = await tokenRes.text();
+      console.error("Discord token exchange failed:", tokErrBody);
+      return NextResponse.redirect(new URL(`/${game}/home?discord=error&reason=token_exchange&status=${tokenRes.status}`, origin));
     }
 
     const tokens = await tokenRes.json();
@@ -83,7 +84,7 @@ export async function GET(request: NextRequest) {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
     if (!userRes.ok) {
-      return NextResponse.redirect(new URL(`/${game}/home?discord=error`, origin));
+      return NextResponse.redirect(new URL(`/${game}/home?discord=error&reason=user_fetch&status=${userRes.status}`, origin));
     }
     const discordUser = await userRes.json();
     const discordId: string = discordUser.id;
@@ -94,7 +95,7 @@ export async function GET(request: NextRequest) {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
     if (!guildsRes.ok) {
-      return NextResponse.redirect(new URL(`/${game}/home?discord=error`, origin));
+      return NextResponse.redirect(new URL(`/${game}/home?discord=error&reason=guilds_fetch&status=${guildsRes.status}`, origin));
     }
     const guilds = await guildsRes.json();
     const guildData = (guilds as { id: string; name: string; icon: string | null }[]).map((g) => ({
@@ -112,7 +113,7 @@ export async function GET(request: NextRequest) {
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(accessTokenSupabase);
     if (authError || !user) {
       console.error("Supabase auth failed:", authError);
-      return NextResponse.redirect(new URL(`/${game}/home?discord=error`, origin));
+      return NextResponse.redirect(new URL(`/${game}/home?discord=error&reason=supabase_auth`, origin));
     }
 
     // 5. discord_connections UPSERT: onConflict は (user_id, game_title)
@@ -134,7 +135,8 @@ export async function GET(request: NextRequest) {
 
     if (upsertError) {
       console.error("discord_connections upsert error:", upsertError);
-      return NextResponse.redirect(new URL(`/${game}/home?discord=error`, origin));
+      const code = (upsertError as { code?: string })?.code ?? "unknown";
+      return NextResponse.redirect(new URL(`/${game}/home?discord=error&reason=upsert&code=${code}`, origin));
     }
 
     // 6. Team 同期 (p_game_title 付き)
@@ -152,6 +154,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL(`/${game}/home?discord=connected`, origin));
   } catch (err) {
     console.error("Discord callback error:", err);
-    return NextResponse.redirect(new URL(`/${game}/home?discord=error`, origin));
+    const msg = err instanceof Error ? err.message : "unknown";
+    return NextResponse.redirect(new URL(`/${game}/home?discord=error&reason=unexpected&msg=${encodeURIComponent(msg).slice(0, 80)}`, origin));
   }
 }
