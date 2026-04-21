@@ -163,11 +163,9 @@ export async function triggerLimitlessSync(): Promise<{
   });
   const json = (await res.json().catch(() => ({}))) as Record<string, unknown>;
   if (!res.ok) {
-    return {
-      ok: false,
-      message:
-        typeof json.error === "string" ? json.error : `HTTP ${res.status}`,
-    };
+    const err = typeof json.error === "string" ? json.error : `HTTP ${res.status}`;
+    const reason = typeof json.reason === "string" ? ` (${json.reason})` : "";
+    return { ok: false, message: `${err}${reason}` };
   }
   if (json.skipped) {
     return { ok: true, message: `スキップ: ${json.reason ?? ""}` };
