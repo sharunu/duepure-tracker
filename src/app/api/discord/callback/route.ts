@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
   const origin = `${protocol}://${host}`;
 
   if (!code || !state) {
-    return NextResponse.redirect(new URL("/home?discord=error&reason=missing_params", origin));
+    return NextResponse.redirect(new URL("/home?discord=error", origin));
   }
 
   const { token: accessTokenSupabase, game } = parseState(state);
@@ -69,27 +69,8 @@ export async function GET(request: NextRequest) {
     });
 
     if (!tokenRes.ok) {
-      const tokErrBody = await tokenRes.text();
-      console.error("Discord token exchange failed:", tokErrBody);
-      const cidLen = (process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID ?? "").length;
-      const secLen = ((await getServerEnv("DISCORD_CLIENT_SECRET")) ?? "").length;
-      const redirUriLen = `${origin}/api/discord/callback`.length;
-      // CF runtime の env binding キー一覧を取得
-      let cfKeys = "NONE";
-      try {
-        const mod = await import("@opennextjs/cloudflare");
-        const ctx = mod.getCloudflareContext?.();
-        const envObj = (ctx?.env ?? {}) as Record<string, unknown>;
-        cfKeys = Object.keys(envObj).slice(0, 40).join(",");
-      } catch (e) {
-        cfKeys = "ERR:" + (e instanceof Error ? e.message : "unknown");
-      }
-      // process.env のキー一覧（関連ぽいもののみ）
-      const procKeys = Object.keys(process.env ?? {})
-        .filter(k => /DISCORD|SUPABASE|INTERNAL|API_URL|APP_URL/i.test(k))
-        .join(",");
-      const extra = `&cid_len=${cidLen}&sec_len=${secLen}&ru_len=${redirUriLen}&host=${encodeURIComponent(origin)}&cf_keys=${encodeURIComponent(cfKeys).slice(0, 400)}&proc_keys=${encodeURIComponent(procKeys).slice(0, 400)}`;
-      return NextResponse.redirect(new URL(`/${game}/home?discord=error&reason=token_exchange&status=${tokenRes.status}${extra}`, origin));
+      console.error("Discord token exchange failed:", await tokenRes.text());
+      return NextResponse.redirect(new URL(`/${game}/home?discord=error`, origin));
     }
 
     const tokens = await tokenRes.json();
@@ -103,7 +84,7 @@ export async function GET(request: NextRequest) {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
     if (!userRes.ok) {
-      return NextResponse.redirect(new URL(`/${game}/home?discord=error&reason=user_fetch&status=${userRes.status}`, origin));
+      return NextResponse.redirect(new URL(`/${game}/home?discord=error`, origin));
     }
     const discordUser = await userRes.json();
     const discordId: string = discordUser.id;
@@ -114,7 +95,7 @@ export async function GET(request: NextRequest) {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
     if (!guildsRes.ok) {
-      return NextResponse.redirect(new URL(`/${game}/home?discord=error&reason=guilds_fetch&status=${guildsRes.status}`, origin));
+      return NextResponse.redirect(new URL(`/${game}/home?discord=error`, origin));
     }
     const guilds = await guildsRes.json();
     const guildData = (guilds as { id: string; name: string; icon: string | null }[]).map((g) => ({
@@ -132,7 +113,7 @@ export async function GET(request: NextRequest) {
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(accessTokenSupabase);
     if (authError || !user) {
       console.error("Supabase auth failed:", authError);
-      return NextResponse.redirect(new URL(`/${game}/home?discord=error&reason=supabase_auth`, origin));
+      return NextResponse.redirect(new URL(`/${game}/home?discord=error`, origin));
     }
 
     // 5. discord_connections UPSERT: onConflict は (user_id, game_title)
@@ -154,8 +135,7 @@ export async function GET(request: NextRequest) {
 
     if (upsertError) {
       console.error("discord_connections upsert error:", upsertError);
-      const code = (upsertError as { code?: string })?.code ?? "unknown";
-      return NextResponse.redirect(new URL(`/${game}/home?discord=error&reason=upsert&code=${code}`, origin));
+      return NextResponse.redirect(new URL(`/${game}/home?discord=error`, origin));
     }
 
     // 6. Team 同期 (p_game_title 付き)
@@ -173,7 +153,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL(`/${game}/home?discord=connected`, origin));
   } catch (err) {
     console.error("Discord callback error:", err);
-    const msg = err instanceof Error ? err.message : "unknown";
-    return NextResponse.redirect(new URL(`/${game}/home?discord=error&reason=unexpected&msg=${encodeURIComponent(msg).slice(0, 80)}`, origin));
+    return NextResponse.redirect(new URL(`/${game}/home?discord=error`, origin));
   }
 }
