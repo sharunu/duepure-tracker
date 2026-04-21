@@ -1,16 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
+import { getServerEnv } from "@/lib/cf-env";
 export async function POST(request: NextRequest) {
   const internalKey = request.headers.get("X-Internal-Key");
-  const expectedKey = process.env.INTERNAL_API_KEY;
+  const expectedKey = await getServerEnv("INTERNAL_API_KEY");
 
   if (!expectedKey || internalKey !== expectedKey) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const serviceRoleKey = await getServerEnv("SUPABASE_SERVICE_ROLE_KEY");
 
   if (!supabaseUrl || !serviceRoleKey) {
     return NextResponse.json({ error: "Server configuration error" }, { status: 500 });

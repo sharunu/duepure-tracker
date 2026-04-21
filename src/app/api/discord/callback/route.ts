@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { DISCORD_REDIRECT_URI } from "@/lib/discord/config";
 import { DEFAULT_GAME, isGameSlug, type GameSlug } from "@/lib/games";
 
+import { getServerEnv } from "@/lib/cf-env";
 /**
  * base64url を decode。'-'→'+', '_'→'/', padding を復元。
  * atob が使える Next.js Edge/Node 両ランタイムで動作。
@@ -61,10 +61,10 @@ export async function GET(request: NextRequest) {
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
         client_id: process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID ?? "",
-        client_secret: process.env.DISCORD_CLIENT_SECRET ?? "",
+        client_secret: (await getServerEnv("DISCORD_CLIENT_SECRET")) ?? "",
         grant_type: "authorization_code",
         code,
-        redirect_uri: DISCORD_REDIRECT_URI,
+        redirect_uri: `${origin}/api/discord/callback`,
       }),
     });
 
@@ -107,7 +107,7 @@ export async function GET(request: NextRequest) {
     // 4. Supabase JWT 検証
     const supabaseAdmin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+      (await getServerEnv("SUPABASE_SERVICE_ROLE_KEY"))!
     );
 
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(accessTokenSupabase);
