@@ -157,9 +157,17 @@ export async function triggerLimitlessSync(): Promise<{
   ok: boolean;
   message: string;
 }> {
+  const supabase = createClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session) {
+    return { ok: false, message: "未ログイン" };
+  }
+
   const res = await fetch("/api/admin/limitless-sync", {
     method: "POST",
-    credentials: "same-origin",
+    headers: { Authorization: `Bearer ${session.access_token}` },
   });
   const json = (await res.json().catch(() => ({}))) as Record<string, unknown>;
   if (!res.ok) {
