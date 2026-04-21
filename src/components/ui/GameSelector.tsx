@@ -61,7 +61,15 @@ export function GameSelector({ currentGame, size = "large", hrefFor }: Props) {
           </svg>
         </button>
         {open && (
-          <ul className="absolute right-0 top-full mt-1 w-max min-w-[200px] rounded-lg border border-border bg-popover p-1 shadow-lg z-50" role="listbox">
+          <ul
+            className="absolute right-0 top-full mt-1 w-max min-w-[200px] rounded-lg p-1 z-50"
+            style={{
+              backgroundColor: "#1a1d2e",
+              border: "0.5px solid rgba(100,100,150,0.4)",
+              boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
+            }}
+            role="listbox"
+          >
             {GAME_SLUGS.map((slug) => {
               const g = GAMES[slug];
               const isActive = slug === currentGame;
@@ -70,7 +78,11 @@ export function GameSelector({ currentGame, size = "large", hrefFor }: Props) {
                   <button
                     type="button"
                     onClick={() => handleSelect(slug)}
-                    className={`w-full text-left px-3 py-2 text-xs rounded-md ${isActive ? "bg-primary/20 text-foreground font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
+                    className={`w-full text-left px-3 py-2 text-xs rounded-md transition-colors ${
+                      isActive
+                        ? "bg-[#2a2d44] text-white font-medium"
+                        : "text-gray-300 hover:bg-[#232640] hover:text-white"
+                    }`}
                     role="option"
                     aria-selected={isActive}
                   >
@@ -103,7 +115,15 @@ export function GameSelector({ currentGame, size = "large", hrefFor }: Props) {
         </svg>
       </button>
       {open && (
-        <ul className="absolute left-0 top-full mt-1 w-full rounded-xl border border-border bg-popover p-1 shadow-lg z-50" role="listbox">
+        <ul
+          className="absolute left-0 top-full mt-1 w-full rounded-xl p-1 z-50"
+          style={{
+            backgroundColor: "#1a1d2e",
+            border: "0.5px solid rgba(100,100,150,0.4)",
+            boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
+          }}
+          role="listbox"
+        >
           {GAME_SLUGS.map((slug) => {
             const g = GAMES[slug];
             const isActive = slug === currentGame;
@@ -112,7 +132,11 @@ export function GameSelector({ currentGame, size = "large", hrefFor }: Props) {
                 <button
                   type="button"
                   onClick={() => handleSelect(slug)}
-                  className={`w-full text-left px-3 py-2 text-sm rounded-lg ${isActive ? "bg-primary/20 text-foreground font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
+                  className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-colors ${
+                    isActive
+                      ? "bg-[#2a2d44] text-white font-medium"
+                      : "text-gray-300 hover:bg-[#232640] hover:text-white"
+                  }`}
                   role="option"
                   aria-selected={isActive}
                 >
