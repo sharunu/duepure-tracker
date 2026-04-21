@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { DEFAULT_GAME, isGameSlug } from "@/lib/games";
 
+import { getServerEnv } from "@/lib/cf-env";
 export async function POST(request: NextRequest) {
   try {
     let bodyGame: string | undefined;
@@ -21,7 +22,7 @@ export async function POST(request: NextRequest) {
 
     const supabaseAdmin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+      (await getServerEnv("SUPABASE_SERVICE_ROLE_KEY"))!
     );
 
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(jwt);
@@ -54,7 +55,7 @@ export async function POST(request: NextRequest) {
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({
           client_id: process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID ?? "",
-          client_secret: process.env.DISCORD_CLIENT_SECRET ?? "",
+          client_secret: (await getServerEnv("DISCORD_CLIENT_SECRET")) ?? "",
           grant_type: "refresh_token",
           refresh_token: conn.refresh_token,
         }),

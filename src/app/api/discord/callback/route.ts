@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { DEFAULT_GAME, isGameSlug, type GameSlug } from "@/lib/games";
 
+import { getServerEnv } from "@/lib/cf-env";
 /**
  * base64url を decode。'-'→'+', '_'→'/', padding を復元。
  * atob が使える Next.js Edge/Node 両ランタイムで動作。
@@ -60,7 +61,7 @@ export async function GET(request: NextRequest) {
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
         client_id: process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID ?? "",
-        client_secret: process.env.DISCORD_CLIENT_SECRET ?? "",
+        client_secret: (await getServerEnv("DISCORD_CLIENT_SECRET")) ?? "",
         grant_type: "authorization_code",
         code,
         redirect_uri: `${origin}/api/discord/callback`,
@@ -71,7 +72,7 @@ export async function GET(request: NextRequest) {
       const tokErrBody = await tokenRes.text();
       console.error("Discord token exchange failed:", tokErrBody);
       const cidLen = (process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID ?? "").length;
-      const secLen = (process.env.DISCORD_CLIENT_SECRET ?? "").length;
+      const secLen = ((await getServerEnv("DISCORD_CLIENT_SECRET")) ?? "").length;
       const redirUriLen = `${origin}/api/discord/callback`.length;
       const extra = `&cid_len=${cidLen}&sec_len=${secLen}&ru_len=${redirUriLen}&host=${encodeURIComponent(origin)}`;
       return NextResponse.redirect(new URL(`/${game}/home?discord=error&reason=token_exchange&status=${tokenRes.status}${extra}`, origin));
@@ -111,7 +112,7 @@ export async function GET(request: NextRequest) {
     // 4. Supabase JWT 検証
     const supabaseAdmin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+      (await getServerEnv("SUPABASE_SERVICE_ROLE_KEY"))!
     );
 
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(accessTokenSupabase);

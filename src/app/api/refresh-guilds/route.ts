@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { DEFAULT_GAME, isGameSlug } from "@/lib/games";
 
+import { getServerEnv } from "@/lib/cf-env";
 export async function POST(request: NextRequest) {
   try {
     const { accessToken, game: bodyGame } = await request.json();
@@ -19,7 +20,7 @@ export async function POST(request: NextRequest) {
 
     const supabaseAdmin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+      (await getServerEnv("SUPABASE_SERVICE_ROLE_KEY"))!
     );
 
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(jwt);

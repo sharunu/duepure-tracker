@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
+import { getServerEnv } from "@/lib/cf-env";
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
@@ -22,7 +23,7 @@ export async function GET(request: NextRequest) {
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
         client_id: process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID ?? "",
-        client_secret: process.env.DISCORD_CLIENT_SECRET ?? "",
+        client_secret: (await getServerEnv("DISCORD_CLIENT_SECRET")) ?? "",
         grant_type: "authorization_code",
         code,
         redirect_uri: `${origin}/api/discord/callback`,
@@ -68,7 +69,7 @@ export async function GET(request: NextRequest) {
     // 4. Verify Supabase JWT from state and get user_id
     const supabaseAdmin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+      (await getServerEnv("SUPABASE_SERVICE_ROLE_KEY"))!
     );
 
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(state);
