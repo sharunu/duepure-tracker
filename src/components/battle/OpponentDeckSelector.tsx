@@ -2,6 +2,11 @@
 
 import { useState, useEffect } from "react";
 
+import {
+  displayDeckName,
+  type OpponentDeckNameMap,
+} from "@/lib/actions/opponent-deck-display";
+
 type Props = {
   majorSuggestions: string[];
   minorSuggestions: string[];
@@ -9,6 +14,7 @@ type Props = {
   value: string;
   onChange: (name: string) => void;
   headerExtra?: React.ReactNode;
+  nameMap?: OpponentDeckNameMap;
 };
 
 const SearchIcon = () => (
@@ -25,6 +31,7 @@ export function OpponentDeckSelector({
   value,
   onChange,
   headerExtra,
+  nameMap,
 }: Props) {
   const [showOther, setShowOther] = useState(false);
   const [showMore, setShowMore] = useState(false);
@@ -38,10 +45,14 @@ export function OpponentDeckSelector({
     }
   }, [value]);
 
+  const display = (name: string) => displayDeckName(name, nameMap);
+
   const filterByQuery = (items: string[]) => {
     if (!searchText) return items;
     const q = searchText.toLowerCase();
-    return items.filter((s) => s.toLowerCase().includes(q));
+    return items.filter((s) => {
+      return s.toLowerCase().includes(q) || display(s).toLowerCase().includes(q);
+    });
   };
 
   const filteredMajor = filterByQuery(majorSuggestions);
@@ -86,7 +97,7 @@ export function OpponentDeckSelector({
             onClick={() => handleSelect(name)}
             style={chipStyle(name, "major")}
           >
-            {name}
+            {display(name)}
           </button>
         ))}
 
@@ -178,7 +189,7 @@ export function OpponentDeckSelector({
                       onClick={() => handleSelect(name)}
                       style={chipStyle(name, "other")}
                     >
-                      {name}
+                      {display(name)}
                     </button>
                   ))}
                 </div>
@@ -212,7 +223,7 @@ export function OpponentDeckSelector({
                       onClick={() => handleSelect(name)}
                       style={chipStyle(name, "other")}
                     >
-                      {name}
+                      {display(name)}
                     </button>
                   ))}
                 </div>

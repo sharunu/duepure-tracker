@@ -9,6 +9,7 @@ import { BattleIntervalModal } from "./BattleIntervalModal";
 import { MiniStats } from "../stats/MiniStats";
 
 import type { Format } from "@/hooks/use-format";
+import type { OpponentDeckNameMap } from "@/lib/actions/opponent-deck-display";
 
 type Tuning = { id: string; name: string; sort_order: number };
 type Deck = {
@@ -38,6 +39,7 @@ type Props = {
   miniStats: MiniStatsData | null;
   format: Format;
   setFormat: (f: Format) => void;
+  opponentDeckNameMap?: OpponentDeckNameMap;
 };
 
 function parseDeckSelection(value: string): { deckId: string; tuningId: string | null } {
@@ -64,6 +66,7 @@ export function BattleRecordForm({
   miniStats: initialMiniStats,
   format,
   setFormat,
+  opponentDeckNameMap,
 }: Props) {
   const { slug: game } = useGame();
   const [selectedValue, setSelectedValue] = useState<string>("");
@@ -296,6 +299,7 @@ export function BattleRecordForm({
             value={opponentDeck}
             onChange={setOpponentDeck}
             headerExtra={memoHeaderExtra}
+            nameMap={opponentDeckNameMap}
           />
 
           {/* Memo panel — expands below opponent deck selector */}
@@ -411,6 +415,7 @@ export function BattleRecordForm({
             battles={modalBattles}
             onSelect={handleSelectInterval}
             currentTimestamp={measureSince}
+            opponentDeckNameMap={opponentDeckNameMap}
           />
     </div>
   );

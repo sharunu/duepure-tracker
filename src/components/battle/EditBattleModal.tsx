@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { OpponentDeckSelector } from "./OpponentDeckSelector";
 import { getOpponentMemoSuggestions, deleteOpponentMemoSuggestion } from "@/lib/actions/battle-actions";
 import { MemoSuggestionButton } from "./MemoSuggestionButton";
+import type { OpponentDeckNameMap } from "@/lib/actions/opponent-deck-display";
 
 type Tuning = { id: string; name: string; sort_order: number };
 type Deck = { id: string; name: string; deck_tunings?: Tuning[] };
@@ -35,6 +36,7 @@ type Props = {
     opponentMemo?: string | null;
   }) => Promise<void>;
   onClose: () => void;
+  opponentDeckNameMap?: OpponentDeckNameMap;
 };
 
 function parseDeckSelection(value: string): { deckId: string; tuningId: string | null } {
@@ -55,7 +57,7 @@ const MemoIcon = ({ active, hasMemo }: { active: boolean; hasMemo: boolean }) =>
   </svg>
 );
 
-export function EditBattleModal({ battle, decks, suggestions, onSave, onClose }: Props) {
+export function EditBattleModal({ battle, decks, suggestions, onSave, onClose, opponentDeckNameMap }: Props) {
   const recordedDeckExists = decks.some(d => d.name === battle.my_deck_name);
   const initialValue = !recordedDeckExists
     ? `__snapshot__:${battle.my_deck_name}`
@@ -205,6 +207,7 @@ export function EditBattleModal({ battle, decks, suggestions, onSave, onClose }:
             value={opponentDeckName}
             onChange={setOpponentDeckName}
             headerExtra={memoHeaderExtra}
+            nameMap={opponentDeckNameMap}
           />
 
           {/* Memo panel */}

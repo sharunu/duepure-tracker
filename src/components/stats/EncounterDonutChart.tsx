@@ -3,6 +3,10 @@
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { getWinRateColor, COLORS } from "@/lib/stats-utils";
+import {
+  displayDeckName,
+  type OpponentDeckNameMap,
+} from "@/lib/actions/opponent-deck-display";
 
 interface DonutItem {
   name: string;
@@ -17,6 +21,7 @@ interface Props {
   overallWins: number;
   overallLosses: number;
   overallTotal: number;
+  opponentDeckNameMap?: OpponentDeckNameMap;
 }
 
 const OTHER_COLOR = "#64748b";
@@ -43,7 +48,9 @@ const renderLabel = (props: any) => {
   );
 };
 
-export function EncounterDonutChart({ items, otherBreakdown, overallWinRate, overallWins, overallLosses, overallTotal }: Props) {
+export function EncounterDonutChart({ items, otherBreakdown, overallWinRate, overallWins, overallLosses, overallTotal, opponentDeckNameMap }: Props) {
+  const display = (name: string) =>
+    name === "\u305D\u306E\u4ED6" ? name : displayDeckName(name, opponentDeckNameMap);
   const [activeIndex, setActiveIndex] = useState<number>(-1);
   const [animationDone, setAnimationDone] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -265,7 +272,7 @@ export function EncounterDonutChart({ items, otherBreakdown, overallWinRate, ove
                 color: "#fff",
               }}
             >
-              {data[activeIndex].name}
+              {display(data[activeIndex].name)}
             </span>
           </div>
         )}
@@ -297,7 +304,7 @@ export function EncounterDonutChart({ items, otherBreakdown, overallWinRate, ove
             >
               <div className="w-2 h-2 rounded-sm shrink-0" style={{ backgroundColor: color }} />
               <span className="text-muted-foreground">
-                {d.name}
+                {display(d.name)}
                 {hasBreakdown && <span className="ml-0.5 text-[10px]">{otherExpanded ? "\u25B2" : "\u25BC"}</span>}
               </span>
               <span className="font-medium">{d.pct}%</span>
@@ -313,7 +320,7 @@ export function EncounterDonutChart({ items, otherBreakdown, overallWinRate, ove
           <div className="space-y-1">
             {sortedBreakdown.map((item) => (
               <div key={item.name} className="flex items-center justify-between text-xs">
-                <span className="text-muted-foreground truncate mr-2">{item.name}</span>
+                <span className="text-muted-foreground truncate mr-2">{display(item.name)}</span>
                 <span className="flex items-center gap-2 shrink-0">
                   <span className="font-medium">{item.pct}%</span>
                   <span className="text-muted-foreground">({item.total}件)</span>

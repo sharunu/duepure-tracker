@@ -3,6 +3,10 @@
 import type { OpponentDetail } from "@/lib/actions/stats-actions";
 import { getWinRateColor } from "@/lib/stats-utils";
 import { BattleCountBadge } from "@/components/ui/BattleCountBadge";
+import {
+  displayDeckName,
+  type OpponentDeckNameMap,
+} from "@/lib/actions/opponent-deck-display";
 
 function TurnOrderBar({ label, wins, losses, total, winRate }: { label: string; wins: number; losses: number; total: number; winRate: number }) {
   if (total === 0) return null;
@@ -19,7 +23,7 @@ function TurnOrderBar({ label, wins, losses, total, winRate }: { label: string; 
   );
 }
 
-export function MatchupCard({ name, namePrefix, detail }: { name: string; namePrefix?: string; detail: OpponentDetail }) {
+export function MatchupCard({ name, namePrefix, detail, opponentDeckNameMap }: { name: string; namePrefix?: string; detail: OpponentDetail; opponentDeckNameMap?: OpponentDeckNameMap }) {
   const color = getWinRateColor(detail.winRate);
   return (
     <div className="flex rounded-lg border border-border bg-card overflow-hidden">
@@ -27,7 +31,7 @@ export function MatchupCard({ name, namePrefix, detail }: { name: string; namePr
       <div className="flex-1 px-3 py-2 space-y-1.5">
         <div className="flex items-center justify-between">
           <span className="flex items-center gap-1.5">
-            <span className="text-sm font-medium">{namePrefix}{name}</span>
+            <span className="text-sm font-medium">{namePrefix}{displayDeckName(name, opponentDeckNameMap)}</span>
             <BattleCountBadge count={detail.total} />
           </span>
           <div className="flex items-center gap-2">

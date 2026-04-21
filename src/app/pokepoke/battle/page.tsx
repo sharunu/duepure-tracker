@@ -7,6 +7,7 @@ import {
   getMiniStats,
 } from "@/lib/actions/battle-actions";
 import { checkIsAdmin } from "@/lib/actions/admin-actions";
+import { getOpponentDeckNameMap, type OpponentDeckNameMap } from "@/lib/actions/opponent-deck-display";
 import { useFormat } from "@/hooks/use-format";
 import { FormatSelector } from "@/components/ui/FormatSelector";
 import { BattleRecordForm } from "@/components/battle/BattleRecordForm";
@@ -19,6 +20,7 @@ export default function BattlePage() {
     suggestions: { major: string[]; minor: string[]; other: string[] };
     miniStats: Awaited<ReturnType<typeof getMiniStats>>;
     isAdmin: boolean;
+    nameMap: OpponentDeckNameMap;
   } | null>(null);
   const [pageLoading, setPageLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -30,8 +32,9 @@ export default function BattlePage() {
       getOpponentDeckSuggestions(format, "pokepoke"),
       getMiniStats(format, localStorage.getItem(`measureSince_${format}`) ?? undefined, "pokepoke"),
       checkIsAdmin(),
-    ]).then(([decks, suggestions, miniStats, isAdmin]) => {
-      setData({ decks, suggestions, miniStats, isAdmin });
+      getOpponentDeckNameMap(format, "pokepoke"),
+    ]).then(([decks, suggestions, miniStats, isAdmin, nameMap]) => {
+      setData({ decks, suggestions, miniStats, isAdmin, nameMap });
       setPageLoading(false);
     }).catch(() => {
       setError("データの読み込みに失敗しました");
@@ -100,6 +103,7 @@ export default function BattlePage() {
           miniStats={data.miniStats}
           format={format}
           setFormat={setFormat}
+          opponentDeckNameMap={data.nameMap}
         />
       </div>
       <BottomNav />

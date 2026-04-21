@@ -30,7 +30,12 @@ import {
   getOpponentDeckStatsForAdmin,
   getOpponentDeckMasterList,
   getBattleCountsForPeriod,
+  updateOpponentDeckNameJa,
+  triggerLimitlessSync,
+  getOpponentDeckSettings,
 } from "@/lib/actions/admin-actions";
+
+type Mode = "admin" | "auto" | "limitless";
 
 type Deck = {
   id: string;
@@ -39,6 +44,18 @@ type Deck = {
   is_active: boolean;
   category: string;
   admin_bonus_count?: number;
+  source?: string | null;
+  name_en?: string | null;
+  name_ja?: string | null;
+  name_ja_is_manual?: boolean | null;
+  limitless_share?: number | null;
+  limitless_count?: number | null;
+  limitless_wins?: number | null;
+  limitless_losses?: number | null;
+  limitless_ties?: number | null;
+  limitless_win_pct?: number | null;
+  limitless_icon_urls?: string[] | null;
+  limitless_last_synced_at?: string | null;
 };
 
 type DeckWithStats = Deck & {
@@ -52,6 +69,12 @@ type Settings = {
   minor_threshold: number;
   usage_period_days: number;
   disable_period_days: number;
+  classification_method?: "threshold" | "fixed_count";
+  major_fixed_count?: number;
+  minor_fixed_count?: number;
+  limitless_last_synced_at?: string | null;
+  limitless_last_sync_status?: string | null;
+  limitless_last_sync_message?: string | null;
 };
 
 const categoryCycle: Record<string, string> = { major: "minor", minor: "other", other: "major" };
@@ -213,8 +236,8 @@ export function OpponentDeckManager({
   onApplyingChange?: (applying: boolean) => void;
   applyRef?: React.MutableRefObject<(() => Promise<void>) | undefined>;
 }) {
-  const [mode, setMode] = useState<"admin" | "auto">(
-    (initialSettings?.management_mode as "admin" | "auto") ?? "admin"
+  const [mode, setMode] = useState<Mode>(
+    (initialSettings?.management_mode as Mode) ?? "admin"
   );
   const [decks, setDecks] = useState(initialDecks);
   const [newName, setNewName] = useState("");
@@ -234,14 +257,24 @@ export function OpponentDeckManager({
   const [bonusEditing, setBonusEditing] = useState<Record<string, string>>({});
   const [showHelp, setShowHelp] = useState(false);
 
+  // limitless mode specific
+  const [classificationMethod, setClassificationMethod] = useState<"threshold" | "fixed_count">(
+    initialSettings?.classification_method ?? "threshold"
+  );
+  const [majorFixedCountStr, setMajorFixedCountStr] = useState(String(initialSettings?.major_fixed_count ?? 5));
+  const [minorFixedCountStr, setMinorFixedCountStr] = useState(String(initialSettings?.minor_fixed_count ?? 10));
+  const [limitlessSyncing, setLimitlessSyncing] = useState(false);
+  const [limitlessMessage, setLimitlessMessage] = useState<string | null>(null);
+  const [nameJaEditing, setNameJaEditing] = useState<Record<string, string>>({});
+
   // --- Batch apply state ---
   const [dirty, setDirty] = useState(false);
   const [applying, setApplying] = useState(false);
   const addedDeckIdsRef = useRef(new Set<string>());
   const deletedDeckIdsRef = useRef(new Set<string>());
 
-  const savedModeRef = useRef<"admin" | "auto">(
-    (initialSettings?.management_mode as "admin" | "auto") ?? "admin"
+  const savedModeRef = useRef<Mode>(
+    (initialSettings?.management_mode as Mode) ?? "admin"
   );
   const savedDecksRef = useRef(initialDecks);
   const savedSettingsRef = useRef(initialSettings);
@@ -254,13 +287,18 @@ export function OpponentDeckManager({
 
   // Sync with initialSettings/initialDecks when format changes
   useEffect(() => {
-    const m = (initialSettings?.management_mode as "admin" | "auto") ?? "admin";
+    const m = (initialSettings?.management_mode as Mode) ?? "admin";
     setMode(m);
     setDecks(initialDecks);
     setMajorThresholdStr(String(initialSettings?.major_threshold ?? 3.0));
     setMinorThresholdStr(String(initialSettings?.minor_threshold ?? 1.0));
     setUsagePeriodStr(String(initialSettings?.usage_period_days ?? 14));
     setDisablePeriodStr(String(initialSettings?.disable_period_days ?? 30));
+    setClassificationMethod(initialSettings?.classification_method ?? "threshold");
+    setMajorFixedCountStr(String(initialSettings?.major_fixed_count ?? 5));
+    setMinorFixedCountStr(String(initialSettings?.minor_fixed_count ?? 10));
+    setNameJaEditing({});
+    setLimitlessMessage(null);
     setStatsLoaded(false);
     setDirty(false);
     addedDeckIdsRef.current.clear();
@@ -313,10 +351,60 @@ export function OpponentDeckManager({
 
   // --- Handlers (all local) ---
 
-  const handleModeChange = (newMode: "admin" | "auto") => {
+  const handleModeChange = (newMode: Mode) => {
     setMode(newMode);
     if (newMode === "auto") setStatsLoaded(false);
     setDirty(true);
+  };
+
+  const handleLimitlessSync = async () => {
+    setLimitlessSyncing(true);
+    setLimitlessMessage("取得中...");
+    try {
+      const res = await triggerLimitlessSync();
+      setLimitlessMessage(res.message);
+      if (res.ok) {
+        const [freshDecks, freshSettings] = await Promise.all([
+          getOpponentDeckMasterList(format, game),
+          getOpponentDeckSettings(format, game),
+        ]);
+        setDecks(freshDecks);
+        savedDecksRef.current = freshDecks;
+        savedSettingsRef.current = freshSettings as Settings | null;
+      }
+    } catch (e) {
+      console.error(e);
+      setLimitlessMessage("取得失敗");
+    } finally {
+      setLimitlessSyncing(false);
+    }
+  };
+
+  const handleNameJaBlur = async (deckId: string, original: string | null | undefined) => {
+    const value = nameJaEditing[deckId];
+    if (value === undefined) return;
+    if ((value ?? "") === (original ?? "")) {
+      const next = { ...nameJaEditing };
+      delete next[deckId];
+      setNameJaEditing(next);
+      return;
+    }
+    try {
+      await updateOpponentDeckNameJa(deckId, value);
+      setDecks((prev) =>
+        prev.map((d) =>
+          d.id === deckId
+            ? { ...d, name_ja: value.trim() || null, name_ja_is_manual: value.trim().length > 0 }
+            : d,
+        ),
+      );
+      const next = { ...nameJaEditing };
+      delete next[deckId];
+      setNameJaEditing(next);
+    } catch (e) {
+      console.error(e);
+      alert("名称保存に失敗しました");
+    }
   };
 
   const handleAdd = () => {
@@ -432,15 +520,41 @@ export function OpponentDeckManager({
     setApplying(true);
     try {
       const { majorThreshold, minorThreshold, usagePeriod, disablePeriod } = parseSettings();
+      const majorFixed = Math.max(0, parseInt(majorFixedCountStr, 10) || 0);
+      const minorFixed = Math.max(0, parseInt(minorFixedCountStr, 10) || 0);
 
-      // 1. Save settings
+      // 1. Save settings (limitless モードは DB 側で category を決めるためデッキ操作はしない)
       await updateOpponentDeckSettings(format, {
         management_mode: mode,
         major_threshold: majorThreshold,
         minor_threshold: minorThreshold,
         usage_period_days: usagePeriod,
         disable_period_days: disablePeriod,
+        classification_method: classificationMethod,
+        major_fixed_count: majorFixed,
+        minor_fixed_count: minorFixed,
       }, game);
+
+      if (mode === "limitless") {
+        savedModeRef.current = mode;
+        savedSettingsRef.current = {
+          management_mode: mode,
+          major_threshold: majorThreshold,
+          minor_threshold: minorThreshold,
+          usage_period_days: usagePeriod,
+          disable_period_days: disablePeriod,
+          classification_method: classificationMethod,
+          major_fixed_count: majorFixed,
+          minor_fixed_count: minorFixed,
+        };
+        // 分類方式・閾値を変えた場合は再同期でカテゴリ再計算させる
+        await triggerLimitlessSync().catch(() => {});
+        const freshDecks = await getOpponentDeckMasterList(format, game);
+        setDecks(freshDecks);
+        savedDecksRef.current = freshDecks;
+        setDirty(false);
+        return;
+      }
 
       // 2. Delete
       for (const id of deletedDeckIdsRef.current) {
@@ -509,6 +623,9 @@ export function OpponentDeckManager({
         minor_threshold: minorThreshold,
         usage_period_days: usagePeriod,
         disable_period_days: disablePeriod,
+        classification_method: classificationMethod,
+        major_fixed_count: majorFixed,
+        minor_fixed_count: minorFixed,
       };
 
       if (mode === "auto") {
@@ -572,19 +689,27 @@ export function OpponentDeckManager({
       {/* Mode selector */}
       <div className="bg-[#232640] rounded-[10px] px-4 py-4">
         <p className="text-[12px] text-gray-500 mb-2">管理モード</p>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <button onClick={() => handleModeChange("admin")} disabled={applying}
-            className={`flex-1 rounded-[6px] px-3 py-3 text-[13px] transition-colors min-h-[44px] ${
+            className={`flex-1 min-w-[120px] rounded-[6px] px-3 py-3 text-[13px] transition-colors min-h-[44px] ${
               mode === "admin" ? "bg-[rgba(99,102,241,0.15)] border border-[#6366f1] text-[#818cf8]"
                 : "bg-[#1e2138] border border-transparent text-gray-400"
             }`}
           >完全管理者依存</button>
           <button onClick={() => handleModeChange("auto")} disabled={applying}
-            className={`flex-1 rounded-[6px] px-3 py-3 text-[13px] transition-colors min-h-[44px] ${
+            className={`flex-1 min-w-[120px] rounded-[6px] px-3 py-3 text-[13px] transition-colors min-h-[44px] ${
               mode === "auto" ? "bg-[rgba(99,102,241,0.15)] border border-[#6366f1] text-[#818cf8]"
                 : "bg-[#1e2138] border border-transparent text-gray-400"
             }`}
           >ユーザー入力依存</button>
+          {game === "pokepoke" && (
+            <button onClick={() => handleModeChange("limitless")} disabled={applying}
+              className={`flex-1 min-w-[120px] rounded-[6px] px-3 py-3 text-[13px] transition-colors min-h-[44px] ${
+                mode === "limitless" ? "bg-[rgba(99,102,241,0.15)] border border-[#6366f1] text-[#818cf8]"
+                  : "bg-[#1e2138] border border-transparent text-gray-400"
+              }`}
+            >LimitLessTCG依存</button>
+          )}
         </div>
       </div>
 
@@ -627,7 +752,175 @@ export function OpponentDeckManager({
         </div>
       )}
 
-      {mode === "admin" ? (
+      {mode === "limitless" ? (
+        <>
+          <div className="bg-[#1e2138] rounded-[10px] px-4 py-3 text-[12px] text-gray-400 leading-relaxed">
+            LimitlessTCG の公式大会 <span className="text-gray-200">standard</span> データを取得し、
+            ポケポケの <span className="text-gray-200">RANKED / RANDOM</span> 両フォーマットに流用しています。
+            自分自身の戦績（battles）の使用率は反映されません。
+          </div>
+
+          {/* 同期状態 */}
+          <div className="bg-[#232640] rounded-[10px] px-4 py-4 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="text-[12px] text-gray-400">
+                最終取得:{" "}
+                <span className="text-gray-200">
+                  {savedSettingsRef.current?.limitless_last_synced_at
+                    ? new Date(savedSettingsRef.current.limitless_last_synced_at).toLocaleString("ja-JP")
+                    : "未取得"}
+                </span>
+                {savedSettingsRef.current?.limitless_last_sync_status && (
+                  <span className="ml-2 text-gray-500">
+                    ({savedSettingsRef.current.limitless_last_sync_status})
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={handleLimitlessSync}
+                disabled={limitlessSyncing || applying}
+                className="bg-[#3d4070] text-white rounded-[6px] px-4 py-2 text-[13px] font-medium hover:opacity-90 disabled:opacity-50 min-h-[40px]"
+              >
+                {limitlessSyncing ? "取得中..." : "今すぐ取得"}
+              </button>
+            </div>
+            {limitlessMessage && (
+              <p className="text-[11px] text-gray-500">{limitlessMessage}</p>
+            )}
+          </div>
+
+          {/* 分類方式 */}
+          <div className="bg-[#232640] rounded-[10px] px-4 py-4 space-y-3">
+            <p className="text-[13px] font-medium text-gray-400">分類方式</p>
+            <div className="flex gap-2">
+              <label className={`flex-1 flex items-center gap-2 cursor-pointer rounded-[6px] px-3 py-2 text-[13px] border ${
+                classificationMethod === "threshold"
+                  ? "border-[#6366f1] bg-[rgba(99,102,241,0.12)]"
+                  : "border-transparent bg-[#1e2138]"
+              }`}>
+                <input
+                  type="radio"
+                  name="classificationMethod"
+                  value="threshold"
+                  checked={classificationMethod === "threshold"}
+                  onChange={() => { setClassificationMethod("threshold"); setDirty(true); }}
+                  className="accent-[#818cf8]"
+                />
+                閾値方式
+              </label>
+              <label className={`flex-1 flex items-center gap-2 cursor-pointer rounded-[6px] px-3 py-2 text-[13px] border ${
+                classificationMethod === "fixed_count"
+                  ? "border-[#6366f1] bg-[rgba(99,102,241,0.12)]"
+                  : "border-transparent bg-[#1e2138]"
+              }`}>
+                <input
+                  type="radio"
+                  name="classificationMethod"
+                  value="fixed_count"
+                  checked={classificationMethod === "fixed_count"}
+                  onChange={() => { setClassificationMethod("fixed_count"); setDirty(true); }}
+                  className="accent-[#818cf8]"
+                />
+                デッキ数固定方式
+              </label>
+            </div>
+            {classificationMethod === "threshold" ? (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[12px] text-gray-500 block mb-1">major 閾値 (%)</label>
+                  <input type="text" inputMode="decimal" value={majorThresholdStr}
+                    onChange={(e) => { setMajorThresholdStr(e.target.value); setDirty(true); }}
+                    className="w-full bg-[#1a1d2e] rounded-[6px] px-3 py-2 text-[14px] focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-[12px] text-gray-500 block mb-1">minor 閾値 (%)</label>
+                  <input type="text" inputMode="decimal" value={minorThresholdStr}
+                    onChange={(e) => { setMinorThresholdStr(e.target.value); setDirty(true); }}
+                    className="w-full bg-[#1a1d2e] rounded-[6px] px-3 py-2 text-[14px] focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[12px] text-gray-500 block mb-1">major デッキ数</label>
+                  <input type="text" inputMode="numeric" value={majorFixedCountStr}
+                    onChange={(e) => { setMajorFixedCountStr(e.target.value); setDirty(true); }}
+                    className="w-full bg-[#1a1d2e] rounded-[6px] px-3 py-2 text-[14px] focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-[12px] text-gray-500 block mb-1">minor デッキ数</label>
+                  <input type="text" inputMode="numeric" value={minorFixedCountStr}
+                    onChange={(e) => { setMinorFixedCountStr(e.target.value); setDirty(true); }}
+                    className="w-full bg-[#1a1d2e] rounded-[6px] px-3 py-2 text-[14px] focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  />
+                </div>
+              </div>
+            )}
+            <p className="text-[11px] text-gray-500">
+              ※「変更内容反映」ボタンで設定を保存し、同時に LimitlessTCG 再取得＆カテゴリ再計算を行います。
+            </p>
+          </div>
+
+          {/* デッキ一覧 (source='limitless' の active のみ) */}
+          {(["major", "minor", "other"] as const).map((cat) => {
+            const catDecks = decks
+              .filter((d) => d.source === "limitless" && d.is_active && d.category === cat)
+              .sort((a, b) => (b.limitless_share ?? 0) - (a.limitless_share ?? 0));
+            return (
+              <div key={cat} className="bg-[#232640] rounded-[10px] px-4 py-4">
+                <h3 className="text-[13px] font-medium text-gray-400 mb-2">{cat}</h3>
+                {catDecks.length === 0 ? (
+                  <p className="text-center text-gray-500 py-4 text-sm">{cat} デッキなし</p>
+                ) : (
+                  <ul className="space-y-2">
+                    {catDecks.map((deck) => {
+                      const displayJa = deck.name_ja ?? deck.name_en ?? deck.name;
+                      const nameJaValue = nameJaEditing[deck.id] ?? (deck.name_ja ?? "");
+                      return (
+                        <li key={deck.id} className="rounded-[8px] bg-[#1e2138] px-4 py-3 space-y-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-[14px] font-medium">{displayJa}</span>
+                            {deck.name_ja_is_manual && (
+                              <span className="text-[10px] text-[#a5b4fc] px-1.5 py-0.5 rounded bg-[rgba(99,102,241,0.2)]">手動</span>
+                            )}
+                          </div>
+                          {deck.name_en && deck.name_en !== displayJa && (
+                            <div className="text-[11px] text-gray-500">{deck.name_en}</div>
+                          )}
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-gray-400">
+                            <span>share: <span className="text-gray-200">{deck.limitless_share?.toFixed(2) ?? "-"}%</span></span>
+                            <span>count: {deck.limitless_count ?? "-"}</span>
+                            <span>
+                              勝敗: {deck.limitless_wins ?? "-"}-{deck.limitless_losses ?? "-"}-{deck.limitless_ties ?? "-"}
+                            </span>
+                            <span>Win%: {deck.limitless_win_pct?.toFixed(2) ?? "-"}</span>
+                          </div>
+                          <div className="flex items-center gap-2 pt-1">
+                            <label className="text-[11px] text-gray-500">和名:</label>
+                            <input
+                              type="text"
+                              value={nameJaValue}
+                              placeholder={deck.name_en ?? ""}
+                              onChange={(e) =>
+                                setNameJaEditing({ ...nameJaEditing, [deck.id]: e.target.value })
+                              }
+                              onBlur={() => handleNameJaBlur(deck.id, deck.name_ja)}
+                              className="flex-1 bg-[#151729] rounded px-2 py-1 text-[12px] focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                            />
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
+            );
+          })}
+        </>
+      ) : mode === "admin" ? (
         <>
           {addForm}
           <SortableCategoryList categoryDecks={majorDecks} allDecks={decks} setDecks={setDecks} categoryLabel="major" {...sortableProps} />

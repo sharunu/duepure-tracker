@@ -4,6 +4,10 @@ import { useState } from "react";
 import { Pencil, X } from "lucide-react";
 import { updateBattle, deleteBattle } from "@/lib/actions/battle-actions";
 import { EditBattleModal } from "./EditBattleModal";
+import {
+  displayDeckName,
+  type OpponentDeckNameMap,
+} from "@/lib/actions/opponent-deck-display";
 
 type Tuning = { id: string; name: string; sort_order: number };
 type Deck = { id: string; name: string; deck_tunings?: Tuning[] };
@@ -27,6 +31,7 @@ type Props = {
   suggestions: { major: string[]; minor: string[]; other: string[] };
   onRefresh?: () => void;
   readOnly?: boolean;
+  opponentDeckNameMap?: OpponentDeckNameMap;
 };
 
 function formatTime(dateStr: string) {
@@ -47,7 +52,7 @@ function groupByDate(battles: Battle[]): { date: string; battles: Battle[] }[] {
   return Array.from(map.entries()).map(([date, battles]) => ({ date, battles }));
 }
 
-export function BattleHistoryList({ battles, decks, suggestions, onRefresh, readOnly }: Props) {
+export function BattleHistoryList({ battles, decks, suggestions, onRefresh, readOnly, opponentDeckNameMap }: Props) {
   const [editingBattle, setEditingBattle] = useState<Battle | null>(null);
 
   if (battles.length === 0) {
@@ -142,7 +147,7 @@ export function BattleHistoryList({ battles, decks, suggestions, onRefresh, read
                         )}
                         <span className="text-[11px] text-[#555577] shrink-0">vs</span>
                         <span className="text-[13px] text-[#ccccdd] truncate">
-                          {b.opponent_deck_name}
+                          {displayDeckName(b.opponent_deck_name, opponentDeckNameMap)}
                         </span>
                       </div>
 
@@ -201,6 +206,7 @@ export function BattleHistoryList({ battles, decks, suggestions, onRefresh, read
           suggestions={suggestions}
           onSave={handleSave}
           onClose={() => setEditingBattle(null)}
+          opponentDeckNameMap={opponentDeckNameMap}
         />
       )}
     </>
