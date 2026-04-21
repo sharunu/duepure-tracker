@@ -70,7 +70,11 @@ export async function GET(request: NextRequest) {
     if (!tokenRes.ok) {
       const tokErrBody = await tokenRes.text();
       console.error("Discord token exchange failed:", tokErrBody);
-      return NextResponse.redirect(new URL(`/${game}/home?discord=error&reason=token_exchange&status=${tokenRes.status}`, origin));
+      const cidLen = (process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID ?? "").length;
+      const secLen = (process.env.DISCORD_CLIENT_SECRET ?? "").length;
+      const redirUriLen = `${origin}/api/discord/callback`.length;
+      const extra = `&cid_len=${cidLen}&sec_len=${secLen}&ru_len=${redirUriLen}&host=${encodeURIComponent(origin)}`;
+      return NextResponse.redirect(new URL(`/${game}/home?discord=error&reason=token_exchange&status=${tokenRes.status}${extra}`, origin));
     }
 
     const tokens = await tokenRes.json();
