@@ -388,12 +388,11 @@ function HomePageInner() {
               </p>
             ) : (
               <button
-                type="button"
-                disabled
-                title="準備中"
-                className="w-full rounded-lg px-4 py-3 text-sm font-medium text-muted-foreground bg-muted/30 cursor-not-allowed"
+                onClick={handleDiscordConnect}
+                className="w-full rounded-lg px-4 py-3 text-sm font-medium text-white transition-colors"
+                style={{ backgroundColor: "#5865F2" }}
               >
-                Discord連携（準備中）
+                Discordと連携する
               </button>
             )}
           </div>
