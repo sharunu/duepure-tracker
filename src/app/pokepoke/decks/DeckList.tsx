@@ -10,6 +10,10 @@ import {
   updateTuning,
   deleteTuning,
 } from "@/lib/actions/deck-actions";
+import {
+  displayDeckName,
+  type OpponentDeckNameMap,
+} from "@/lib/actions/opponent-deck-display";
 
 type Tuning = {
   id: string;
@@ -49,10 +53,12 @@ export function DeckList({
   initialDecks,
   format,
   suggestions = { major: [], minor: [], other: [] },
+  opponentDeckNameMap,
 }: {
   initialDecks: Deck[];
   format: string;
   suggestions?: { major: string[]; minor: string[]; other: string[] };
+  opponentDeckNameMap?: OpponentDeckNameMap;
 }) {
   const [decks, setDecks] = useState(initialDecks);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -94,11 +100,13 @@ export function DeckList({
     });
   };
 
-  // Filter chips by search query
+  const display = (name: string) => displayDeckName(name, opponentDeckNameMap);
+
+  // Filter chips by search query (日本語表示名 / 英語原名どちらでもヒット)
   const filterByQuery = (items: string[]) => {
     if (!searchQuery) return items;
     const q = searchQuery.toLowerCase();
-    return items.filter(s => s.toLowerCase().includes(q));
+    return items.filter(s => s.toLowerCase().includes(q) || display(s).toLowerCase().includes(q));
   };
 
   const filteredMajor = filterByQuery(suggestions.major);
@@ -457,11 +465,12 @@ export function DeckList({
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                 {filteredMajor.map((name) => {
-                  const isRegistered = registeredNames.has(name);
+                  const label = display(name);
+                  const isRegistered = registeredNames.has(name) || registeredNames.has(label);
                   return (
                     <button
                       key={name}
-                      onClick={() => handleChipCreate(name)}
+                      onClick={() => handleChipCreate(label)}
                       disabled={loading || isRegistered}
                       style={{
                         padding: "7px 14px",
@@ -477,7 +486,7 @@ export function DeckList({
                       }}
                       onMouseDown={(e) => e.preventDefault()}
                     >
-                      {name}
+                      {label}
                     </button>
                   );
                 })}
@@ -501,11 +510,12 @@ export function DeckList({
                 }}
               >
                 {filteredMinor.map((name) => {
-                  const isRegistered = registeredNames.has(name);
+                  const label = display(name);
+                  const isRegistered = registeredNames.has(name) || registeredNames.has(label);
                   return (
                     <button
                       key={name}
-                      onClick={() => handleChipCreate(name)}
+                      onClick={() => handleChipCreate(label)}
                       disabled={loading || isRegistered}
                       style={{
                         padding: "6px 12px",
@@ -521,7 +531,7 @@ export function DeckList({
                       }}
                       onMouseDown={(e) => e.preventDefault()}
                     >
-                      {name}
+                      {label}
                     </button>
                   );
                 })}
@@ -559,11 +569,12 @@ export function DeckList({
                 }}
               >
                 {(searchQuery ? filteredOther : suggestions.other).map((name) => {
-                  const isRegistered = registeredNames.has(name);
+                  const label = display(name);
+                  const isRegistered = registeredNames.has(name) || registeredNames.has(label);
                   return (
                     <button
                       key={name}
-                      onClick={() => handleChipCreate(name)}
+                      onClick={() => handleChipCreate(label)}
                       disabled={loading || isRegistered}
                       style={{
                         padding: "6px 12px",
@@ -579,7 +590,7 @@ export function DeckList({
                       }}
                       onMouseDown={(e) => e.preventDefault()}
                     >
-                      {name}
+                      {label}
                     </button>
                   );
                 })}
