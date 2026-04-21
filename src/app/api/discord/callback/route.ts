@@ -74,7 +74,21 @@ export async function GET(request: NextRequest) {
       const cidLen = (process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID ?? "").length;
       const secLen = ((await getServerEnv("DISCORD_CLIENT_SECRET")) ?? "").length;
       const redirUriLen = `${origin}/api/discord/callback`.length;
-      const extra = `&cid_len=${cidLen}&sec_len=${secLen}&ru_len=${redirUriLen}&host=${encodeURIComponent(origin)}`;
+      // CF runtime の env binding キー一覧を取得
+      let cfKeys = "NONE";
+      try {
+        const mod = await import("@opennextjs/cloudflare");
+        const ctx = mod.getCloudflareContext?.();
+        const envObj = (ctx?.env ?? {}) as Record<string, unknown>;
+        cfKeys = Object.keys(envObj).slice(0, 40).join(",");
+      } catch (e) {
+        cfKeys = "ERR:" + (e instanceof Error ? e.message : "unknown");
+      }
+      // process.env のキー一覧（関連ぽいもののみ）
+      const procKeys = Object.keys(process.env ?? {})
+        .filter(k => /DISCORD|SUPABASE|INTERNAL|API_URL|APP_URL/i.test(k))
+        .join(",");
+      const extra = `&cid_len=${cidLen}&sec_len=${secLen}&ru_len=${redirUriLen}&host=${encodeURIComponent(origin)}&cf_keys=${encodeURIComponent(cfKeys).slice(0, 400)}&proc_keys=${encodeURIComponent(procKeys).slice(0, 400)}`;
       return NextResponse.redirect(new URL(`/${game}/home?discord=error&reason=token_exchange&status=${tokenRes.status}${extra}`, origin));
     }
 
