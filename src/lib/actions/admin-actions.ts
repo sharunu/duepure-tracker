@@ -123,6 +123,9 @@ export async function updateOpponentDeckSettings(
     minor_threshold?: number;
     usage_period_days?: number;
     disable_period_days?: number;
+    classification_method?: "threshold" | "fixed_count";
+    major_fixed_count?: number;
+    minor_fixed_count?: number;
   },
   game: GameSlug = DEFAULT_GAME
 ) {
@@ -133,6 +136,46 @@ export async function updateOpponentDeckSettings(
     .eq("format", format)
     .eq("game_title", game);
   if (error) throw new Error(error.message);
+}
+
+export async function updateOpponentDeckNameJa(id: string, nameJa: string) {
+  const supabase = await requireAdmin();
+  const trimmed = nameJa.trim();
+  const { error } = await (supabase
+    .from("opponent_deck_master") as unknown as {
+      update: (v: Record<string, unknown>) => { eq: (k: string, v: string) => Promise<{ error: { message: string } | null }> };
+    })
+    .update({
+      name_ja: trimmed.length > 0 ? trimmed : null,
+      name_ja_is_manual: trimmed.length > 0,
+    })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
+export async function triggerLimitlessSync(): Promise<{
+  ok: boolean;
+  message: string;
+}> {
+  const res = await fetch("/api/admin/limitless-sync", {
+    method: "POST",
+    credentials: "same-origin",
+  });
+  const json = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+  if (!res.ok) {
+    return {
+      ok: false,
+      message:
+        typeof json.error === "string" ? json.error : `HTTP ${res.status}`,
+    };
+  }
+  if (json.skipped) {
+    return { ok: true, message: `スキップ: ${json.reason ?? ""}` };
+  }
+  return {
+    ok: true,
+    message: `同期完了: ${json.fetched} 件 (${json.synced_at})`,
+  };
 }
 
 // === 即時再計算 ===

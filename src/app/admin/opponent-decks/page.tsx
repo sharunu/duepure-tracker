@@ -17,6 +17,12 @@ type Settings = {
   minor_threshold: number;
   usage_period_days: number;
   disable_period_days: number;
+  classification_method: "threshold" | "fixed_count";
+  major_fixed_count: number;
+  minor_fixed_count: number;
+  limitless_last_synced_at: string | null;
+  limitless_last_sync_status: string | null;
+  limitless_last_sync_message: string | null;
 };
 
 function AdminOpponentDecksInner() {
