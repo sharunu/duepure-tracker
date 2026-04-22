@@ -310,7 +310,7 @@ export type Database = {
           {
             foreignKeyName: "discord_connections_user_id_fkey"
             columns: ["user_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -353,8 +353,21 @@ export type Database = {
           id: string
           is_active: boolean
           last_used_at: string | null
+          limitless_count: number | null
+          limitless_deck_slug: string | null
+          limitless_icon_urls: string[] | null
+          limitless_last_synced_at: string | null
+          limitless_losses: number | null
+          limitless_share: number | null
+          limitless_ties: number | null
+          limitless_win_pct: number | null
+          limitless_wins: number | null
           name: string
+          name_en: string | null
+          name_ja: string | null
+          name_ja_is_manual: boolean
           sort_order: number
+          source: string
         }
         Insert: {
           admin_bonus_count?: number
@@ -365,8 +378,21 @@ export type Database = {
           id?: string
           is_active?: boolean
           last_used_at?: string | null
+          limitless_count?: number | null
+          limitless_deck_slug?: string | null
+          limitless_icon_urls?: string[] | null
+          limitless_last_synced_at?: string | null
+          limitless_losses?: number | null
+          limitless_share?: number | null
+          limitless_ties?: number | null
+          limitless_win_pct?: number | null
+          limitless_wins?: number | null
           name: string
+          name_en?: string | null
+          name_ja?: string | null
+          name_ja_is_manual?: boolean
           sort_order?: number
+          source?: string
         }
         Update: {
           admin_bonus_count?: number
@@ -377,41 +403,72 @@ export type Database = {
           id?: string
           is_active?: boolean
           last_used_at?: string | null
+          limitless_count?: number | null
+          limitless_deck_slug?: string | null
+          limitless_icon_urls?: string[] | null
+          limitless_last_synced_at?: string | null
+          limitless_losses?: number | null
+          limitless_share?: number | null
+          limitless_ties?: number | null
+          limitless_win_pct?: number | null
+          limitless_wins?: number | null
           name?: string
+          name_en?: string | null
+          name_ja?: string | null
+          name_ja_is_manual?: boolean
           sort_order?: number
+          source?: string
         }
         Relationships: []
       }
       opponent_deck_settings: {
         Row: {
+          classification_method: string
           disable_period_days: number
           format: string
           game_title: string
           id: string
+          limitless_last_sync_message: string | null
+          limitless_last_sync_status: string | null
+          limitless_last_synced_at: string | null
+          major_fixed_count: number
           major_threshold: number
           management_mode: string
+          minor_fixed_count: number
           minor_threshold: number
           updated_at: string
           usage_period_days: number
         }
         Insert: {
+          classification_method?: string
           disable_period_days?: number
           format: string
           game_title?: string
           id?: string
+          limitless_last_sync_message?: string | null
+          limitless_last_sync_status?: string | null
+          limitless_last_synced_at?: string | null
+          major_fixed_count?: number
           major_threshold?: number
           management_mode?: string
+          minor_fixed_count?: number
           minor_threshold?: number
           updated_at?: string
           usage_period_days?: number
         }
         Update: {
+          classification_method?: string
           disable_period_days?: number
           format?: string
           game_title?: string
           id?: string
+          limitless_last_sync_message?: string | null
+          limitless_last_sync_status?: string | null
+          limitless_last_synced_at?: string | null
+          major_fixed_count?: number
           major_threshold?: number
           management_mode?: string
+          minor_fixed_count?: number
           minor_threshold?: number
           updated_at?: string
           usage_period_days?: number
@@ -745,6 +802,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      apply_limitless_snapshot: {
+        Args: {
+          p_format: string
+          p_game_title: string
+          p_rows: Json
+          p_synced_at?: string
+        }
+        Returns: Json
+      }
       auto_add_opponent_deck:
         | {
             Args: { p_deck_name: string; p_format: string }
@@ -833,15 +899,19 @@ export type Database = {
           p_start_date?: string
         }
         Returns: {
+          draws: number
+          first_draws: number
           first_losses: number
           first_total: number
           first_wins: number
           losses: number
           opponent_name: string
+          second_draws: number
           second_losses: number
           second_total: number
           second_wins: number
           total: number
+          unknown_draws: number
           unknown_losses: number
           unknown_total: number
           unknown_wins: number
@@ -857,6 +927,7 @@ export type Database = {
         }
         Returns: {
           deck_name: string
+          draws: number
           losses: number
           total: number
           win_rate: number
@@ -872,15 +943,19 @@ export type Database = {
           p_start_date?: string
         }
         Returns: {
+          draws: number
+          first_draws: number
           first_losses: number
           first_total: number
           first_wins: number
           losses: number
           my_deck_name: string
+          second_draws: number
           second_losses: number
           second_total: number
           second_wins: number
           total: number
+          unknown_draws: number
           unknown_losses: number
           unknown_total: number
           unknown_wins: number
@@ -896,6 +971,7 @@ export type Database = {
         }
         Returns: {
           deck_name: string
+          draws: number
           losses: number
           total: number
           win_rate: number
@@ -910,10 +986,13 @@ export type Database = {
           p_start_date: string
         }
         Returns: {
+          first_draws: number
           first_losses: number
           first_wins: number
+          second_draws: number
           second_losses: number
           second_wins: number
+          unknown_draws: number
           unknown_losses: number
           unknown_wins: number
         }[]
@@ -950,16 +1029,20 @@ export type Database = {
           p_user_id?: string
         }
         Returns: {
+          draws: number
+          first_draws: number
           first_losses: number
           first_total: number
           first_wins: number
           losses: number
           opponent_name: string
+          second_draws: number
           second_losses: number
           second_total: number
           second_wins: number
           total: number
           tuning_name: string
+          unknown_draws: number
           unknown_losses: number
           unknown_total: number
           unknown_wins: number
@@ -985,6 +1068,7 @@ export type Database = {
         Args: { p_team_id: string }
         Returns: {
           discord_username: string
+          draws: number
           losses: number
           total: number
           user_id: string
@@ -1008,6 +1092,7 @@ export type Database = {
         }
         Returns: {
           deck_name: string
+          draws: number
           losses: number
           total: number
           win_rate: number
@@ -1024,15 +1109,19 @@ export type Database = {
           p_user_id?: string
         }
         Returns: {
+          draws: number
+          first_draws: number
           first_losses: number
           first_total: number
           first_wins: number
           losses: number
           my_deck_name: string
+          second_draws: number
           second_losses: number
           second_total: number
           second_wins: number
           total: number
+          unknown_draws: number
           unknown_losses: number
           unknown_total: number
           unknown_wins: number
@@ -1049,6 +1138,7 @@ export type Database = {
         }
         Returns: {
           deck_name: string
+          draws: number
           losses: number
           total: number
           win_rate: number
@@ -1064,10 +1154,13 @@ export type Database = {
           p_user_id?: string
         }
         Returns: {
+          first_draws: number
           first_losses: number
           first_wins: number
+          second_draws: number
           second_losses: number
           second_wins: number
+          unknown_draws: number
           unknown_losses: number
           unknown_wins: number
         }[]
@@ -1092,6 +1185,15 @@ export type Database = {
       is_team_member: {
         Args: { p_team_id: string; p_user_id: string }
         Returns: boolean
+      }
+      mark_limitless_sync_error: {
+        Args: {
+          p_format: string
+          p_game_title: string
+          p_message: string
+          p_status: string
+        }
+        Returns: undefined
       }
       recalculate_opponent_decks:
         | { Args: { p_format: string }; Returns: undefined }
