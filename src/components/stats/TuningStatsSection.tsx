@@ -25,7 +25,7 @@ export function TuningStatsSection({ tuningStats, viewMode, game, opponentDeckNa
       {tuningStats.map((t) => {
         const key = t.tuningName;
         const ratePct = t.winRate === null ? 0 : t.winRate;
-        const color = getWinRateColor(ratePct);
+        const color = getWinRateColor(t.winRate);
         const expanded = expandedTuning === key;
         return (
           <div key={key} style={{ backgroundColor: "#232640", borderRadius: 10 }} className="overflow-hidden">

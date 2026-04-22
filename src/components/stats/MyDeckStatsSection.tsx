@@ -43,7 +43,7 @@ export function MyDeckStatsSection({ stats, startDate, endDate, scope, teamId, m
     <div className="space-y-2">
       {stats.map((deck) => {
         const ratePct = deck.winRate === null ? 0 : deck.winRate;
-        const color = getWinRateColor(ratePct);
+        const color = getWinRateColor(deck.winRate);
         return (
           <div key={deck.deckName} className="relative rounded-lg border border-border bg-card overflow-hidden">
             <div className="absolute left-0 top-0 bottom-0 w-[3px]" style={{ backgroundColor: color }} />
