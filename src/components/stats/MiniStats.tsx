@@ -23,8 +23,7 @@ type Props = {
 };
 
 export function MiniStats({ stats, onEditInterval, game }: Props) {
-  const rate = computeWinRate(stats.wins, stats.losses);
-  const winRatePct = rate === null ? null : Math.round(rate * 100);
+  const winRatePct = computeWinRate(stats.wins, stats.losses);
   const winRateColor = getWinRateColor(winRatePct ?? 0);
 
   return (
