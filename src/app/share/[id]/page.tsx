@@ -48,15 +48,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   let title: string;
   let description: string;
 
+  const dGame = (d.game as string | undefined) ?? gameTitle ?? "dm";
+  const drawSuffix = dGame === "pokepoke" ? `${(d.totalDraws as number) ?? 0}分` : "";
+  const wlText = `${d.totalWins}勝${d.totalLosses}敗${drawSuffix}`;
+  const winRateText = d.winRate === null || d.winRate === undefined ? "--" : d.winRate;
   if (share.share_type === "stats") {
-    title = `勝率 ${d.winRate}% - 戦績サマリー`;
-    description = `${d.totalWins}勝${d.totalLosses}敗 | ${d.period}`;
+    title = `勝率 ${winRateText}% - 戦績サマリー`;
+    description = `${wlText} | ${d.period}`;
   } else if (share.share_type === "deck") {
-    title = `${d.deckName} 勝率 ${d.winRate}%`;
-    description = `${d.totalWins}勝${d.totalLosses}敗 | ${d.period}`;
+    title = `${d.deckName} 勝率 ${winRateText}%`;
+    description = `${wlText} | ${d.period}`;
   } else {
-    title = `vs ${d.deckName} 勝率 ${d.winRate}%`;
-    description = `${d.totalWins}勝${d.totalLosses}敗 | ${d.period}`;
+    title = `vs ${d.deckName} 勝率 ${winRateText}%`;
+    description = `${wlText} | ${d.period}`;
   }
 
   return {

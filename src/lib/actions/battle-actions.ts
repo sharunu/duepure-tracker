@@ -1,11 +1,12 @@
 import { createClient } from "@/lib/supabase/client";
 import { DEFAULT_GAME, type GameSlug } from "@/lib/games";
+import type { BattleResult } from "@/lib/battle/result-format";
 
 export async function recordBattle(formData: {
   myDeckId: string;
   myDeckName: string;
   opponentDeckName: string;
-  result: "win" | "loss";
+  result: BattleResult;
   turnOrder: "first" | "second" | null;
   format: string;
   game?: GameSlug;
@@ -49,7 +50,7 @@ export async function updateBattle(
   id: string,
   fields: {
     opponentDeckName?: string;
-    result?: "win" | "loss";
+    result?: BattleResult;
     turnOrder?: "first" | "second" | null;
     myDeckId?: string;
     myDeckName?: string;
@@ -161,15 +162,19 @@ export async function getMiniStats(format: string, sinceTimestamp?: string, game
   if (!battles || battles.length === 0) return null;
 
   const wins = battles.filter((b) => b.result === "win").length;
+  const losses = battles.filter((b) => b.result === "loss").length;
+  const draws = battles.filter((b) => b.result === "draw").length;
   const total = battles.length;
 
+  // DRAW は連勝カウンタを維持（継続）、LOSS でのみ中断
   let streak = 0;
   for (const b of battles) {
     if (b.result === "win") streak++;
+    else if (b.result === "draw") continue;
     else break;
   }
 
-  return { wins, losses: total - wins, total, streak };
+  return { wins, losses, draws, total, streak };
 }
 
 export async function getAllBattles(format: string, game: GameSlug = DEFAULT_GAME) {

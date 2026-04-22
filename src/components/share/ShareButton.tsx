@@ -8,30 +8,39 @@ import { ShareModal } from "./ShareModal";
 export type StatsShareData = {
   totalWins: number;
   totalLosses: number;
-  winRate: number;
+  totalDraws: number;
+  winRate: number | null;
   firstWins: number;
   firstLosses: number;
+  firstDraws: number;
   secondWins: number;
   secondLosses: number;
+  secondDraws: number;
   unknownWins: number;
   unknownLosses: number;
-  encounterDistribution: { name: string; count: number; percentage: number; winRate: number }[];
+  unknownDraws: number;
+  encounterDistribution: { name: string; count: number; percentage: number; winRate: number | null }[];
   period: string;
   format: string;
+  game: string;
 };
 
 export type DeckShareData = {
   deckName: string;
   totalWins: number;
   totalLosses: number;
-  winRate: number;
+  totalDraws: number;
+  winRate: number | null;
   firstWins: number;
   firstLosses: number;
+  firstDraws: number;
   secondWins: number;
   secondLosses: number;
-  topMatchups: { name: string; wins: number; losses: number; winRate: number }[];
+  secondDraws: number;
+  topMatchups: { name: string; wins: number; losses: number; draws: number; winRate: number | null }[];
   period: string;
   format: string;
+  game: string;
 };
 
 type Props = {

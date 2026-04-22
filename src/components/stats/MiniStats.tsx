@@ -7,31 +7,35 @@ import {
   YAxis,
 } from "recharts";
 import { getWinRateColor } from "@/lib/stats-utils";
+import { formatWLTJa, winRate as computeWinRate } from "@/lib/battle/result-format";
 
 type Props = {
   stats: {
     wins: number;
     losses: number;
+    draws: number;
     total: number;
     streak: number;
     trend?: { index: number; winRate: number }[];
   };
   onEditInterval?: () => void;
+  game: string;
 };
 
-export function MiniStats({ stats, onEditInterval }: Props) {
-  const winRate = stats.total > 0 ? Math.round((stats.wins / stats.total) * 100) : 0;
-  const winRateColor = getWinRateColor(winRate);
+export function MiniStats({ stats, onEditInterval, game }: Props) {
+  const rate = computeWinRate(stats.wins, stats.losses);
+  const winRatePct = rate === null ? null : Math.round(rate * 100);
+  const winRateColor = getWinRateColor(winRatePct ?? 0);
 
   return (
     <div className="rounded-[10px] px-4 py-3" style={{ backgroundColor: "#232640" }}>
       <div className="flex items-center justify-between">
         <div className="flex items-baseline gap-3 flex-wrap">
           <span className="text-[15px] font-bold" style={{ color: winRateColor }}>
-            勝率 {winRate}%
+            勝率 {winRatePct === null ? "--" : winRatePct}%
           </span>
           <span className="text-[13px] text-gray-400">
-            {stats.wins}勝 {stats.losses}敗（{stats.total}戦）
+            {formatWLTJa(stats.wins, stats.losses, stats.draws, game)}（{stats.total}戦）
           </span>
           {stats.streak > 0 && (
             <span className="text-[12px] font-medium" style={{ color: "#50c878" }}>

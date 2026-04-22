@@ -4,10 +4,11 @@ import { useRouter } from "next/navigation";
 import type { DetailedPersonalStats } from "@/lib/actions/stats-actions";
 import { getWinRateColor } from "@/lib/stats-utils";
 import { BattleCountBadge } from "@/components/ui/BattleCountBadge";
+import { formatWLTJa } from "@/lib/battle/result-format";
 
 type MyDeckRow = DetailedPersonalStats["myDeckStats"][number];
 
-export function MyDeckStatsSection({ stats, startDate, endDate, scope, teamId, memberId, memberName, otherDeckNames, premiumFilter, disableLinks }: { stats: MyDeckRow[]; startDate?: string; endDate?: string; scope?: "personal" | "global" | "team"; teamId?: string; memberId?: string | null; memberName?: string | null; otherDeckNames?: string[]; premiumFilter?: boolean; disableLinks?: boolean }) {
+export function MyDeckStatsSection({ stats, startDate, endDate, scope, teamId, memberId, memberName, otherDeckNames, premiumFilter, disableLinks, game }: { stats: MyDeckRow[]; startDate?: string; endDate?: string; scope?: "personal" | "global" | "team"; teamId?: string; memberId?: string | null; memberName?: string | null; otherDeckNames?: string[]; premiumFilter?: boolean; disableLinks?: boolean; game: string }) {
   const router = useRouter();
 
   if (stats.length === 0) {
@@ -41,7 +42,8 @@ export function MyDeckStatsSection({ stats, startDate, endDate, scope, teamId, m
   return (
     <div className="space-y-2">
       {stats.map((deck) => {
-        const color = getWinRateColor(deck.winRate);
+        const ratePct = deck.winRate === null ? 0 : deck.winRate;
+        const color = getWinRateColor(ratePct);
         return (
           <div key={deck.deckName} className="relative rounded-lg border border-border bg-card overflow-hidden">
             <div className="absolute left-0 top-0 bottom-0 w-[3px]" style={{ backgroundColor: color }} />
@@ -57,10 +59,10 @@ export function MyDeckStatsSection({ stats, startDate, endDate, scope, teamId, m
                 <span className="flex items-center gap-2">
                   <span className="flex items-baseline">
                     <span className="text-xs text-muted-foreground" style={{ width: 24, flexShrink: 0 }}>勝率</span>
-                    <span className="text-base font-bold" style={{ color, width: 40, textAlign: "right", flexShrink: 0 }}>{deck.winRate}%</span>
+                    <span className="text-base font-bold" style={{ color, width: 40, textAlign: "right", flexShrink: 0 }}>{deck.winRate === null ? "--" : deck.winRate}%</span>
                   </span>
                   <span className="text-muted-foreground text-xs">
-                    {deck.wins}勝 {deck.losses}敗
+                    {formatWLTJa(deck.wins, deck.losses, deck.draws, game)}
                   </span>
                   {!disableLinks && <span className="text-muted-foreground">›</span>}
                 </span>
@@ -68,7 +70,7 @@ export function MyDeckStatsSection({ stats, startDate, endDate, scope, teamId, m
               <div className="h-1 rounded-full bg-muted/30">
                 <div
                   className="h-1 rounded-full transition-all"
-                  style={{ width: `${deck.winRate}%`, backgroundColor: color }}
+                  style={{ width: `${ratePct}%`, backgroundColor: color }}
                 />
               </div>
             </button>

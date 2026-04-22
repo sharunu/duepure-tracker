@@ -66,9 +66,9 @@ function StatsPageInner() {
   });
 
   // Data states
-  const [personalStats, setPersonalStats] = useState<DetailedPersonalStats>({ myDeckStats: [], opponentDeckStats: [], turnOrder: { firstWins: 0, firstLosses: 0, secondWins: 0, secondLosses: 0, unknownWins: 0, unknownLosses: 0 } });
-  const [globalStats, setGlobalStats] = useState<DetailedPersonalStats>({ myDeckStats: [], opponentDeckStats: [], turnOrder: { firstWins: 0, firstLosses: 0, secondWins: 0, secondLosses: 0, unknownWins: 0, unknownLosses: 0 } });
-  const [teamStats, setTeamStats] = useState<DetailedPersonalStats>({ myDeckStats: [], opponentDeckStats: [], turnOrder: { firstWins: 0, firstLosses: 0, secondWins: 0, secondLosses: 0, unknownWins: 0, unknownLosses: 0 } });
+  const [personalStats, setPersonalStats] = useState<DetailedPersonalStats>({ myDeckStats: [], opponentDeckStats: [], turnOrder: { firstWins: 0, firstLosses: 0, firstDraws: 0, secondWins: 0, secondLosses: 0, secondDraws: 0, unknownWins: 0, unknownLosses: 0, unknownDraws: 0 } });
+  const [globalStats, setGlobalStats] = useState<DetailedPersonalStats>({ myDeckStats: [], opponentDeckStats: [], turnOrder: { firstWins: 0, firstLosses: 0, firstDraws: 0, secondWins: 0, secondLosses: 0, secondDraws: 0, unknownWins: 0, unknownLosses: 0, unknownDraws: 0 } });
+  const [teamStats, setTeamStats] = useState<DetailedPersonalStats>({ myDeckStats: [], opponentDeckStats: [], turnOrder: { firstWins: 0, firstLosses: 0, firstDraws: 0, secondWins: 0, secondLosses: 0, secondDraws: 0, unknownWins: 0, unknownLosses: 0, unknownDraws: 0 } });
   const [trendData, setTrendData] = useState<TrendRow[]>([]);
   const [deckCategories, setDeckCategories] = useState<{ major: string[]; minor: string[]; other: string[] }>({ major: [], minor: [], other: [] });
   const [opponentDeckNameMap, setOpponentDeckNameMap] = useState<OpponentDeckNameMap>({});
@@ -257,13 +257,14 @@ function StatsPageInner() {
       const stats = scope === "personal" ? personalStats : scope === "global" ? globalStats : teamStats;
       const totalWins = stats.myDeckStats.reduce((sum, d) => sum + d.wins, 0);
       const totalLosses = stats.myDeckStats.reduce((sum, d) => sum + d.losses, 0);
-      const totalBattles = totalWins + totalLosses;
-      const overallWinRate = totalBattles > 0 ? Math.round((totalWins / totalBattles) * 100) : 0;
+      const totalDraws = stats.myDeckStats.reduce((sum, d) => sum + d.draws, 0);
+      const totalBattles = totalWins + totalLosses + totalDraws;
+      const overallWinRate = (totalWins + totalLosses) > 0 ? Math.round((totalWins / (totalWins + totalLosses)) * 100) : null;
 
       // Aggregate opponent deck stats: major/minor individual, other -> "その他"
-      const aggregatedDonut: { name: string; total: number; winRate: number }[] = [];
-      const otherBreakdown: { name: string; total: number; winRate: number }[] = [];
-      let otherWins = 0, otherLosses = 0, otherTotal = 0;
+      const aggregatedDonut: { name: string; total: number; winRate: number | null }[] = [];
+      const otherBreakdown: { name: string; total: number; winRate: number | null }[] = [];
+      let otherWins = 0, otherLosses = 0, otherDraws = 0, otherTotal = 0;
       for (const o of stats.opponentDeckStats) {
         const cat = categoryMap.get(o.deckName) ?? "other";
         if (cat === "major" || cat === "minor") {
@@ -271,19 +272,21 @@ function StatsPageInner() {
         } else {
           otherWins += o.wins;
           otherLosses += o.losses;
+          otherDraws += o.draws;
           otherTotal += o.total;
           otherBreakdown.push({ name: o.deckName, total: o.total, winRate: o.winRate });
         }
       }
       if (otherTotal > 0) {
-        aggregatedDonut.push({ name: "その他", total: otherTotal, winRate: Math.round((otherWins / otherTotal) * 100) });
+        const otherWinRate = (otherWins + otherLosses) > 0 ? Math.round((otherWins / (otherWins + otherLosses)) * 100) : null;
+        aggregatedDonut.push({ name: "その他", total: otherTotal, winRate: otherWinRate });
       }
 
       // Aggregate myDeckStats for global scope
       const otherMyDeckNames: string[] = [];
       const myDeckData = scope === "global" && categoryMap.size > 0 ? (() => {
         const kept: typeof stats.myDeckStats = [];
-        let mOtherWins = 0, mOtherLosses = 0, mOtherTotal = 0;
+        let mOtherWins = 0, mOtherLosses = 0, mOtherDraws = 0, mOtherTotal = 0;
         for (const d of stats.myDeckStats) {
           const cat = categoryMap.get(d.deckName) ?? "other";
           if (cat === "major" || cat === "minor") {
@@ -291,12 +294,14 @@ function StatsPageInner() {
           } else {
             mOtherWins += d.wins;
             mOtherLosses += d.losses;
+            mOtherDraws += d.draws;
             mOtherTotal += d.total;
             otherMyDeckNames.push(d.deckName);
           }
         }
         if (mOtherTotal > 0) {
-          kept.push({ deckName: "その他", wins: mOtherWins, losses: mOtherLosses, total: mOtherTotal, winRate: Math.round((mOtherWins / mOtherTotal) * 100), opponents: [] });
+          const mOtherWinRate = (mOtherWins + mOtherLosses) > 0 ? Math.round((mOtherWins / (mOtherWins + mOtherLosses)) * 100) : null;
+          kept.push({ deckName: "その他", wins: mOtherWins, losses: mOtherLosses, draws: mOtherDraws, total: mOtherTotal, winRate: mOtherWinRate, opponents: [] });
         }
         return kept;
       })() : stats.myDeckStats;
@@ -312,8 +317,10 @@ function StatsPageInner() {
                 overallWinRate={overallWinRate}
                 overallWins={totalWins}
                 overallLosses={totalLosses}
+                overallDraws={totalDraws}
                 overallTotal={totalBattles}
                 opponentDeckNameMap={opponentDeckNameMap}
+                game="pokepoke"
               />
             ) : (
               <p className="text-center text-muted-foreground py-4 text-sm">データがありません</p>
@@ -322,9 +329,10 @@ function StatsPageInner() {
           <div>
             <h2 className="text-base font-bold mb-2">先攻/後攻別</h2>
             <TurnOrderCards
-              firstWins={stats.turnOrder.firstWins} firstLosses={stats.turnOrder.firstLosses} firstTotal={stats.turnOrder.firstWins + stats.turnOrder.firstLosses}
-              secondWins={stats.turnOrder.secondWins} secondLosses={stats.turnOrder.secondLosses} secondTotal={stats.turnOrder.secondWins + stats.turnOrder.secondLosses}
-              unknownWins={stats.turnOrder.unknownWins} unknownLosses={stats.turnOrder.unknownLosses} unknownTotal={stats.turnOrder.unknownWins + stats.turnOrder.unknownLosses}
+              firstWins={stats.turnOrder.firstWins} firstLosses={stats.turnOrder.firstLosses} firstDraws={stats.turnOrder.firstDraws} firstTotal={stats.turnOrder.firstWins + stats.turnOrder.firstLosses + stats.turnOrder.firstDraws}
+              secondWins={stats.turnOrder.secondWins} secondLosses={stats.turnOrder.secondLosses} secondDraws={stats.turnOrder.secondDraws} secondTotal={stats.turnOrder.secondWins + stats.turnOrder.secondLosses + stats.turnOrder.secondDraws}
+              unknownWins={stats.turnOrder.unknownWins} unknownLosses={stats.turnOrder.unknownLosses} unknownDraws={stats.turnOrder.unknownDraws} unknownTotal={stats.turnOrder.unknownWins + stats.turnOrder.unknownLosses + stats.turnOrder.unknownDraws}
+              game="pokepoke"
             />
           </div>
           <div>
@@ -332,11 +340,11 @@ function StatsPageInner() {
             {scope === "global" && categoryMap.size > 0 && (
               <p className="text-xs text-muted-foreground">※ 使用率の低いデッキは「その他」に集約されています</p>
             )}
-            <MyDeckStatsSection stats={myDeckData} startDate={startDate} endDate={endDate} scope={scope} teamId={activeTeamId ?? undefined} memberId={selectedMemberId} memberName={selectedMemberId ? (teamMembers.find(m => m.user_id === selectedMemberId)?.discord_username ?? null) : null} otherDeckNames={otherMyDeckNames} premiumFilter={premiumFilter} />
+            <MyDeckStatsSection stats={myDeckData} startDate={startDate} endDate={endDate} scope={scope} teamId={activeTeamId ?? undefined} memberId={selectedMemberId} memberName={selectedMemberId ? (teamMembers.find(m => m.user_id === selectedMemberId)?.discord_username ?? null) : null} otherDeckNames={otherMyDeckNames} premiumFilter={premiumFilter} game="pokepoke" />
           </div>
           <div>
             <h2 className="text-base font-bold mb-2">対面デッキ別</h2>
-            <OpponentDeckStatsSection stats={stats.opponentDeckStats} startDate={startDate} endDate={endDate} scope={scope} teamId={activeTeamId ?? undefined} memberId={selectedMemberId} memberName={selectedMemberId ? (teamMembers.find(m => m.user_id === selectedMemberId)?.discord_username ?? null) : null} premiumFilter={premiumFilter} opponentDeckNameMap={opponentDeckNameMap} />
+            <OpponentDeckStatsSection stats={stats.opponentDeckStats} startDate={startDate} endDate={endDate} scope={scope} teamId={activeTeamId ?? undefined} memberId={selectedMemberId} memberName={selectedMemberId ? (teamMembers.find(m => m.user_id === selectedMemberId)?.discord_username ?? null) : null} premiumFilter={premiumFilter} opponentDeckNameMap={opponentDeckNameMap} game="pokepoke" />
           </div>
         </>
       );
@@ -391,32 +399,41 @@ function StatsPageInner() {
               const stats = personalStats;
               const totalWins = stats.myDeckStats.reduce((sum, d) => sum + d.wins, 0);
               const totalLosses = stats.myDeckStats.reduce((sum, d) => sum + d.losses, 0);
-              const totalBattles = totalWins + totalLosses;
+              const totalDraws = stats.myDeckStats.reduce((sum, d) => sum + d.draws, 0);
+              const totalBattles = totalWins + totalLosses + totalDraws;
               if (totalBattles === 0) return null;
+              const winRateVal = (totalWins + totalLosses) > 0 ? Math.round((totalWins / (totalWins + totalLosses)) * 100) : null;
               const shareData: StatsShareData = {
                 totalWins,
                 totalLosses,
-                winRate: Math.round((totalWins / totalBattles) * 100),
+                totalDraws,
+                winRate: winRateVal,
                 firstWins: stats.turnOrder.firstWins,
                 firstLosses: stats.turnOrder.firstLosses,
+                firstDraws: stats.turnOrder.firstDraws,
                 secondWins: stats.turnOrder.secondWins,
                 secondLosses: stats.turnOrder.secondLosses,
+                secondDraws: stats.turnOrder.secondDraws,
                 unknownWins: stats.turnOrder.unknownWins,
                 unknownLosses: stats.turnOrder.unknownLosses,
+                unknownDraws: stats.turnOrder.unknownDraws,
                 encounterDistribution: (() => {
-                  const allOpponents = stats.opponentDeckStats.map(d => ({ name: d.deckName, count: d.wins + d.losses, winRate: d.winRate }));
+                  const allOpponents = stats.opponentDeckStats.map(d => ({ name: d.deckName, count: d.wins + d.losses + d.draws, winRate: d.winRate }));
                   const topN = allOpponents.slice(0, 5);
                   const otherWins = stats.opponentDeckStats.slice(5).reduce((s, d) => s + d.wins, 0);
                   const otherLosses = stats.opponentDeckStats.slice(5).reduce((s, d) => s + d.losses, 0);
-                  const otherCount = otherWins + otherLosses;
+                  const otherDraws = stats.opponentDeckStats.slice(5).reduce((s, d) => s + d.draws, 0);
+                  const otherCount = otherWins + otherLosses + otherDraws;
                   if (otherCount > 0) {
-                    topN.push({ name: "その他", count: otherCount, winRate: otherCount > 0 ? Math.round((otherWins / otherCount) * 100) : 0 });
+                    const otherRate = (otherWins + otherLosses) > 0 ? Math.round((otherWins / (otherWins + otherLosses)) * 100) : null;
+                    topN.push({ name: "その他", count: otherCount, winRate: otherRate });
                   }
                   const total = topN.reduce((s, d) => s + d.count, 0);
                   return topN.map(d => ({ name: d.name, count: d.count, percentage: total > 0 ? Math.round((d.count / total) * 100) : 0, winRate: d.winRate }));
                 })(),
                 period: `${startDate} ~ ${endDate}`,
                 format,
+                game: "pokepoke",
               };
               return <ShareButton type="stats" data={shareData} xConnected={xConnected} />;
             })()}

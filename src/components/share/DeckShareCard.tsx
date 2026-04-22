@@ -3,6 +3,7 @@ import { useGame } from "@/lib/games/context";
 
 import { forwardRef } from "react";
 import type { DeckShareData } from "./ShareButton";
+import { formatWLTJa } from "@/lib/battle/result-format";
 
 type Props = {
   data: DeckShareData;
@@ -95,7 +96,7 @@ function StatColumn({
 export const DeckShareCard = forwardRef<HTMLDivElement, Props>(
   function DeckShareCard({ data, type }, ref) {
     const { trackerName } = useGame();
-    const totalBattles = data.totalWins + data.totalLosses;
+    const totalBattles = data.totalWins + data.totalLosses + data.totalDraws;
     const firstTotal = data.firstWins + data.firstLosses;
     const secondTotal = data.secondWins + data.secondLosses;
     const firstRate = firstTotal > 0 ? Math.round((data.firstWins / firstTotal) * 100) : -1;
@@ -228,7 +229,7 @@ export const DeckShareCard = forwardRef<HTMLDivElement, Props>(
           >
             <defs>
               <linearGradient id="deckHeroGrad" x1="0" y1="0" x2="1" y2="1">
-                {data.winRate >= 50 ? (
+                {(data.winRate ?? 0) >= 50 ? (
                   <>
                     <stop offset="0%" stopColor="#c7d2fe" />
                     <stop offset="50%" stopColor="#818cf8" />
@@ -253,12 +254,12 @@ export const DeckShareCard = forwardRef<HTMLDivElement, Props>(
               letterSpacing={-6}
               style={{
                 filter:
-                  data.winRate >= 50
+                  (data.winRate ?? 0) >= 50
                     ? "drop-shadow(0 8px 40px rgba(99,102,241,0.5))"
                     : "drop-shadow(0 8px 32px rgba(239,68,68,0.4))",
               }}
             >
-              {data.winRate}%
+              {data.winRate === null ? "--" : data.winRate}%
             </text>
           </svg>
           <div
@@ -278,7 +279,7 @@ export const DeckShareCard = forwardRef<HTMLDivElement, Props>(
                 letterSpacing: 1,
               }}
             >
-              {data.totalWins}勝 {data.totalLosses}敗
+              {formatWLTJa(data.totalWins, data.totalLosses, data.totalDraws, data.game)}
             </div>
             <div
               style={{

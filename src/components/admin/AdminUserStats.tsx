@@ -34,7 +34,11 @@ export function AdminUserStats({ userId, format, game = DEFAULT_GAME }: Props) {
   const [battleCounts, setBattleCounts] = useState<Record<string, number>>({});
   const [stats, setStats] = useState<DetailedPersonalStats>({
     myDeckStats: [], opponentDeckStats: [],
-    turnOrder: { firstWins: 0, firstLosses: 0, secondWins: 0, secondLosses: 0, unknownWins: 0, unknownLosses: 0 },
+    turnOrder: {
+      firstWins: 0, firstLosses: 0, firstDraws: 0,
+      secondWins: 0, secondLosses: 0, secondDraws: 0,
+      unknownWins: 0, unknownLosses: 0, unknownDraws: 0,
+    },
   });
   const [trendData, setTrendData] = useState<TrendRow[]>([]);
   const [trendMode, setTrendMode] = useState<"line" | "heatmap">("line");
@@ -128,12 +132,13 @@ export function AdminUserStats({ userId, format, game = DEFAULT_GAME }: Props) {
   const renderStats = () => {
     const totalWins = stats.myDeckStats.reduce((sum, d) => sum + d.wins, 0);
     const totalLosses = stats.myDeckStats.reduce((sum, d) => sum + d.losses, 0);
-    const totalBattles = totalWins + totalLosses;
-    const overallWinRate = totalBattles > 0 ? Math.round((totalWins / totalBattles) * 100) : 0;
+    const totalDraws = stats.myDeckStats.reduce((sum, d) => sum + d.draws, 0);
+    const totalBattles = totalWins + totalLosses + totalDraws;
+    const overallWinRate = (totalWins + totalLosses) > 0 ? Math.round((totalWins / (totalWins + totalLosses)) * 100) : null;
 
-    const aggregatedDonut: { name: string; total: number; winRate: number }[] = [];
-    const otherBreakdown: { name: string; total: number; winRate: number }[] = [];
-    let otherWins = 0, otherLosses = 0, otherTotal = 0;
+    const aggregatedDonut: { name: string; total: number; winRate: number | null }[] = [];
+    const otherBreakdown: { name: string; total: number; winRate: number | null }[] = [];
+    let otherWins = 0, otherLosses = 0, otherDraws = 0, otherTotal = 0;
     for (const o of stats.opponentDeckStats) {
       const cat = categoryMap.get(o.deckName) ?? "other";
       if (cat === "major" || cat === "minor") {
@@ -141,12 +146,14 @@ export function AdminUserStats({ userId, format, game = DEFAULT_GAME }: Props) {
       } else {
         otherWins += o.wins;
         otherLosses += o.losses;
+        otherDraws += o.draws;
         otherTotal += o.total;
         otherBreakdown.push({ name: o.deckName, total: o.total, winRate: o.winRate });
       }
     }
     if (otherTotal > 0) {
-      aggregatedDonut.push({ name: "その他", total: otherTotal, winRate: Math.round((otherWins / otherTotal) * 100) });
+      const otherWinRate = (otherWins + otherLosses) > 0 ? Math.round((otherWins / (otherWins + otherLosses)) * 100) : null;
+      aggregatedDonut.push({ name: "その他", total: otherTotal, winRate: otherWinRate });
     }
 
     return (
@@ -160,7 +167,9 @@ export function AdminUserStats({ userId, format, game = DEFAULT_GAME }: Props) {
               overallWinRate={overallWinRate}
               overallWins={totalWins}
               overallLosses={totalLosses}
+              overallDraws={totalDraws}
               overallTotal={totalBattles}
+              game={game}
             />
           ) : (
             <p className="text-center text-muted-foreground py-4 text-sm">データがありません</p>
@@ -169,18 +178,19 @@ export function AdminUserStats({ userId, format, game = DEFAULT_GAME }: Props) {
         <div>
           <h2 className="text-base font-bold mb-2">先攻/後攻別</h2>
           <TurnOrderCards
-            firstWins={stats.turnOrder.firstWins} firstLosses={stats.turnOrder.firstLosses} firstTotal={stats.turnOrder.firstWins + stats.turnOrder.firstLosses}
-            secondWins={stats.turnOrder.secondWins} secondLosses={stats.turnOrder.secondLosses} secondTotal={stats.turnOrder.secondWins + stats.turnOrder.secondLosses}
-            unknownWins={stats.turnOrder.unknownWins} unknownLosses={stats.turnOrder.unknownLosses} unknownTotal={stats.turnOrder.unknownWins + stats.turnOrder.unknownLosses}
+            firstWins={stats.turnOrder.firstWins} firstLosses={stats.turnOrder.firstLosses} firstDraws={stats.turnOrder.firstDraws} firstTotal={stats.turnOrder.firstWins + stats.turnOrder.firstLosses + stats.turnOrder.firstDraws}
+            secondWins={stats.turnOrder.secondWins} secondLosses={stats.turnOrder.secondLosses} secondDraws={stats.turnOrder.secondDraws} secondTotal={stats.turnOrder.secondWins + stats.turnOrder.secondLosses + stats.turnOrder.secondDraws}
+            unknownWins={stats.turnOrder.unknownWins} unknownLosses={stats.turnOrder.unknownLosses} unknownDraws={stats.turnOrder.unknownDraws} unknownTotal={stats.turnOrder.unknownWins + stats.turnOrder.unknownLosses + stats.turnOrder.unknownDraws}
+            game={game}
           />
         </div>
         <div>
           <h2 className="text-base font-bold mb-2">使用デッキ別</h2>
-          <MyDeckStatsSection stats={stats.myDeckStats} disableLinks />
+          <MyDeckStatsSection stats={stats.myDeckStats} disableLinks game={game} />
         </div>
         <div>
           <h2 className="text-base font-bold mb-2">対面デッキ別</h2>
-          <OpponentDeckStatsSection stats={stats.opponentDeckStats} disableLinks />
+          <OpponentDeckStatsSection stats={stats.opponentDeckStats} disableLinks game={game} />
         </div>
       </>
     );
