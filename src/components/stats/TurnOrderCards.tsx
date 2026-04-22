@@ -20,8 +20,7 @@ export function TurnOrderCards(props: TurnOrderCardsProps) {
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
       {cards.map((c) => {
-        const r = computeWinRate(c.wins, c.losses);
-        const rate = r === null ? null : Math.round(r * 100);
+        const rate = computeWinRate(c.wins, c.losses);
         return (
           <div
             key={c.label}

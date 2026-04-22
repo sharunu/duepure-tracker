@@ -50,11 +50,10 @@ function calcOverall(rows: MatchupTableRow[]): OpponentDetail {
     o.secondWins += r.secondWins; o.secondLosses += r.secondLosses; o.secondDraws += r.secondDraws; o.secondTotal += r.secondTotal;
     o.unknownWins += r.unknownWins; o.unknownLosses += r.unknownLosses; o.unknownDraws += r.unknownDraws; o.unknownTotal += r.unknownTotal;
   }
-  const pct = (rate: number | null) => rate === null ? null : Math.round(rate * 100);
-  o.winRate = pct(computeWinRate(o.wins, o.losses));
-  o.firstWinRate = pct(computeWinRate(o.firstWins, o.firstLosses));
-  o.secondWinRate = pct(computeWinRate(o.secondWins, o.secondLosses));
-  o.unknownWinRate = pct(computeWinRate(o.unknownWins, o.unknownLosses));
+  o.winRate = computeWinRate(o.wins, o.losses);
+  o.firstWinRate = computeWinRate(o.firstWins, o.firstLosses);
+  o.secondWinRate = computeWinRate(o.secondWins, o.secondLosses);
+  o.unknownWinRate = computeWinRate(o.unknownWins, o.unknownLosses);
   return o;
 }
 
