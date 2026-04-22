@@ -164,8 +164,9 @@ export type TeamMemberSummary = {
   discord_username: string;
   wins: number;
   losses: number;
+  draws: number;
   total: number;
-  winRate: number;
+  winRate: number | null;
 };
 
 export async function getTeamMemberSummaries(teamId: string): Promise<TeamMemberSummary[]> {
@@ -175,8 +176,17 @@ export async function getTeamMemberSummaries(teamId: string): Promise<TeamMember
   });
 
   if (error || !data) return [];
-  return (data as { user_id: string; discord_username: string; wins: number; losses: number; total: number }[]).map((d) => ({
-    ...d,
-    winRate: d.total > 0 ? Math.round((d.wins / d.total) * 100) : 0,
-  }));
+  return (data as { user_id: string; discord_username: string; wins: number; losses: number; draws: number | null; total: number }[]).map((d) => {
+    const draws = Number(d.draws ?? 0);
+    const wl = d.wins + d.losses;
+    return {
+      user_id: d.user_id,
+      discord_username: d.discord_username,
+      wins: d.wins,
+      losses: d.losses,
+      draws,
+      total: d.total,
+      winRate: wl > 0 ? Math.round((d.wins / wl) * 100) : null,
+    };
+  });
 }

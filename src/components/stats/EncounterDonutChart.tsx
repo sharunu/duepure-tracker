@@ -7,21 +7,24 @@ import {
   displayDeckName,
   type OpponentDeckNameMap,
 } from "@/lib/actions/opponent-deck-display";
+import { formatWLTJa } from "@/lib/battle/result-format";
 
 interface DonutItem {
   name: string;
   total: number;
-  winRate: number;
+  winRate: number | null;
 }
 
 interface Props {
   items: DonutItem[];
   otherBreakdown?: DonutItem[];
-  overallWinRate: number;
+  overallWinRate: number | null;
   overallWins: number;
   overallLosses: number;
+  overallDraws: number;
   overallTotal: number;
   opponentDeckNameMap?: OpponentDeckNameMap;
+  game: string;
 }
 
 const OTHER_COLOR = "#64748b";
@@ -48,7 +51,7 @@ const renderLabel = (props: any) => {
   );
 };
 
-export function EncounterDonutChart({ items, otherBreakdown, overallWinRate, overallWins, overallLosses, overallTotal, opponentDeckNameMap }: Props) {
+export function EncounterDonutChart({ items, otherBreakdown, overallWinRate, overallWins, overallLosses, overallDraws, overallTotal, opponentDeckNameMap, game }: Props) {
   const display = (name: string) =>
     name === "\u305D\u306E\u4ED6" ? name : displayDeckName(name, opponentDeckNameMap);
   const [activeIndex, setActiveIndex] = useState<number>(-1);
@@ -95,7 +98,7 @@ export function EncounterDonutChart({ items, otherBreakdown, overallWinRate, ove
       }));
   }, [otherBreakdown, overallTotal]);
 
-  const winRateColor = getWinRateColor(overallWinRate);
+  const winRateColor = getWinRateColor(overallWinRate ?? 0);
 
   // Calculate chart center on mount/resize
   useEffect(() => {
@@ -249,9 +252,9 @@ export function EncounterDonutChart({ items, otherBreakdown, overallWinRate, ove
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
           <div className="flex items-baseline gap-1">
             <span className="text-sm text-muted-foreground">勝率</span>
-            <span className="text-2xl font-bold" style={{ color: winRateColor }}>{overallWinRate}%</span>
+            <span className="text-2xl font-bold" style={{ color: winRateColor }}>{overallWinRate === null ? "--" : overallWinRate}%</span>
           </div>
-          <span className="text-xs text-muted-foreground">{overallWins}勝{overallLosses}敗 / {overallTotal}件</span>
+          <span className="text-xs text-muted-foreground">{formatWLTJa(overallWins, overallLosses, overallDraws, game)} / {overallTotal}件</span>
         </div>
 
         {/* Deck name overlay */}

@@ -7,24 +7,50 @@ import {
   displayDeckName,
   type OpponentDeckNameMap,
 } from "@/lib/actions/opponent-deck-display";
+import { formatWLT, formatWLTJa } from "@/lib/battle/result-format";
 
-function TurnOrderBar({ label, wins, losses, total, winRate }: { label: string; wins: number; losses: number; total: number; winRate: number }) {
+function TurnOrderBar({
+  label, wins, losses, draws, total, winRate, game,
+}: {
+  label: string;
+  wins: number;
+  losses: number;
+  draws: number;
+  total: number;
+  winRate: number | null;
+  game: string;
+}) {
   if (total === 0) return null;
-  const color = getWinRateColor(winRate);
+  const pct = winRate === null ? 0 : winRate;
+  const color = getWinRateColor(pct);
   return (
     <div className="flex items-center gap-2 text-xs py-0.5">
       <span className="text-muted-foreground w-8 shrink-0">{label}</span>
       <div className="flex-1 bg-muted rounded h-1.5 overflow-hidden">
-        <div className="h-full rounded" style={{ width: `${winRate}%`, backgroundColor: color }} />
+        <div className="h-full rounded" style={{ width: `${pct}%`, backgroundColor: color }} />
       </div>
-      <span className="shrink-0 font-medium" style={{ color, width: 36, textAlign: "right" }}>{winRate}%</span>
-      <span className="text-muted-foreground shrink-0" style={{ width: 80, textAlign: "right" }}>{wins}-{losses} ({total})</span>
+      <span className="shrink-0 font-medium" style={{ color, width: 36, textAlign: "right" }}>{winRate === null ? "--" : winRate}%</span>
+      <span className="text-muted-foreground shrink-0" style={{ width: 100, textAlign: "right" }}>{formatWLT(wins, losses, draws, game)} ({total})</span>
     </div>
   );
 }
 
-export function MatchupCard({ name, namePrefix, detail, opponentDeckNameMap }: { name: string; namePrefix?: string; detail: OpponentDetail; opponentDeckNameMap?: OpponentDeckNameMap }) {
-  const color = getWinRateColor(detail.winRate);
+export function MatchupCard({
+  name,
+  namePrefix,
+  detail,
+  opponentDeckNameMap,
+  game,
+}: {
+  name: string;
+  namePrefix?: string;
+  detail: OpponentDetail;
+  opponentDeckNameMap?: OpponentDeckNameMap;
+  game: string;
+}) {
+  const rate = detail.winRate;
+  const ratePct = rate === null ? 0 : rate;
+  const color = getWinRateColor(ratePct);
   return (
     <div className="flex rounded-lg border border-border bg-card overflow-hidden">
       <div className="w-[3px] shrink-0" style={{ backgroundColor: color }} />
@@ -37,15 +63,15 @@ export function MatchupCard({ name, namePrefix, detail, opponentDeckNameMap }: {
           <div className="flex items-center gap-2">
             <span className="flex items-baseline">
               <span className="text-xs text-muted-foreground" style={{ width: 24, flexShrink: 0 }}>勝率</span>
-              <span className="text-lg font-bold" style={{ color, width: 46, textAlign: "right", flexShrink: 0 }}>{detail.winRate}%</span>
+              <span className="text-lg font-bold" style={{ color, width: 46, textAlign: "right", flexShrink: 0 }}>{rate === null ? "--" : rate}%</span>
             </span>
-            <span className="text-muted-foreground text-xs">{detail.wins}勝{detail.losses}敗</span>
+            <span className="text-muted-foreground text-xs">{formatWLTJa(detail.wins, detail.losses, detail.draws, game)}</span>
           </div>
         </div>
         <div>
-          <TurnOrderBar label="先攻" wins={detail.firstWins} losses={detail.firstLosses} total={detail.firstTotal} winRate={detail.firstWinRate} />
-          <TurnOrderBar label="後攻" wins={detail.secondWins} losses={detail.secondLosses} total={detail.secondTotal} winRate={detail.secondWinRate} />
-          <TurnOrderBar label="不明" wins={detail.unknownWins} losses={detail.unknownLosses} total={detail.unknownTotal} winRate={detail.unknownWinRate} />
+          <TurnOrderBar label="先攻" wins={detail.firstWins} losses={detail.firstLosses} draws={detail.firstDraws} total={detail.firstTotal} winRate={detail.firstWinRate} game={game} />
+          <TurnOrderBar label="後攻" wins={detail.secondWins} losses={detail.secondLosses} draws={detail.secondDraws} total={detail.secondTotal} winRate={detail.secondWinRate} game={game} />
+          <TurnOrderBar label="不明" wins={detail.unknownWins} losses={detail.unknownLosses} draws={detail.unknownDraws} total={detail.unknownTotal} winRate={detail.unknownWinRate} game={game} />
         </div>
       </div>
     </div>

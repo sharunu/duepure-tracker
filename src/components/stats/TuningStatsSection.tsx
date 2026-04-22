@@ -6,8 +6,10 @@ import { getWinRateColor } from "@/lib/stats-utils";
 import { MatchupCard } from "@/components/stats/MatchupCard";
 import { MatchupTable } from "@/components/stats/MatchupTable";
 import { BattleCountBadge } from "@/components/ui/BattleCountBadge";
+import { formatWLTJa } from "@/lib/battle/result-format";
+import type { OpponentDeckNameMap } from "@/lib/actions/opponent-deck-display";
 
-export function TuningStatsSection({ tuningStats, viewMode }: { tuningStats: TuningStats[]; viewMode?: "visual" | "table" }) {
+export function TuningStatsSection({ tuningStats, viewMode, game, opponentDeckNameMap }: { tuningStats: TuningStats[]; viewMode?: "visual" | "table"; game: string; opponentDeckNameMap?: OpponentDeckNameMap }) {
   const [expandedTuning, setExpandedTuning] = useState<string | null>(null);
 
   if (tuningStats.length === 0) {
@@ -22,7 +24,8 @@ export function TuningStatsSection({ tuningStats, viewMode }: { tuningStats: Tun
     <div className="space-y-2">
       {tuningStats.map((t) => {
         const key = t.tuningName;
-        const color = getWinRateColor(t.winRate);
+        const ratePct = t.winRate === null ? 0 : t.winRate;
+        const color = getWinRateColor(ratePct);
         const expanded = expandedTuning === key;
         return (
           <div key={key} style={{ backgroundColor: "#232640", borderRadius: 10 }} className="overflow-hidden">
@@ -38,10 +41,10 @@ export function TuningStatsSection({ tuningStats, viewMode }: { tuningStats: Tun
               {/* 2行目 */}
               <div className="flex items-center gap-2 mt-1.5">
                 <div className="h-1 rounded-sm overflow-hidden" style={{ maxWidth: 120, flex: 1, backgroundColor: "rgba(255,255,255,0.1)" }}>
-                  <div className="h-full rounded-sm" style={{ width: `${t.winRate}%`, backgroundColor: color }} />
+                  <div className="h-full rounded-sm" style={{ width: `${ratePct}%`, backgroundColor: color }} />
                 </div>
-                <span style={{ fontSize: 14, fontWeight: 500, color }}>{t.winRate}%</span>
-                <span style={{ fontSize: 10, color: "#8888aa" }}>{t.wins}勝{t.losses}敗</span>
+                <span style={{ fontSize: 14, fontWeight: 500, color }}>{t.winRate === null ? "--" : t.winRate}%</span>
+                <span style={{ fontSize: 10, color: "#8888aa" }}>{formatWLTJa(t.wins, t.losses, t.draws, game)}</span>
                 <span className="ml-auto">{expanded ? "▴" : "▾"}</span>
               </div>
             </button>
@@ -52,10 +55,19 @@ export function TuningStatsSection({ tuningStats, viewMode }: { tuningStats: Tun
                   <MatchupTable
                     rows={t.opponents.map((opp) => ({ ...opp, name: opp.opponentName, namePrefix: "vs " }))}
                     showTotal
+                    game={game}
+                    opponentDeckNameMap={opponentDeckNameMap}
                   />
                 ) : (
                   t.opponents.map((opp) => (
-                    <MatchupCard key={opp.opponentName} name={opp.opponentName} namePrefix="vs " detail={opp} />
+                    <MatchupCard
+                      key={opp.opponentName}
+                      name={opp.opponentName}
+                      namePrefix="vs "
+                      detail={opp}
+                      game={game}
+                      opponentDeckNameMap={opponentDeckNameMap}
+                    />
                   ))
                 )}
               </div>

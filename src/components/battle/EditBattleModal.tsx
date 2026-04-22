@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { OpponentDeckSelector } from "./OpponentDeckSelector";
 import { getOpponentMemoSuggestions, deleteOpponentMemoSuggestion } from "@/lib/actions/battle-actions";
 import { MemoSuggestionButton } from "./MemoSuggestionButton";
+import { useGame } from "@/lib/games/context";
+import { supportsDraw, type BattleResult } from "@/lib/battle/result-format";
 import type { OpponentDeckNameMap } from "@/lib/actions/opponent-deck-display";
 
 type Tuning = { id: string; name: string; sort_order: number };
@@ -15,7 +17,7 @@ type Battle = {
   my_deck_name: string;
   opponent_deck_name: string;
   opponent_memo?: string | null;
-  result: "win" | "loss";
+  result: BattleResult;
   turn_order: "first" | "second" | null;
   tuning_id?: string | null;
   tuning_name?: string | null;
@@ -27,7 +29,7 @@ type Props = {
   suggestions: { major: string[]; minor: string[]; other: string[] };
   onSave: (fields: {
     opponentDeckName: string;
-    result: "win" | "loss";
+    result: BattleResult;
     turnOrder: "first" | "second" | null;
     myDeckId: string;
     myDeckName: string;
@@ -58,6 +60,7 @@ const MemoIcon = ({ active, hasMemo }: { active: boolean; hasMemo: boolean }) =>
 );
 
 export function EditBattleModal({ battle, decks, suggestions, onSave, onClose, opponentDeckNameMap }: Props) {
+  const { slug: game } = useGame();
   const recordedDeckExists = decks.some(d => d.name === battle.my_deck_name);
   const initialValue = !recordedDeckExists
     ? `__snapshot__:${battle.my_deck_name}`
@@ -69,7 +72,7 @@ export function EditBattleModal({ battle, decks, suggestions, onSave, onClose, o
   const [opponentMemo, setOpponentMemo] = useState(battle.opponent_memo ?? "");
   const [memoSuggestions, setMemoSuggestions] = useState<string[]>([]);
   const [showMemo, setShowMemo] = useState(!!battle.opponent_memo);
-  const [result, setResult] = useState<"win" | "loss">(battle.result);
+  const [result, setResult] = useState<BattleResult>(battle.result);
   const [turnOrder, setTurnOrder] = useState<"first" | "second" | null>(battle.turn_order);
   const [saving, setSaving] = useState(false);
 
@@ -287,22 +290,27 @@ export function EditBattleModal({ battle, decks, suggestions, onSave, onClose, o
         <div className="space-y-1">
           <label className="text-sm text-muted-foreground">勝敗</label>
           <div className="flex gap-2">
-            {(["win", "loss"] as const).map((r) => (
-              <button
-                key={r}
-                type="button"
-                onClick={() => setResult(r)}
-                className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition-colors min-h-[44px] ${
-                  result === r
-                    ? r === "win"
-                      ? "border-success bg-success/10 text-success"
-                      : "border-destructive bg-destructive/10 text-destructive"
-                    : "border-border bg-card hover:bg-muted text-muted-foreground"
-                }`}
-              >
-                {r === "win" ? "WIN" : "LOSE"}
-              </button>
-            ))}
+            {((supportsDraw(game) ? ["win", "draw", "loss"] : ["win", "loss"]) as BattleResult[]).map((r) => {
+              const selectedClass =
+                r === "win" ? "border-success bg-success/10 text-success"
+                : r === "loss" ? "border-destructive bg-destructive/10 text-destructive"
+                : "border-accent bg-accent/10 text-accent";
+              const label = r === "win" ? "WIN" : r === "loss" ? "LOSE" : "DRAW";
+              return (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => setResult(r)}
+                  className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition-colors min-h-[44px] ${
+                    result === r
+                      ? selectedClass
+                      : "border-border bg-card hover:bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
           </div>
         </div>
 

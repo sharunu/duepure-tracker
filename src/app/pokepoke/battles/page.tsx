@@ -19,7 +19,7 @@ type Battle = {
   my_deck_id: string;
   my_deck_name: string;
   opponent_deck_name: string;
-  result: "win" | "loss";
+  result: "win" | "loss" | "draw";
   turn_order: "first" | "second" | null;
   fought_at: string;
   tuning_id: string | null;

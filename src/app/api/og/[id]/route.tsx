@@ -27,31 +27,52 @@ const CHIP_COLORS = ["#818cf8", "#6366f1", "#38bdf8", "#34d399", "#fbbf24", "#64
 type StatsData = {
   totalWins: number;
   totalLosses: number;
-  winRate: number;
+  totalDraws?: number;
+  winRate: number | null;
   firstWins: number;
   firstLosses: number;
+  firstDraws?: number;
   secondWins: number;
   secondLosses: number;
+  secondDraws?: number;
   unknownWins?: number;
   unknownLosses?: number;
-  encounterDistribution: { name: string; count: number; percentage: number; winRate?: number }[];
+  unknownDraws?: number;
+  encounterDistribution: { name: string; count: number; percentage: number; winRate?: number | null }[];
   period: string;
   format: string;
+  game?: string;
 };
 
 type DeckData = {
   deckName: string;
   totalWins: number;
   totalLosses: number;
-  winRate: number;
+  totalDraws?: number;
+  winRate: number | null;
   firstWins: number;
   firstLosses: number;
+  firstDraws?: number;
   secondWins: number;
   secondLosses: number;
-  topMatchups: { name: string; wins: number; losses: number; winRate: number }[];
+  secondDraws?: number;
+  topMatchups: { name: string; wins: number; losses: number; draws?: number; winRate: number | null }[];
   period: string;
   format: string;
+  game?: string;
 };
+
+function formatWLTJaOg(wins: number, losses: number, draws: number, game: string | undefined): string {
+  return game === "pokepoke"
+    ? `${wins}勝${losses}敗${draws}分`
+    : `${wins}勝${losses}敗`;
+}
+
+function formatWLTOg(wins: number, losses: number, draws: number, game: string | undefined): string {
+  return game === "pokepoke"
+    ? `${wins}-${losses}-${draws}`
+    : `${wins}-${losses}`;
+}
 
 function winRateColor(rate: number): string {
   if (rate < 0) return "#8a8fa3";
@@ -59,7 +80,7 @@ function winRateColor(rate: number): string {
   return "#e85d75";
 }
 
-function TurnRow({ label, color, wins, losses, total, rate }: { label: string; color: string; wins: number; losses: number; total: number; rate: number }) {
+function TurnRow({ label, color, wins, losses, draws, total, rate, game }: { label: string; color: string; wins: number; losses: number; draws: number; total: number; rate: number; game: string | undefined }) {
   return (
     <div
       style={{
@@ -109,7 +130,7 @@ function TurnRow({ label, color, wins, losses, total, rate }: { label: string; c
         }}
       >
         <div style={{ fontSize: 18, fontWeight: 700, color: "#d6dae8", display: "flex" }}>
-          {total > 0 ? `${wins}-${losses}` : "—"}
+          {total > 0 ? formatWLTOg(wins, losses, draws, game) : "—"}
         </div>
         <div style={{ fontSize: 12, fontWeight: 400, color: "#8a8fa3", marginTop: 2 }}>
           {total > 0 ? `${total}戦` : "0戦"}
@@ -119,18 +140,23 @@ function TurnRow({ label, color, wins, losses, total, rate }: { label: string; c
   );
 }
 
-function renderStatsOg(d: StatsData, appUrl: string, trackerName: string) {
-  const totalBattles = d.totalWins + d.totalLosses;
-  const firstTotal = d.firstWins + d.firstLosses;
-  const secondTotal = d.secondWins + d.secondLosses;
+function renderStatsOg(d: StatsData, appUrl: string, trackerName: string, gameTitle: string | undefined) {
+  const game = d.game ?? gameTitle;
+  const totalDraws = d.totalDraws ?? 0;
+  const firstDraws = d.firstDraws ?? 0;
+  const secondDraws = d.secondDraws ?? 0;
   const unknownWins = d.unknownWins ?? 0;
   const unknownLosses = d.unknownLosses ?? 0;
-  const unknownTotal = unknownWins + unknownLosses;
-  const firstRate = firstTotal > 0 ? Math.round((d.firstWins / firstTotal) * 100) : -1;
-  const secondRate = secondTotal > 0 ? Math.round((d.secondWins / secondTotal) * 100) : -1;
-  const unknownRate = unknownTotal > 0 ? Math.round((unknownWins / unknownTotal) * 100) : -1;
+  const unknownDraws = d.unknownDraws ?? 0;
+  const totalBattles = d.totalWins + d.totalLosses + totalDraws;
+  const firstTotal = d.firstWins + d.firstLosses + firstDraws;
+  const secondTotal = d.secondWins + d.secondLosses + secondDraws;
+  const unknownTotal = unknownWins + unknownLosses + unknownDraws;
+  const firstRate = (d.firstWins + d.firstLosses) > 0 ? Math.round((d.firstWins / (d.firstWins + d.firstLosses)) * 100) : -1;
+  const secondRate = (d.secondWins + d.secondLosses) > 0 ? Math.round((d.secondWins / (d.secondWins + d.secondLosses)) * 100) : -1;
+  const unknownRate = (unknownWins + unknownLosses) > 0 ? Math.round((unknownWins / (unknownWins + unknownLosses)) * 100) : -1;
 
-  const heroColor = winRateColor(d.winRate);
+  const heroColor = winRateColor(d.winRate ?? -1);
   const distribution = (d.encounterDistribution ?? []).slice(0, 5);
 
   return (
@@ -184,11 +210,11 @@ function renderStatsOg(d: StatsData, appUrl: string, trackerName: string) {
               letterSpacing: -4,
             }}
           >
-            {`${d.winRate}%`}
+            {d.winRate === null ? "--%" : `${d.winRate}%`}
           </div>
           <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginTop: 18 }}>
             <div style={{ fontSize: 30, fontWeight: 700, color: "#e8eaf4", display: "flex" }}>
-              {`${d.totalWins}勝 ${d.totalLosses}敗`}
+              {formatWLTJaOg(d.totalWins, d.totalLosses, totalDraws, game)}
             </div>
             <div style={{ fontSize: 18, fontWeight: 400, color: "#8a8fa3" }}>{`/ ${totalBattles}戦`}</div>
           </div>
@@ -196,9 +222,9 @@ function renderStatsOg(d: StatsData, appUrl: string, trackerName: string) {
 
         {/* Right: Turn stats */}
         <div style={{ display: "flex", flexDirection: "column", width: 560, gap: 14 }}>
-          <TurnRow label="先攻" color="#f0a030" wins={d.firstWins} losses={d.firstLosses} total={firstTotal} rate={firstRate} />
-          <TurnRow label="後攻" color="#5b8def" wins={d.secondWins} losses={d.secondLosses} total={secondTotal} rate={secondRate} />
-          <TurnRow label="不明" color="#8a8aa0" wins={unknownWins} losses={unknownLosses} total={unknownTotal} rate={unknownRate} />
+          <TurnRow label="先攻" color="#f0a030" wins={d.firstWins} losses={d.firstLosses} draws={firstDraws} total={firstTotal} rate={firstRate} game={game} />
+          <TurnRow label="後攻" color="#5b8def" wins={d.secondWins} losses={d.secondLosses} draws={secondDraws} total={secondTotal} rate={secondRate} game={game} />
+          <TurnRow label="不明" color="#8a8aa0" wins={unknownWins} losses={unknownLosses} draws={unknownDraws} total={unknownTotal} rate={unknownRate} game={game} />
         </div>
       </div>
 
@@ -246,10 +272,10 @@ function renderStatsOg(d: StatsData, appUrl: string, trackerName: string) {
                 style={{
                   fontSize: 13,
                   fontWeight: 700,
-                  color: item.winRate !== undefined ? winRateColor(item.winRate) : "#9aa0b4",
+                  color: item.winRate !== undefined && item.winRate !== null ? winRateColor(item.winRate) : "#9aa0b4",
                 }}
               >
-                {item.winRate !== undefined ? `${item.winRate}%` : `${item.percentage}%`}
+                {item.winRate !== undefined && item.winRate !== null ? `${item.winRate}%` : `${item.percentage}%`}
               </div>
             </div>
           ))}
@@ -264,12 +290,16 @@ function renderStatsOg(d: StatsData, appUrl: string, trackerName: string) {
   );
 }
 
-function renderDeckOg(d: DeckData, shareType: string, appUrl: string, trackerName: string) {
-  const totalBattles = d.totalWins + d.totalLosses;
-  const firstTotal = d.firstWins + d.firstLosses;
-  const secondTotal = d.secondWins + d.secondLosses;
-  const firstRate = firstTotal > 0 ? Math.round((d.firstWins / firstTotal) * 100) : 0;
-  const secondRate = secondTotal > 0 ? Math.round((d.secondWins / secondTotal) * 100) : 0;
+function renderDeckOg(d: DeckData, shareType: string, appUrl: string, trackerName: string, gameTitle: string | undefined) {
+  const game = d.game ?? gameTitle;
+  const totalDraws = d.totalDraws ?? 0;
+  const firstDraws = d.firstDraws ?? 0;
+  const secondDraws = d.secondDraws ?? 0;
+  const totalBattles = d.totalWins + d.totalLosses + totalDraws;
+  const firstTotal = d.firstWins + d.firstLosses + firstDraws;
+  const secondTotal = d.secondWins + d.secondLosses + secondDraws;
+  const firstRate = (d.firstWins + d.firstLosses) > 0 ? Math.round((d.firstWins / (d.firstWins + d.firstLosses)) * 100) : 0;
+  const secondRate = (d.secondWins + d.secondLosses) > 0 ? Math.round((d.secondWins / (d.secondWins + d.secondLosses)) * 100) : 0;
 
   const title = shareType === "opponent" ? `vs ${d.deckName}` : d.deckName;
   const matchupLabel = shareType === "opponent" ? "使用デッキ別" : "対面別勝率";
@@ -283,19 +313,19 @@ function renderDeckOg(d: DeckData, shareType: string, appUrl: string, trackerNam
 
       <div style={{ display: "flex", alignItems: "center", gap: 56, marginTop: 20 }}>
         <div style={{ display: "flex", flexDirection: "column" }}>
-          <div style={{ fontSize: 72, fontWeight: 700, color: d.winRate >= 50 ? "#5b8def" : "#e85d75" }}>{`${d.winRate}%`}</div>
-          <div style={{ fontSize: 18, fontWeight: 400, color: "#999", marginTop: 4 }}>{`${d.totalWins}勝 ${d.totalLosses}敗 / ${totalBattles}戦`}</div>
+          <div style={{ fontSize: 72, fontWeight: 700, color: (d.winRate ?? 0) >= 50 ? "#5b8def" : "#e85d75" }}>{d.winRate === null ? "--%" : `${d.winRate}%`}</div>
+          <div style={{ fontSize: 18, fontWeight: 400, color: "#999", marginTop: 4 }}>{`${formatWLTJaOg(d.totalWins, d.totalLosses, totalDraws, game)} / ${totalBattles}戦`}</div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14, fontSize: 18 }}>
             <div style={{ color: "#aaa", width: 40, fontWeight: 400 }}>先攻</div>
             <div style={{ fontWeight: 700 }}>{`${firstRate}%`}</div>
-            <div style={{ color: "#666", fontSize: 14, fontWeight: 400 }}>{`(${d.firstWins}-${d.firstLosses})`}</div>
+            <div style={{ color: "#666", fontSize: 14, fontWeight: 400 }}>{`(${formatWLTOg(d.firstWins, d.firstLosses, firstDraws, game)})`}</div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 14, fontSize: 18 }}>
             <div style={{ color: "#aaa", width: 40, fontWeight: 400 }}>後攻</div>
             <div style={{ fontWeight: 700 }}>{`${secondRate}%`}</div>
-            <div style={{ color: "#666", fontSize: 14, fontWeight: 400 }}>{`(${d.secondWins}-${d.secondLosses})`}</div>
+            <div style={{ color: "#666", fontSize: 14, fontWeight: 400 }}>{`(${formatWLTOg(d.secondWins, d.secondLosses, secondDraws, game)})`}</div>
           </div>
         </div>
       </div>
@@ -307,8 +337,8 @@ function renderDeckOg(d: DeckData, shareType: string, appUrl: string, trackerNam
             <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 16 }}>
               <div style={{ color: "#ccc", fontWeight: 400, overflow: "hidden", maxWidth: 500 }}>{m.name}</div>
               <div style={{ display: "flex", alignItems: "baseline", fontWeight: 700, flexShrink: 0, marginLeft: 16 }}>
-                <span>{`${m.winRate}%`}</span>
-                <span style={{ color: "#666", fontSize: 13, fontWeight: 400, marginLeft: 4 }}>{`(${m.wins}-${m.losses})`}</span>
+                <span>{m.winRate === null ? "--%" : `${m.winRate}%`}</span>
+                <span style={{ color: "#666", fontSize: 13, fontWeight: 400, marginLeft: 4 }}>{`(${formatWLTOg(m.wins, m.losses, m.draws ?? 0, game)})`}</span>
               </div>
             </div>
           ))}
@@ -362,8 +392,8 @@ export async function GET(
 
   const element =
     share.share_type === "stats"
-      ? renderStatsOg(share.share_data as unknown as StatsData, appUrl, trackerName)
-      : renderDeckOg(share.share_data as unknown as DeckData, share.share_type, appUrl, trackerName);
+      ? renderStatsOg(share.share_data as unknown as StatsData, appUrl, trackerName, gameTitle ?? undefined)
+      : renderDeckOg(share.share_data as unknown as DeckData, share.share_type, appUrl, trackerName, gameTitle ?? undefined);
 
   return new ImageResponse(element, {
     width: 1200,

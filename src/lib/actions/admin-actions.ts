@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { DEFAULT_GAME, type GameSlug } from "@/lib/games";
 import type { DetailedPersonalStats, TurnOrderSummary, OpponentDetail, TrendRow } from "@/lib/actions/stats-actions";
+import { winRate, type BattleResult } from "@/lib/battle/result-format";
 
 async function requireAdmin() {
   const supabase = createClient();
@@ -370,7 +371,11 @@ export async function getAdminUserPersonalStats(
 
   const empty: DetailedPersonalStats = {
     myDeckStats: [], opponentDeckStats: [],
-    turnOrder: { firstWins: 0, firstLosses: 0, secondWins: 0, secondLosses: 0, unknownWins: 0, unknownLosses: 0 },
+    turnOrder: {
+      firstWins: 0, firstLosses: 0, firstDraws: 0,
+      secondWins: 0, secondLosses: 0, secondDraws: 0,
+      unknownWins: 0, unknownLosses: 0, unknownDraws: 0,
+    },
   };
 
   let query = supabase
@@ -390,68 +395,79 @@ export async function getAdminUserPersonalStats(
   const { data: battles } = await query;
   if (!battles || battles.length === 0) return empty;
 
-  const myDeckMap = new Map<string, { wins: number; losses: number; total: number; opponents: Map<string, OpponentDetail> }>();
-  const oppDeckMap = new Map<string, { wins: number; losses: number; total: number }>();
-  const turnOrder: TurnOrderSummary = { firstWins: 0, firstLosses: 0, secondWins: 0, secondLosses: 0, unknownWins: 0, unknownLosses: 0 };
+  const myDeckMap = new Map<string, { wins: number; losses: number; draws: number; total: number; opponents: Map<string, OpponentDetail> }>();
+  const oppDeckMap = new Map<string, { wins: number; losses: number; draws: number; total: number }>();
+  const turnOrder: TurnOrderSummary = {
+    firstWins: 0, firstLosses: 0, firstDraws: 0,
+    secondWins: 0, secondLosses: 0, secondDraws: 0,
+    unknownWins: 0, unknownLosses: 0, unknownDraws: 0,
+  };
+
+  const bumpWLD = (obj: { wins: number; losses: number; draws: number }, r: BattleResult) => {
+    if (r === "win") obj.wins++;
+    else if (r === "loss") obj.losses++;
+    else obj.draws++;
+  };
 
   for (const b of battles) {
     const myDeckName = b.my_deck_name ?? "不明";
     const oppName = b.opponent_deck_name;
-    const isWin = b.result === "win";
+    const r = b.result as BattleResult;
 
     if (!myDeckMap.has(myDeckName)) {
-      myDeckMap.set(myDeckName, { wins: 0, losses: 0, total: 0, opponents: new Map() });
+      myDeckMap.set(myDeckName, { wins: 0, losses: 0, draws: 0, total: 0, opponents: new Map() });
     }
     const myEntry = myDeckMap.get(myDeckName)!;
     myEntry.total++;
-    if (isWin) myEntry.wins++; else myEntry.losses++;
+    bumpWLD(myEntry, r);
 
     if (!myEntry.opponents.has(oppName)) {
       myEntry.opponents.set(oppName, {
-        wins: 0, losses: 0, total: 0, winRate: 0,
-        firstWins: 0, firstLosses: 0, firstTotal: 0, firstWinRate: 0,
-        secondWins: 0, secondLosses: 0, secondTotal: 0, secondWinRate: 0,
-        unknownWins: 0, unknownLosses: 0, unknownTotal: 0, unknownWinRate: 0,
+        wins: 0, losses: 0, draws: 0, total: 0, winRate: null,
+        firstWins: 0, firstLosses: 0, firstDraws: 0, firstTotal: 0, firstWinRate: null,
+        secondWins: 0, secondLosses: 0, secondDraws: 0, secondTotal: 0, secondWinRate: null,
+        unknownWins: 0, unknownLosses: 0, unknownDraws: 0, unknownTotal: 0, unknownWinRate: null,
       });
     }
     const oppDetail = myEntry.opponents.get(oppName)!;
     oppDetail.total++;
-    if (isWin) oppDetail.wins++; else oppDetail.losses++;
+    bumpWLD(oppDetail, r);
 
     if (b.turn_order === "first") {
       oppDetail.firstTotal++;
-      if (isWin) oppDetail.firstWins++; else oppDetail.firstLosses++;
-      if (isWin) turnOrder.firstWins++; else turnOrder.firstLosses++;
+      if (r === "win") { oppDetail.firstWins++; turnOrder.firstWins++; }
+      else if (r === "loss") { oppDetail.firstLosses++; turnOrder.firstLosses++; }
+      else { oppDetail.firstDraws++; turnOrder.firstDraws++; }
     } else if (b.turn_order === "second") {
       oppDetail.secondTotal++;
-      if (isWin) oppDetail.secondWins++; else oppDetail.secondLosses++;
-      if (isWin) turnOrder.secondWins++; else turnOrder.secondLosses++;
+      if (r === "win") { oppDetail.secondWins++; turnOrder.secondWins++; }
+      else if (r === "loss") { oppDetail.secondLosses++; turnOrder.secondLosses++; }
+      else { oppDetail.secondDraws++; turnOrder.secondDraws++; }
     } else {
       oppDetail.unknownTotal++;
-      if (isWin) oppDetail.unknownWins++; else oppDetail.unknownLosses++;
-      if (isWin) turnOrder.unknownWins++; else turnOrder.unknownLosses++;
+      if (r === "win") { oppDetail.unknownWins++; turnOrder.unknownWins++; }
+      else if (r === "loss") { oppDetail.unknownLosses++; turnOrder.unknownLosses++; }
+      else { oppDetail.unknownDraws++; turnOrder.unknownDraws++; }
     }
 
-    if (!oppDeckMap.has(oppName)) oppDeckMap.set(oppName, { wins: 0, losses: 0, total: 0 });
+    if (!oppDeckMap.has(oppName)) oppDeckMap.set(oppName, { wins: 0, losses: 0, draws: 0, total: 0 });
     const oppGlobal = oppDeckMap.get(oppName)!;
     oppGlobal.total++;
-    if (isWin) oppGlobal.wins++; else oppGlobal.losses++;
+    bumpWLD(oppGlobal, r);
   }
-
-  const safeRate = (w: number, t: number) => t === 0 ? 0 : Math.round((w / t) * 100);
 
   const myDeckStats = Array.from(myDeckMap.entries())
     .map(([deckName, s]) => ({
       deckName,
-      wins: s.wins, losses: s.losses, total: s.total,
-      winRate: safeRate(s.wins, s.total),
+      wins: s.wins, losses: s.losses, draws: s.draws, total: s.total,
+      winRate: winRate(s.wins, s.losses),
       opponents: Array.from(s.opponents.entries())
         .map(([opponentName, o]) => ({
           opponentName, ...o,
-          winRate: safeRate(o.wins, o.total),
-          firstWinRate: safeRate(o.firstWins, o.firstTotal),
-          secondWinRate: safeRate(o.secondWins, o.secondTotal),
-          unknownWinRate: safeRate(o.unknownWins, o.unknownTotal),
+          winRate: winRate(o.wins, o.losses),
+          firstWinRate: winRate(o.firstWins, o.firstLosses),
+          secondWinRate: winRate(o.secondWins, o.secondLosses),
+          unknownWinRate: winRate(o.unknownWins, o.unknownLosses),
         }))
         .sort((a, b) => b.total - a.total),
     }))
@@ -459,7 +475,7 @@ export async function getAdminUserPersonalStats(
 
   const opponentDeckStats = Array.from(oppDeckMap.entries())
     .map(([deckName, s]) => ({
-      deckName, ...s, winRate: safeRate(s.wins, s.total),
+      deckName, ...s, winRate: winRate(s.wins, s.losses),
     }))
     .sort((a, b) => b.total - a.total);
 

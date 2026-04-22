@@ -114,7 +114,7 @@ export default function DeckDetailPage() {
     if (!stats) return [];
     const arr = [...stats.overall];
     if (sortBy === "winRate") {
-      arr.sort((a, b) => b.winRate - a.winRate || b.total - a.total);
+      arr.sort((a, b) => (b.winRate ?? -1) - (a.winRate ?? -1) || b.total - a.total);
     } else {
       arr.sort((a, b) => b.total - a.total);
     }
@@ -127,12 +127,12 @@ export default function DeckDetailPage() {
     if (categoryMap.size === 0) {
       return {
         donutItems: stats.overall.map((o) => ({ name: o.opponentName, total: o.total, winRate: o.winRate })),
-        otherBreakdown: [],
+        otherBreakdown: [] as { name: string; total: number; winRate: number | null }[],
       };
     }
 
-    const items: { name: string; total: number; winRate: number }[] = [];
-    const breakdown: { name: string; total: number; winRate: number }[] = [];
+    const items: { name: string; total: number; winRate: number | null }[] = [];
+    const breakdown: { name: string; total: number; winRate: number | null }[] = [];
     let oW = 0, oL = 0, oT = 0;
 
     for (const o of stats.overall) {
@@ -147,7 +147,8 @@ export default function DeckDetailPage() {
       }
     }
     if (oT > 0) {
-      items.push({ name: "\u305D\u306E\u4ED6", total: oT, winRate: Math.round((oW / oT) * 100) });
+      const rate = (oW + oL) > 0 ? Math.round((oW / (oW + oL)) * 100) : null;
+      items.push({ name: "\u305D\u306E\u4ED6", total: oT, winRate: rate });
     }
 
     return { donutItems: items, otherBreakdown: breakdown };
@@ -189,18 +190,22 @@ export default function DeckDetailPage() {
             {scope === "personal" && stats && stats.overallTotal > 0 && (() => {
               const fW = stats.overall.reduce((s, o) => s + o.firstWins, 0);
               const fL = stats.overall.reduce((s, o) => s + o.firstLosses, 0);
+              const fD = stats.overall.reduce((s, o) => s + o.firstDraws, 0);
               const sW = stats.overall.reduce((s, o) => s + o.secondWins, 0);
               const sL = stats.overall.reduce((s, o) => s + o.secondLosses, 0);
+              const sD = stats.overall.reduce((s, o) => s + o.secondDraws, 0);
               const shareData: DeckShareData = {
                 deckName,
                 totalWins: stats.overallWins,
                 totalLosses: stats.overallLosses,
+                totalDraws: stats.overallDraws,
                 winRate: stats.overallWinRate,
-                firstWins: fW, firstLosses: fL,
-                secondWins: sW, secondLosses: sL,
-                topMatchups: stats.overall.slice(0, 5).map(o => ({ name: o.opponentName, wins: o.wins, losses: o.losses, winRate: o.winRate })),
+                firstWins: fW, firstLosses: fL, firstDraws: fD,
+                secondWins: sW, secondLosses: sL, secondDraws: sD,
+                topMatchups: stats.overall.slice(0, 5).map(o => ({ name: o.opponentName, wins: o.wins, losses: o.losses, draws: o.draws, winRate: o.winRate })),
                 period: `${startDate} ~ ${endDate}`,
                 format,
+                game: "pokepoke",
               };
               return <ShareButton type="deck" data={shareData} />;
             })()}
@@ -238,24 +243,30 @@ export default function DeckDetailPage() {
                     overallWinRate={stats.overallWinRate}
                     overallWins={stats.overallWins}
                     overallLosses={stats.overallLosses}
+                    overallDraws={stats.overallDraws}
                     overallTotal={stats.overallTotal}
                     opponentDeckNameMap={opponentDeckNameMap}
+                    game="pokepoke"
                   />
 
                   {(() => {
                     const fw = stats.overall.reduce((s, o) => s + o.firstWins, 0);
                     const fl = stats.overall.reduce((s, o) => s + o.firstLosses, 0);
+                    const fd = stats.overall.reduce((s, o) => s + o.firstDraws, 0);
                     const sw = stats.overall.reduce((s, o) => s + o.secondWins, 0);
                     const sl = stats.overall.reduce((s, o) => s + o.secondLosses, 0);
+                    const sd = stats.overall.reduce((s, o) => s + o.secondDraws, 0);
                     const uw = stats.overall.reduce((s, o) => s + o.unknownWins, 0);
                     const ul = stats.overall.reduce((s, o) => s + o.unknownLosses, 0);
+                    const ud = stats.overall.reduce((s, o) => s + o.unknownDraws, 0);
                     return (
                       <div>
                         <h2 className="text-base font-bold mb-2">先攻/後攻別</h2>
                         <TurnOrderCards
-                          firstWins={fw} firstLosses={fl} firstTotal={fw + fl}
-                          secondWins={sw} secondLosses={sl} secondTotal={sw + sl}
-                          unknownWins={uw} unknownLosses={ul} unknownTotal={uw + ul}
+                          firstWins={fw} firstLosses={fl} firstDraws={fd} firstTotal={fw + fl + fd}
+                          secondWins={sw} secondLosses={sl} secondDraws={sd} secondTotal={sw + sl + sd}
+                          unknownWins={uw} unknownLosses={ul} unknownDraws={ud} unknownTotal={uw + ul + ud}
+                          game="pokepoke"
                         />
                       </div>
                     );
@@ -300,7 +311,7 @@ export default function DeckDetailPage() {
                   {viewMode === "visual" ? (
                     <div className="space-y-2">
                       {sortedOverall.map((opp) => (
-                        <MatchupCard key={opp.opponentName} name={opp.opponentName} namePrefix="vs " detail={opp} opponentDeckNameMap={opponentDeckNameMap} />
+                        <MatchupCard key={opp.opponentName} name={opp.opponentName} namePrefix="vs " detail={opp} opponentDeckNameMap={opponentDeckNameMap} game="pokepoke" />
                       ))}
                     </div>
                   ) : (
@@ -308,6 +319,7 @@ export default function DeckDetailPage() {
                       rows={sortedOverall.map((opp) => ({ ...opp, name: opp.opponentName, namePrefix: "vs " }))}
                       showTotal
                       opponentDeckNameMap={opponentDeckNameMap}
+                      game="pokepoke"
                     />
                   )}
                 </>
@@ -318,7 +330,7 @@ export default function DeckDetailPage() {
             {!isGlobal && stats.tuningStats.length > 0 && (
               <div>
                 <h2 className="text-base font-bold mb-2">チューニング別</h2>
-                <TuningStatsSection tuningStats={stats.tuningStats} viewMode={viewMode} />
+                <TuningStatsSection tuningStats={stats.tuningStats} viewMode={viewMode} game="pokepoke" opponentDeckNameMap={opponentDeckNameMap} />
               </div>
             )}
           </>

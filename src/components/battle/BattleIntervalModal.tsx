@@ -4,6 +4,11 @@ import {
   displayDeckName,
   type OpponentDeckNameMap,
 } from "@/lib/actions/opponent-deck-display";
+import {
+  resultColorClass,
+  resultLabel,
+  type BattleResult,
+} from "@/lib/battle/result-format";
 
 type Battle = {
   id: string;
@@ -71,8 +76,8 @@ export function BattleIntervalModal({ open, onClose, battles, onSelect, currentT
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 min-w-0">
-                    <span className={`text-xs font-bold ${b.result === "win" ? "text-success" : "text-destructive"}`}>
-                      {b.result === "win" ? "勝" : "敗"}
+                    <span className={`text-xs font-bold ${resultColorClass(b.result as BattleResult)}`}>
+                      {resultLabel(b.result as BattleResult)}
                     </span>
                     <span className="truncate">
                       {b.my_deck_name ?? "?"} vs {displayDeckName(b.opponent_deck_name, opponentDeckNameMap)}

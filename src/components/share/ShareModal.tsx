@@ -8,6 +8,7 @@ import { StatsShareCard } from "./StatsShareCard";
 import { DeckShareCard } from "./DeckShareCard";
 import { createClient } from "@/lib/supabase/client";
 import { generateShareId } from "@/lib/share-utils";
+import { formatWLTJa } from "@/lib/battle/result-format";
 
 type Props = {
   type: "stats" | "deck" | "opponent";
@@ -27,15 +28,16 @@ export function ShareModal({ type, data, onClose }: Props) {
   const appUrl = typeof window !== "undefined" ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL ?? "");
 
   const shareText = (() => {
+    const fmt = (rate: number | null) => rate === null ? "--" : rate;
     if (type === "stats") {
       const d = data as StatsShareData;
-      return `${trackerName}で戦績を記録中！\n勝率 ${d.winRate}%（${d.totalWins}勝${d.totalLosses}敗）`;
+      return `${trackerName}で戦績を記録中！\n勝率 ${fmt(d.winRate)}%（${formatWLTJa(d.totalWins, d.totalLosses, d.totalDraws, d.game)}）`;
     } else if (type === "deck") {
       const d = data as DeckShareData;
-      return `【${d.deckName}】勝率 ${d.winRate}%（${d.totalWins}勝${d.totalLosses}敗）`;
+      return `【${d.deckName}】勝率 ${fmt(d.winRate)}%（${formatWLTJa(d.totalWins, d.totalLosses, d.totalDraws, d.game)}）`;
     } else {
       const d = data as DeckShareData;
-      return `【vs ${d.deckName}】勝率 ${d.winRate}%（${d.totalWins}勝${d.totalLosses}敗）`;
+      return `【vs ${d.deckName}】勝率 ${fmt(d.winRate)}%（${formatWLTJa(d.totalWins, d.totalLosses, d.totalDraws, d.game)}）`;
     }
   })();
 

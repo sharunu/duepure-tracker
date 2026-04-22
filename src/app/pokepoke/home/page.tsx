@@ -337,11 +337,11 @@ function HomePageInner() {
                   <div className="text-right flex-shrink-0 flex items-center gap-1.5">
                     {member.total > 0 ? (
                       <>
-                        <span className="text-[12px] font-medium" style={{ color: getWinRateColor(member.winRate) }}>{member.winRate}%</span>
-                        <span className="text-[10px] text-muted-foreground">{member.wins}勝{member.losses}敗</span>
+                        <span className="text-[12px] font-medium" style={{ color: getWinRateColor(member.winRate ?? 0) }}>{member.winRate === null ? "--" : member.winRate}%</span>
+                        <span className="text-[10px] text-muted-foreground">{member.wins}勝{member.losses}敗{member.draws}分</span>
                       </>
                     ) : (
-                      <span className="text-[10px] text-muted-foreground">-- 0勝0敗</span>
+                      <span className="text-[10px] text-muted-foreground">-- 0勝0敗0分</span>
                     )}
                   </div>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-muted-foreground/50 flex-shrink-0">

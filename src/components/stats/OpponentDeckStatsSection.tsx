@@ -8,10 +8,11 @@ import {
   displayDeckName,
   type OpponentDeckNameMap,
 } from "@/lib/actions/opponent-deck-display";
+import { formatWLTJa } from "@/lib/battle/result-format";
 
 type OpponentRow = DetailedPersonalStats["opponentDeckStats"][number];
 
-export function OpponentDeckStatsSection({ stats, startDate, endDate, scope, teamId, memberId, memberName, premiumFilter, disableLinks, opponentDeckNameMap }: { stats: OpponentRow[]; startDate?: string; endDate?: string; scope?: "personal" | "global" | "team"; teamId?: string; memberId?: string | null; memberName?: string | null; premiumFilter?: boolean; disableLinks?: boolean; opponentDeckNameMap?: OpponentDeckNameMap }) {
+export function OpponentDeckStatsSection({ stats, startDate, endDate, scope, teamId, memberId, memberName, premiumFilter, disableLinks, opponentDeckNameMap, game }: { stats: OpponentRow[]; startDate?: string; endDate?: string; scope?: "personal" | "global" | "team"; teamId?: string; memberId?: string | null; memberName?: string | null; premiumFilter?: boolean; disableLinks?: boolean; opponentDeckNameMap?: OpponentDeckNameMap; game: string }) {
   const router = useRouter();
 
   if (stats.length === 0) {
@@ -42,7 +43,8 @@ export function OpponentDeckStatsSection({ stats, startDate, endDate, scope, tea
   return (
     <div className="space-y-2">
       {stats.map((row) => {
-        const color = getWinRateColor(row.winRate);
+        const ratePct = row.winRate === null ? 0 : row.winRate;
+        const color = getWinRateColor(ratePct);
         return (
           <div key={row.deckName} className="relative rounded-lg border border-border bg-card overflow-hidden">
             <div className="absolute left-0 top-0 bottom-0 w-[3px]" style={{ backgroundColor: color }} />
@@ -58,10 +60,10 @@ export function OpponentDeckStatsSection({ stats, startDate, endDate, scope, tea
                 <span className="flex items-center gap-2">
                   <span className="flex items-baseline">
                     <span className="text-xs text-muted-foreground" style={{ width: 24, flexShrink: 0 }}>勝率</span>
-                    <span className="text-base font-bold" style={{ color, width: 40, textAlign: "right", flexShrink: 0 }}>{row.winRate}%</span>
+                    <span className="text-base font-bold" style={{ color, width: 40, textAlign: "right", flexShrink: 0 }}>{row.winRate === null ? "--" : row.winRate}%</span>
                   </span>
                   <span className="text-muted-foreground text-xs">
-                    {row.wins}勝 {row.losses}敗
+                    {formatWLTJa(row.wins, row.losses, row.draws, game)}
                   </span>
                   {!disableLinks && <span className="text-muted-foreground">›</span>}
                 </span>
@@ -69,7 +71,7 @@ export function OpponentDeckStatsSection({ stats, startDate, endDate, scope, tea
               <div className="h-1 rounded-full bg-muted/30">
                 <div
                   className="h-1 rounded-full transition-all"
-                  style={{ width: `${row.winRate}%`, backgroundColor: color }}
+                  style={{ width: `${ratePct}%`, backgroundColor: color }}
                 />
               </div>
             </button>

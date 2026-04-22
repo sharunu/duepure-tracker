@@ -8,6 +8,7 @@ import {
   displayDeckName,
   type OpponentDeckNameMap,
 } from "@/lib/actions/opponent-deck-display";
+import type { BattleResult } from "@/lib/battle/result-format";
 
 type Tuning = { id: string; name: string; sort_order: number };
 type Deck = { id: string; name: string; deck_tunings?: Tuning[] };
@@ -18,7 +19,7 @@ type Battle = {
   my_deck_name: string;
   opponent_deck_name: string;
   opponent_memo?: string | null;
-  result: "win" | "loss";
+  result: BattleResult;
   turn_order: "first" | "second" | null;
   fought_at: string;
   tuning_id: string | null;
@@ -71,7 +72,7 @@ export function BattleHistoryList({ battles, decks, suggestions, onRefresh, read
 
   const handleSave = async (fields: {
     opponentDeckName: string;
-    result: "win" | "loss";
+    result: BattleResult;
     turnOrder: "first" | "second" | null;
     myDeckId: string;
     myDeckName: string;
@@ -106,7 +107,20 @@ export function BattleHistoryList({ battles, decks, suggestions, onRefresh, read
               {group.battles.map((b) => {
                 const deckDisplay = b.my_deck_name ?? "?";
                 const tuningDisplay = b.tuning_name;
-                const isWin = b.result === "win";
+                const resultKey = b.result;
+
+                const barColor =
+                  resultKey === "win" ? "bg-[#50c878]"
+                  : resultKey === "loss" ? "bg-[#e85d75]"
+                  : "bg-[#f59e0b]";
+                const badgeColor =
+                  resultKey === "win" ? "bg-[rgba(80,200,120,0.12)] text-[#50c878]"
+                  : resultKey === "loss" ? "bg-[rgba(232,93,117,0.12)] text-[#e85d75]"
+                  : "bg-[rgba(245,158,11,0.12)] text-[#f59e0b]";
+                const badgeLabel =
+                  resultKey === "win" ? "WIN"
+                  : resultKey === "loss" ? "LOSE"
+                  : "DRAW";
 
                 return (
                   <div
@@ -114,24 +128,16 @@ export function BattleHistoryList({ battles, decks, suggestions, onRefresh, read
                     className="bg-[#232640] rounded-[10px] overflow-hidden flex"
                   >
                     {/* Left color bar */}
-                    <div
-                      className={`w-[3px] shrink-0 ${
-                        isWin ? "bg-[#50c878]" : "bg-[#e85d75]"
-                      }`}
-                    />
+                    <div className={`w-[3px] shrink-0 ${barColor}`} />
 
                     {/* Card content */}
                     <div className="flex-1 px-3 py-2.5 min-w-0">
                       {/* Top row: badge, deck, vs, opponent */}
                       <div className="flex items-center gap-1.5 min-w-0">
                         <span
-                          className={`shrink-0 inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${
-                            isWin
-                              ? "bg-[rgba(80,200,120,0.12)] text-[#50c878]"
-                              : "bg-[rgba(232,93,117,0.12)] text-[#e85d75]"
-                          }`}
+                          className={`shrink-0 inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${badgeColor}`}
                         >
-                          {isWin ? "WIN" : "LOSE"}
+                          {badgeLabel}
                         </span>
 
                         <span className="text-[13px] font-medium text-white truncate">

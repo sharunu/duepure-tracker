@@ -7,6 +7,7 @@ import { MemoSuggestionButton } from "./MemoSuggestionButton";
 import { OpponentDeckSelector } from "./OpponentDeckSelector";
 import { BattleIntervalModal } from "./BattleIntervalModal";
 import { MiniStats } from "../stats/MiniStats";
+import { supportsDraw, type BattleResult } from "@/lib/battle/result-format";
 
 import type { Format } from "@/hooks/use-format";
 import type { OpponentDeckNameMap } from "@/lib/actions/opponent-deck-display";
@@ -21,6 +22,7 @@ type Deck = {
 type MiniStatsData = {
   wins: number;
   losses: number;
+  draws: number;
   total: number;
   streak: number;
 };
@@ -76,7 +78,7 @@ export function BattleRecordForm({
   const [showMemo, setShowMemo] = useState(false);
   const [turnOrder, setTurnOrder] = useState<"first" | "second" | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [lastResult, setLastResult] = useState<"win" | "loss" | null>(null);
+  const [lastResult, setLastResult] = useState<BattleResult | null>(null);
   const [miniStats, setMiniStats] = useState<MiniStatsData | null>(initialMiniStats);
 
   // Measure interval state
@@ -145,7 +147,7 @@ export function BattleRecordForm({
     }
   }, [opponentDeck]);
 
-  const handleSubmit = async (result: "win" | "loss") => {
+  const handleSubmit = async (result: BattleResult) => {
     const { deckId, tuningId } = parseDeckSelection(selectedValue);
     if (!deckId || !opponentDeck.trim()) return;
     setSubmitting(true);
@@ -252,8 +254,9 @@ export function BattleRecordForm({
 
           {/* Mini stats */}
           <MiniStats
-            stats={miniStats ?? { wins: 0, losses: 0, total: 0, streak: 0 }}
+            stats={miniStats ?? { wins: 0, losses: 0, draws: 0, total: 0, streak: 0 }}
             onEditInterval={handleOpenIntervalModal}
+            game={game}
           />
 
           {/* Deck selector */}
@@ -394,6 +397,20 @@ export function BattleRecordForm({
             >
               WIN
             </button>
+            {supportsDraw(game) && (
+              <button
+                onClick={() => handleSubmit("draw")}
+                disabled={submitting || !opponentDeck.trim() || !selectedValue}
+                className={"flex-1 rounded-[10px] py-4 text-[18px] font-bold transition-all min-h-[56px] shadow-lg text-white " + (
+                  lastResult === "draw"
+                    ? "scale-95 opacity-90"
+                    : "hover:brightness-110 disabled:opacity-40"
+                )}
+                style={{ background: "linear-gradient(to right, #f59e0b, #d97706)" }}
+              >
+                DRAW
+              </button>
+            )}
             <button
               onClick={() => handleSubmit("loss")}
               disabled={submitting || !opponentDeck.trim() || !selectedValue}
