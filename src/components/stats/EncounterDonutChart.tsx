@@ -98,7 +98,7 @@ export function EncounterDonutChart({ items, otherBreakdown, overallWinRate, ove
       }));
   }, [otherBreakdown, overallTotal]);
 
-  const winRateColor = getWinRateColor(overallWinRate ?? 0);
+  const winRateColor = getWinRateColor(overallWinRate);
 
   // Calculate chart center on mount/resize
   useEffect(() => {

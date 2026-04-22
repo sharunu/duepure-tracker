@@ -24,7 +24,7 @@ type Props = {
 
 export function MiniStats({ stats, onEditInterval, game }: Props) {
   const winRatePct = computeWinRate(stats.wins, stats.losses);
-  const winRateColor = getWinRateColor(winRatePct ?? 0);
+  const winRateColor = getWinRateColor(winRatePct);
 
   return (
     <div className="rounded-[10px] px-4 py-3" style={{ backgroundColor: "#232640" }}>

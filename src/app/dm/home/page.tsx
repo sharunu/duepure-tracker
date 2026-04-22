@@ -337,7 +337,7 @@ function HomePageInner() {
                   <div className="text-right flex-shrink-0 flex items-center gap-1.5">
                     {member.total > 0 ? (
                       <>
-                        <span className="text-[12px] font-medium" style={{ color: getWinRateColor(member.winRate ?? 0) }}>{member.winRate === null ? "--" : member.winRate}%</span>
+                        <span className="text-[12px] font-medium" style={{ color: getWinRateColor(member.winRate) }}>{member.winRate === null ? "--" : member.winRate}%</span>
                         <span className="text-[10px] text-muted-foreground">{member.wins}勝{member.losses}敗</span>
                       </>
                     ) : (

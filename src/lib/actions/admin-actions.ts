@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { DEFAULT_GAME, type GameSlug } from "@/lib/games";
 import type { DetailedPersonalStats, TurnOrderSummary, OpponentDetail, TrendRow } from "@/lib/actions/stats-actions";
-import { winRate, type BattleResult } from "@/lib/battle/result-format";
+import { winRate, bumpWLD, type BattleResult } from "@/lib/battle/result-format";
 
 async function requireAdmin() {
   const supabase = createClient();
@@ -401,12 +401,6 @@ export async function getAdminUserPersonalStats(
     firstWins: 0, firstLosses: 0, firstDraws: 0,
     secondWins: 0, secondLosses: 0, secondDraws: 0,
     unknownWins: 0, unknownLosses: 0, unknownDraws: 0,
-  };
-
-  const bumpWLD = (obj: { wins: number; losses: number; draws: number }, r: BattleResult) => {
-    if (r === "win") obj.wins++;
-    else if (r === "loss") obj.losses++;
-    else obj.draws++;
   };
 
   for (const b of battles) {
