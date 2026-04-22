@@ -35,7 +35,7 @@ export function TurnOrderCards(props: TurnOrderCardsProps) {
             <div style={{ fontSize: 10, fontWeight: 500, color: c.color }}>{c.label}</div>
             <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 2 }}>
               <span style={{ fontSize: 10, color: "#8888aa" }}>勝率</span>
-              <span style={{ fontSize: 20, fontWeight: 500, color: rate !== null ? getWinRateColor(rate) : "#8888aa" }}>
+              <span style={{ fontSize: 20, fontWeight: 500, color: getWinRateColor(rate) }}>
                 {rate !== null ? `${rate}%` : "--%"}
               </span>
             </div>

@@ -22,7 +22,7 @@ function TurnOrderBar({
 }) {
   if (total === 0) return null;
   const pct = winRate === null ? 0 : winRate;
-  const color = getWinRateColor(pct);
+  const color = getWinRateColor(winRate);
   return (
     <div className="flex items-center gap-2 text-xs py-0.5">
       <span className="text-muted-foreground w-8 shrink-0">{label}</span>
@@ -49,8 +49,7 @@ export function MatchupCard({
   game: string;
 }) {
   const rate = detail.winRate;
-  const ratePct = rate === null ? 0 : rate;
-  const color = getWinRateColor(ratePct);
+  const color = getWinRateColor(rate);
   return (
     <div className="flex rounded-lg border border-border bg-card overflow-hidden">
       <div className="w-[3px] shrink-0" style={{ backgroundColor: color }} />

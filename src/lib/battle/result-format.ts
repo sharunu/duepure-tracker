@@ -54,3 +54,13 @@ export function resultBgClass(result: BattleResult): string {
       ? "bg-destructive"
       : "bg-accent";
 }
+
+// wins/losses/draws カウンタを result に応じてインクリメントする共通処理
+export function bumpWLD(
+  obj: { wins: number; losses: number; draws: number },
+  result: BattleResult,
+): void {
+  if (result === "win") obj.wins++;
+  else if (result === "loss") obj.losses++;
+  else obj.draws++;
+}

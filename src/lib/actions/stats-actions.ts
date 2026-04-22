@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
-import { winRate, type BattleResult } from "@/lib/battle/result-format";
+import { winRate, bumpWLD, type BattleResult } from "@/lib/battle/result-format";
 
 export async function getPersonalStats(format: string = "ND") {
   const supabase = createClient();
@@ -161,15 +161,6 @@ export async function getDetailedPersonalStats(
   const myDeckMap = new Map<string, { wins: number; losses: number; draws: number; total: number; opponents: Map<string, OpponentDetail> }>();
   const oppDeckMap = new Map<string, { wins: number; losses: number; draws: number; total: number }>();
   const turnOrder: TurnOrderSummary = { ...EMPTY_TURN_ORDER };
-
-  const bumpWLD = (
-    obj: { wins: number; losses: number; draws: number },
-    r: BattleResult,
-  ) => {
-    if (r === "win") obj.wins++;
-    else if (r === "loss") obj.losses++;
-    else obj.draws++;
-  };
 
   for (const b of battles) {
     const myDeckName = b.my_deck_name ?? "不明";

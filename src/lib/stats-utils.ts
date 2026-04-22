@@ -1,4 +1,5 @@
-export function getWinRateColor(rate: number): string {
+export function getWinRateColor(rate: number | null): string {
+  if (rate === null) return "#8888aa";
   if (rate >= 65) return "#50c878";
   if (rate >= 55) return "#7dcea0";
   if (rate >= 45) return "#f0a030";
