@@ -10,9 +10,9 @@ type Props = {
 };
 
 const labels: Record<Scope, string> = {
-  personal: "個人",
-  team: "サーバー",
-  global: "全体",
+  personal: "自分のみ",
+  team: "Discord",
+  global: "全ユーザー",
 };
 
 export function ScopeSelector({ scope, setScope, teamEnabled = false, isGuest = false }: Props) {

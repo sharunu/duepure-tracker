@@ -8,7 +8,7 @@ type Props = {
 };
 
 const labels: Record<View, string> = {
-  stats: "統計",
+  stats: "サマリー",
   trend: "推移",
 };
 

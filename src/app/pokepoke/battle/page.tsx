@@ -1,65 +1,166 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { getDecks } from "@/lib/actions/deck-actions";
 import {
+  getBattlesByDateRange,
+  getDailyBattleCounts,
   getOpponentDeckSuggestions,
   getMiniStats,
+  hasAnyBattles,
 } from "@/lib/actions/battle-actions";
 import { checkIsAdmin } from "@/lib/actions/admin-actions";
-import { getOpponentDeckNameMap, type OpponentDeckNameMap } from "@/lib/actions/opponent-deck-display";
+import {
+  getOpponentDeckNameMap,
+  type OpponentDeckNameMap,
+} from "@/lib/actions/opponent-deck-display";
 import { useFormat } from "@/hooks/use-format";
-import { FormatSelector } from "@/components/ui/FormatSelector";
-import { BattleRecordForm } from "@/components/battle/BattleRecordForm";
 import { BottomNav } from "@/components/layout/BottomNav";
+import { BattleTabsView } from "@/components/battle/BattleTabsView";
 
-export default function BattlePage() {
+type Tuning = { id: string; name: string; sort_order: number };
+type Deck = { id: string; name: string; deck_tunings?: Tuning[] };
+type Battle = {
+  id: string;
+  my_deck_id: string;
+  my_deck_name: string;
+  opponent_deck_name: string;
+  result: "win" | "loss" | "draw";
+  turn_order: "first" | "second" | null;
+  fought_at: string;
+  tuning_id: string | null;
+  tuning_name?: string | null;
+};
+
+type Suggestions = { major: string[]; minor: string[]; other: string[] };
+type MiniStatsData = {
+  wins: number;
+  losses: number;
+  draws: number;
+  total: number;
+  streak: number;
+};
+
+function BattlePageInner() {
   const { format, setFormat, ready } = useFormat();
-  const [data, setData] = useState<{
-    decks: Awaited<ReturnType<typeof getDecks>>;
-    suggestions: { major: string[]; minor: string[]; other: string[] };
-    miniStats: Awaited<ReturnType<typeof getMiniStats>>;
-    isAdmin: boolean;
-    nameMap: OpponentDeckNameMap;
-  } | null>(null);
-  const [pageLoading, setPageLoading] = useState(true);
+
+  const [decks, setDecks] = useState<Deck[]>([]);
+  const [suggestions, setSuggestions] = useState<Suggestions>({
+    major: [],
+    minor: [],
+    other: [],
+  });
+  const [miniStats, setMiniStats] = useState<MiniStatsData | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [nameMap, setNameMap] = useState<OpponentDeckNameMap>({});
+  const [inputLoading, setInputLoading] = useState(true);
+
+  const [battles, setBattles] = useState<Battle[]>([]);
+  const [selectedDeck, setSelectedDeck] = useState<string | null>(null);
+  const [battleCounts, setBattleCounts] = useState<Record<string, number>>({});
+  const [hasAny, setHasAny] = useState<boolean | null>(null);
+  const [historyLoading, setHistoryLoading] = useState(true);
+
   const [error, setError] = useState<string | null>(null);
 
-  const loadData = useCallback(() => {
+  const [startDate, setStartDate] = useState(() => {
+    const d = new Date();
+    d.setMonth(d.getMonth() - 1);
+    return d.toLocaleDateString("sv-SE");
+  });
+  const [endDate, setEndDate] = useState(() => new Date().toLocaleDateString("sv-SE"));
+
+  const loadInputData = useCallback(() => {
     if (!ready) return;
     Promise.all([
       getDecks(format, "pokepoke"),
       getOpponentDeckSuggestions(format, "pokepoke"),
-      getMiniStats(format, localStorage.getItem(`measureSince_${format}`) ?? undefined, "pokepoke"),
+      getMiniStats(
+        format,
+        localStorage.getItem(`measureSince_${format}`) ?? undefined,
+        "pokepoke"
+      ),
       checkIsAdmin(),
       getOpponentDeckNameMap(format, "pokepoke"),
-    ]).then(([decks, suggestions, miniStats, isAdmin, nameMap]) => {
-      setData({ decks, suggestions, miniStats, isAdmin, nameMap });
-      setPageLoading(false);
-    }).catch(() => {
-      setError("データの読み込みに失敗しました");
-      setPageLoading(false);
-    });
+    ])
+      .then(([d, s, m, admin, map]) => {
+        setDecks(d as Deck[]);
+        setSuggestions(s);
+        setMiniStats(m);
+        setIsAdmin(admin);
+        setNameMap(map);
+        setInputLoading(false);
+      })
+      .catch(() => {
+        setError("データの読み込みに失敗しました");
+        setInputLoading(false);
+      });
   }, [format, ready]);
 
+  const loadHistory = useCallback(() => {
+    if (!ready) return;
+    setHistoryLoading(true);
+    Promise.all([
+      getBattlesByDateRange(format, startDate, endDate, "pokepoke"),
+      hasAnyBattles(format, "pokepoke"),
+      getOpponentDeckNameMap(format, "pokepoke"),
+    ])
+      .then(([b, any, map]) => {
+        setBattles(b as Battle[]);
+        setHasAny(any);
+        setNameMap(map);
+        setHistoryLoading(false);
+      })
+      .catch(() => {
+        setError("データの読み込みに失敗しました");
+        setHistoryLoading(false);
+      });
+  }, [format, startDate, endDate, ready]);
+
+  const loadCounts = useCallback(
+    (year: number, month: number) => {
+      if (!ready) return;
+      getDailyBattleCounts(format, year, month, "pokepoke").then(setBattleCounts);
+    },
+    [format, ready]
+  );
+
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    loadInputData();
+  }, [loadInputData]);
 
-  if (error) {
-    return (
-      <>
-        <div className="min-h-screen pb-20 px-4 pt-6 max-w-lg mx-auto">
-          <p className="text-center text-red-400 py-12 text-sm">{error}</p>
-        </div>
-        <BottomNav />
-      </>
-    );
-  }
+  useEffect(() => {
+    loadHistory();
+  }, [loadHistory]);
 
-  if (!data || !ready) {
-    return (
-      <>
+  useEffect(() => {
+    const now = new Date();
+    loadCounts(now.getFullYear(), now.getMonth() + 1);
+  }, [loadCounts]);
+
+  useEffect(() => {
+    setSelectedDeck(null);
+  }, [format]);
+
+  const handleRangeChange = (start: string, end: string) => {
+    setStartDate(start);
+    setEndDate(end);
+  };
+
+  const handleHistoryRefresh = useCallback(() => {
+    loadHistory();
+    const now = new Date();
+    loadCounts(now.getFullYear(), now.getMonth() + 1);
+  }, [loadHistory, loadCounts]);
+
+  const ready2 = ready && !inputLoading;
+
+  const content = useMemo(() => {
+    if (error) {
+      return <p className="text-center text-red-400 py-12 text-sm">{error}</p>;
+    }
+    if (!ready2) {
+      return (
         <div className="min-h-screen pb-20 px-4 pt-6 max-w-lg mx-auto">
           <div className="flex items-center justify-between mb-4">
             <div className="animate-pulse rounded-[8px] bg-[#232640] h-6 w-24" />
@@ -70,43 +171,88 @@ export default function BattlePage() {
             <div className="animate-pulse rounded-[10px] bg-[#232640] h-[52px]" />
             <div className="animate-pulse rounded-[10px] bg-[#232640] h-[52px]" />
             <div className="animate-pulse rounded-[10px] bg-[#232640] h-[44px]" />
-            <div className="flex gap-3"><div className="animate-pulse rounded-[10px] bg-[#232640] h-[56px] flex-1" /><div className="animate-pulse rounded-[10px] bg-[#232640] h-[56px] flex-1" /></div>
+            <div className="flex gap-3">
+              <div className="animate-pulse rounded-[10px] bg-[#232640] h-[56px] flex-1" />
+              <div className="animate-pulse rounded-[10px] bg-[#232640] h-[56px] flex-1" />
+            </div>
           </div>
         </div>
-        <BottomNav />
-      </>
+      );
+    }
+    return (
+      <BattleTabsView
+        format={format}
+        setFormat={setFormat}
+        ready={ready}
+        decks={decks}
+        suggestions={suggestions}
+        miniStats={miniStats}
+        isAdmin={isAdmin}
+        battles={battles}
+        selectedDeck={selectedDeck}
+        setSelectedDeck={setSelectedDeck}
+        startDate={startDate}
+        endDate={endDate}
+        onRangeChange={handleRangeChange}
+        battleCounts={battleCounts}
+        onMonthChange={loadCounts}
+        hasAny={hasAny}
+        historyLoading={historyLoading}
+        onHistoryRefresh={handleHistoryRefresh}
+        opponentDeckNameMap={nameMap}
+      />
     );
-  }
+  }, [
+    error,
+    ready2,
+    format,
+    setFormat,
+    ready,
+    decks,
+    suggestions,
+    miniStats,
+    isAdmin,
+    battles,
+    selectedDeck,
+    startDate,
+    endDate,
+    battleCounts,
+    loadCounts,
+    hasAny,
+    historyLoading,
+    handleHistoryRefresh,
+    nameMap,
+  ]);
 
   return (
     <>
-      <div className="min-h-screen pb-20 px-4 pt-6 max-w-lg mx-auto">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-[20px] font-medium">対戦記録</h1>
-          <div className={"flex items-center gap-2" + (!ready ? " invisible" : "")}>
-            {data.isAdmin && (
-              <a
-                href="/admin/opponent-decks"
-                className="text-[11px] text-gray-400 hover:text-white px-2 py-1 rounded-[6px] transition-colors"
-                style={{ backgroundColor: "#1a1d2e", border: "0.5px solid #333355" }}
-              >
-                対面デッキ管理
-              </a>
-            )}
-            <FormatSelector format={format} setFormat={setFormat} />
-          </div>
-        </div>
-
-        <BattleRecordForm
-          decks={data.decks}
-          suggestions={data.suggestions}
-          miniStats={data.miniStats}
-          format={format}
-          setFormat={setFormat}
-          opponentDeckNameMap={data.nameMap}
-        />
-      </div>
+      {content}
       <BottomNav />
     </>
+  );
+}
+
+export default function BattlePage() {
+  return (
+    <Suspense
+      fallback={
+        <>
+          <div className="min-h-screen pb-20 px-4 pt-6 max-w-lg mx-auto">
+            <div className="flex items-center justify-between mb-4">
+              <div className="animate-pulse rounded-[8px] bg-[#232640] h-6 w-24" />
+              <div className="animate-pulse rounded-[8px] bg-[#232640] h-8 w-20" />
+            </div>
+            <div className="space-y-4">
+              <div className="animate-pulse rounded-[10px] bg-[#232640] h-[56px]" />
+              <div className="animate-pulse rounded-[10px] bg-[#232640] h-[52px]" />
+              <div className="animate-pulse rounded-[10px] bg-[#232640] h-[52px]" />
+            </div>
+          </div>
+          <BottomNav />
+        </>
+      }
+    >
+      <BattlePageInner />
+    </Suspense>
   );
 }

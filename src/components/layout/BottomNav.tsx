@@ -23,15 +23,6 @@ function IconRecord({ className }: { className?: string }) {
   );
 }
 
-function IconHistory({ className }: { className?: string }) {
-  return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className={className}>
-      <rect x="3" y="2" width="14" height="16" rx="2" stroke="currentColor" strokeWidth="1.5" />
-      <path d="M6.5 6.5H13.5M6.5 10H13.5M6.5 13.5H10.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  );
-}
-
 function IconStats({ className }: { className?: string }) {
   return (
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className={className}>
@@ -55,9 +46,8 @@ function IconAccount({ className }: { className?: string }) {
  */
 const gameScopedItems = [
   { suffix: "/home", label: "ホーム", Icon: IconHome },
+  { suffix: "/battle", label: "対戦記録", Icon: IconRecord },
   { suffix: "/stats", label: "分析", Icon: IconStats },
-  { suffix: "/battle", label: "記録", Icon: IconRecord },
-  { suffix: "/battles", label: "履歴", Icon: IconHistory },
 ];
 
 export function BottomNav() {
