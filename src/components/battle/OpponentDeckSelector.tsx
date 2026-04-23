@@ -66,11 +66,11 @@ export function OpponentDeckSelector({
     onChange(name);
   };
 
-  const chipStyle = (name: string, size: "major" | "other") => {
+  const chipStyle = (name: string) => {
     const isSelected = value === name;
     return {
-      padding: size === "major" ? "7px 14px" : "6px 12px",
-      fontSize: size === "major" ? 12 : 11,
+      padding: "6px 12px",
+      fontSize: 11,
       borderRadius: 8,
       background: isSelected ? "rgba(99,102,241,0.1)" : "#232640",
       border: isSelected ? "1px solid #6366f1" : "0.5px solid #333355",
@@ -95,7 +95,7 @@ export function OpponentDeckSelector({
             key={name}
             type="button"
             onClick={() => handleSelect(name)}
-            style={chipStyle(name, "major")}
+            style={chipStyle(name)}
           >
             {display(name)}
           </button>
@@ -187,7 +187,7 @@ export function OpponentDeckSelector({
                       key={name}
                       type="button"
                       onClick={() => handleSelect(name)}
-                      style={chipStyle(name, "other")}
+                      style={chipStyle(name)}
                     >
                       {display(name)}
                     </button>
@@ -221,7 +221,7 @@ export function OpponentDeckSelector({
                       key={name}
                       type="button"
                       onClick={() => handleSelect(name)}
-                      style={chipStyle(name, "other")}
+                      style={chipStyle(name)}
                     >
                       {display(name)}
                     </button>

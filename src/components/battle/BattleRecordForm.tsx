@@ -361,7 +361,7 @@ export function BattleRecordForm({
 
           </div>
 
-          {/* Turn order */}
+          {/* Turn order + Result */}
           <div style={{ background: '#1a1d2e', border: '1px solid #2a2d48', borderRadius: 10, padding: 12 }}>
             <p className="text-[12px] text-gray-500 mb-2">先攻/後攻（任意）</p>
             <div className="flex gap-2">
@@ -383,49 +383,48 @@ export function BattleRecordForm({
                 </button>
               ))}
             </div>
-          </div>
 
-
-          {/* Result buttons */}
-          <div className="flex gap-3 pt-2">
-            <button
-              onClick={() => handleSubmit("win")}
-              disabled={submitting || !opponentDeck.trim() || !selectedValue}
-              className={"flex-1 rounded-[10px] py-4 text-[18px] font-bold transition-all min-h-[56px] shadow-lg text-white " + (
-                lastResult === "win"
-                  ? "scale-95 opacity-90"
-                  : "hover:brightness-110 disabled:opacity-40"
-              )}
-              style={{ background: "linear-gradient(to right, #22c55e, #16a34a)" }}
-            >
-              WIN
-            </button>
-            {supportsDraw(game) && (
+            <p className="text-[12px] text-gray-500 mb-2" style={{ marginTop: 12 }}>対戦結果</p>
+            <div className="flex gap-2">
               <button
-                onClick={() => handleSubmit("draw")}
+                onClick={() => handleSubmit("win")}
                 disabled={submitting || !opponentDeck.trim() || !selectedValue}
-                className={"flex-1 rounded-[10px] py-4 text-[18px] font-bold transition-all min-h-[56px] shadow-lg text-white " + (
-                  lastResult === "draw"
+                className={"flex-1 rounded-[6px] px-3 py-2 text-[13px] font-bold transition-all min-h-[44px] text-white " + (
+                  lastResult === "win"
                     ? "scale-95 opacity-90"
                     : "hover:brightness-110 disabled:opacity-40"
                 )}
-                style={{ background: "linear-gradient(to right, #f59e0b, #d97706)" }}
+                style={{ background: "linear-gradient(to right, #22c55e, #16a34a)" }}
               >
-                DRAW
+                WIN
               </button>
-            )}
-            <button
-              onClick={() => handleSubmit("loss")}
-              disabled={submitting || !opponentDeck.trim() || !selectedValue}
-              className={"flex-1 rounded-[10px] py-4 text-[18px] font-bold transition-all min-h-[56px] shadow-lg text-white " + (
-                lastResult === "loss"
-                  ? "scale-95 opacity-90"
-                  : "hover:brightness-110 disabled:opacity-40"
+              {supportsDraw(game) && (
+                <button
+                  onClick={() => handleSubmit("draw")}
+                  disabled={submitting || !opponentDeck.trim() || !selectedValue}
+                  className={"flex-1 rounded-[6px] px-3 py-2 text-[13px] font-bold transition-all min-h-[44px] text-white " + (
+                    lastResult === "draw"
+                      ? "scale-95 opacity-90"
+                      : "hover:brightness-110 disabled:opacity-40"
+                  )}
+                  style={{ background: "linear-gradient(to right, #f59e0b, #d97706)" }}
+                >
+                  DRAW
+                </button>
               )}
-              style={{ background: "linear-gradient(to right, #ef4444, #dc2626)" }}
-            >
-              LOSE
-            </button>
+              <button
+                onClick={() => handleSubmit("loss")}
+                disabled={submitting || !opponentDeck.trim() || !selectedValue}
+                className={"flex-1 rounded-[6px] px-3 py-2 text-[13px] font-bold transition-all min-h-[44px] text-white " + (
+                  lastResult === "loss"
+                    ? "scale-95 opacity-90"
+                    : "hover:brightness-110 disabled:opacity-40"
+                )}
+                style={{ background: "linear-gradient(to right, #ef4444, #dc2626)" }}
+              >
+                LOSE
+              </button>
+            </div>
           </div>
 
           {/* Interval modal */}
