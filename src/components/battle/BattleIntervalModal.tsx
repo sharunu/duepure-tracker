@@ -1,5 +1,6 @@
 "use client";
 
+import { createPortal } from "react-dom";
 import {
   displayDeckName,
   type OpponentDeckNameMap,
@@ -29,18 +30,19 @@ type Props = {
 
 export function BattleIntervalModal({ open, onClose, battles, onSelect, currentTimestamp, opponentDeckNameMap }: Props) {
   if (!open) return null;
+  if (typeof document === "undefined") return null;
 
   const formatDate = (iso: string) => {
     const d = new Date(iso);
     return d.toLocaleDateString("ja-JP", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
   };
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center">
       <div className="fixed inset-0 bg-black/50" onClick={onClose} />
       <div className="relative w-full max-w-lg bg-background rounded-t-2xl max-h-[80vh] flex flex-col">
         <div className="flex items-center justify-between p-4 border-b border-border">
-          <h2 className="text-base font-bold">計測区間編集</h2>
+          <h2 className="text-base font-bold">集計範囲</h2>
           <button
             type="button"
             onClick={onClose}
@@ -104,11 +106,12 @@ export function BattleIntervalModal({ open, onClose, battles, onSelect, currentT
               onClick={() => { onSelect(null); onClose(); }}
               className="w-full rounded-lg border border-border px-4 py-3 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
             >
-              計測区間をリセット
+              集計範囲をリセット
             </button>
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

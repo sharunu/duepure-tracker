@@ -49,7 +49,7 @@ export function MiniStats({ stats, onEditInterval, game }: Props) {
             className="text-[11px] text-gray-400 hover:text-white px-2 py-1 rounded-[6px] transition-colors shrink-0 ml-2"
             style={{ backgroundColor: "#1a1d2e", border: "0.5px solid #333355" }}
           >
-            計測区間編集
+            集計範囲
           </button>
         )}
       </div>
