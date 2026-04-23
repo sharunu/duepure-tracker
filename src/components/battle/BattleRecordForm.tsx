@@ -384,12 +384,12 @@ export function BattleRecordForm({
               ))}
             </div>
 
-            <p className="text-[12px] text-gray-500 mb-2" style={{ marginTop: 12 }}>対戦結果</p>
+            <p className="text-[12px] text-gray-500 mb-2" style={{ marginTop: 12 }}>勝敗</p>
             <div className="flex gap-2">
               <button
                 onClick={() => handleSubmit("win")}
                 disabled={submitting || !opponentDeck.trim() || !selectedValue}
-                className={"flex-1 rounded-[6px] px-3 py-2 text-[13px] font-bold transition-all min-h-[44px] text-white " + (
+                className={"flex-1 rounded-[6px] px-3 py-2 text-[15px] font-bold transition-all min-h-[44px] text-white " + (
                   lastResult === "win"
                     ? "scale-95 opacity-90"
                     : "hover:brightness-110 disabled:opacity-40"
@@ -402,7 +402,7 @@ export function BattleRecordForm({
                 <button
                   onClick={() => handleSubmit("draw")}
                   disabled={submitting || !opponentDeck.trim() || !selectedValue}
-                  className={"flex-1 rounded-[6px] px-3 py-2 text-[13px] font-bold transition-all min-h-[44px] text-white " + (
+                  className={"flex-1 rounded-[6px] px-3 py-2 text-[15px] font-bold transition-all min-h-[44px] text-white " + (
                     lastResult === "draw"
                       ? "scale-95 opacity-90"
                       : "hover:brightness-110 disabled:opacity-40"
@@ -415,7 +415,7 @@ export function BattleRecordForm({
               <button
                 onClick={() => handleSubmit("loss")}
                 disabled={submitting || !opponentDeck.trim() || !selectedValue}
-                className={"flex-1 rounded-[6px] px-3 py-2 text-[13px] font-bold transition-all min-h-[44px] text-white " + (
+                className={"flex-1 rounded-[6px] px-3 py-2 text-[15px] font-bold transition-all min-h-[44px] text-white " + (
                   lastResult === "loss"
                     ? "scale-95 opacity-90"
                     : "hover:brightness-110 disabled:opacity-40"
