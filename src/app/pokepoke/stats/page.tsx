@@ -237,7 +237,7 @@ function StatsPageInner() {
     if (scope === "team" && !activeTeamId) {
       return (
         <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-          <p className="text-sm">ホームタブでサーバーを選択してください</p>
+          <p className="text-sm">ホームタブで Discord サーバーを選択してください</p>
         </div>
       );
     }

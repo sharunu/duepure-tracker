@@ -42,6 +42,7 @@ type Props = {
   format: Format;
   setFormat: (f: Format) => void;
   opponentDeckNameMap?: OpponentDeckNameMap;
+  onBattleRecorded?: () => void;
 };
 
 function parseDeckSelection(value: string): { deckId: string; tuningId: string | null } {
@@ -69,6 +70,7 @@ export function BattleRecordForm({
   format,
   setFormat,
   opponentDeckNameMap,
+  onBattleRecorded,
 }: Props) {
   const { slug: game } = useGame();
   const [selectedValue, setSelectedValue] = useState<string>("");
@@ -173,6 +175,7 @@ export function BattleRecordForm({
       setTimeout(() => setLastResult(null), 1500);
       const updatedStats = await getMiniStats(format, measureSince ?? undefined, game);
       setMiniStats(updatedStats);
+      onBattleRecorded?.();
     } catch (e) {
       console.error(e);
       alert("記録の保存に失敗しました");
