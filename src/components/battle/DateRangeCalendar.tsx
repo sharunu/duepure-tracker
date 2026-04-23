@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
 
 type Props = {
   startDate: string;
@@ -140,7 +141,7 @@ export function DateRangeCalendar({ startDate, endDate, onRangeChange, battleCou
       </div>
 
       {/* Calendar modal */}
-      {calendarOpen && (
+      {calendarOpen && typeof document !== "undefined" && createPortal(
         <div
           className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50"
           onClick={() => setCalendarOpen(false)}
@@ -207,7 +208,8 @@ export function DateRangeCalendar({ startDate, endDate, onRangeChange, battleCou
             })}
           </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
