@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { OpponentDeckSelector } from "./OpponentDeckSelector";
 import { getOpponentMemoSuggestions, deleteOpponentMemoSuggestion } from "@/lib/actions/battle-actions";
 import { MemoSuggestionButton } from "./MemoSuggestionButton";
@@ -180,7 +181,9 @@ export function EditBattleModal({ battle, decks, suggestions, onSave, onClose, o
     </button>
   );
 
-  return (
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50" onClick={onClose}>
       <div className="bg-card rounded-xl border border-border p-5 w-[90%] max-w-md space-y-4 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <h2 className="text-base font-bold">対戦記録を編集</h2>
@@ -331,6 +334,7 @@ export function EditBattleModal({ battle, decks, suggestions, onSave, onClose, o
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
