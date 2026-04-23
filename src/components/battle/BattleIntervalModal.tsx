@@ -59,7 +59,7 @@ export function BattleIntervalModal({ open, onClose, battles, onSelect, currentT
             onClick={() => { onSelect(new Date().toISOString()); onClose(); }}
             className="w-full text-left rounded-lg border border-primary bg-primary/5 px-4 py-3 text-sm font-medium text-primary hover:bg-primary/10 transition-colors"
           >
-            今試合から計測開始
+            今試合から集計開始
           </button>
 
           {/* Battle list */}
