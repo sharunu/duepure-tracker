@@ -98,18 +98,6 @@ export function BattleIntervalModal({ open, onClose, battles, onSelect, currentT
           )}
         </div>
 
-        {/* Reset button at bottom */}
-        {currentTimestamp && (
-          <div className="p-4 border-t border-border">
-            <button
-              type="button"
-              onClick={() => { onSelect(null); onClose(); }}
-              className="w-full rounded-lg border border-border px-4 py-3 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            >
-              集計範囲をリセット
-            </button>
-          </div>
-        )}
       </div>
     </div>,
     document.body
