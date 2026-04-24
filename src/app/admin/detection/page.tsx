@@ -84,12 +84,15 @@ function DetectionPageInner() {
 
   return (
     <div className="min-h-screen px-4 pt-6 pb-8 max-w-lg mx-auto">
-      <div className="flex items-center gap-3 mb-4">
+      <div className="flex items-center gap-3 mb-2">
         <button onClick={() => router.push("/admin")} className="text-gray-400 hover:text-white">
           <ChevronLeft size={20} />
         </button>
         <h1 className="text-[20px] font-medium">検知アラート</h1>
       </div>
+      <p className="text-[11px] text-gray-500 mb-4 ml-7">
+        毎日 04:30 JST に自動スキャンが実行されます。「今すぐスキャン」は即時確認用です。
+      </p>
 
       {/* ゲームタブ */}
       <div className="flex gap-1 mb-4 border-b border-[#232640]">

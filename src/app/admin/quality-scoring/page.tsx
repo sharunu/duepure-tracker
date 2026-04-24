@@ -88,12 +88,15 @@ export default function QualityScoringPage() {
 
   return (
     <div className="min-h-screen px-4 pt-6 pb-8 max-w-lg mx-auto">
-      <div className="flex items-center gap-3 mb-4">
+      <div className="flex items-center gap-3 mb-2">
         <button onClick={() => router.push("/admin")} className="text-gray-400 hover:text-white">
           <ChevronLeft size={20} />
         </button>
         <h1 className="text-[20px] font-medium">品質スコアリング</h1>
       </div>
+      <p className="text-[11px] text-gray-500 mb-4 ml-7">
+        毎日 04:15 JST に全ユーザーの品質スコアが再計算され、ステージの昇降格が自動で行われます。「今すぐ再計算」は即時確認用です。
+      </p>
 
       {/* アクションバー */}
       <div className="flex items-center gap-2 mb-4">
