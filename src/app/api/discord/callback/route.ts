@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { DEFAULT_GAME, isGameSlug, type GameSlug } from "@/lib/games";
 
 import { getServerEnv } from "@/lib/cf-env";
+
 /**
  * base64url を decode。'-'→'+', '_'→'/', padding を復元。
  * atob が使える Next.js Edge/Node 両ランタイムで動作。
@@ -20,10 +21,12 @@ function base64urlDecode(input: string): string {
 }
 
 /**
- * state をパース。新形式: base64url(JSON.stringify({ t: token, g: game }))
- * 旧形式（access_token 生文字列）も暫定互換で受け入れる（game は DEFAULT）。
+ * 旧形式 state パース（base64url JSON + 最古の raw access_token fallback）。
+ * 新方式（UUID nonce + discord_oauth_states）に移行済みだが、デプロイ直前に authorize を
+ * 開始したユーザーの in-flight OAuth を破壊しないため暫定継続。
+ * TODO: Phase 2 完了後 1 週間以上経過した別 PR で削除予定。
  */
-function parseState(state: string): { token: string; game: GameSlug } {
+function parseLegacyState(state: string): { token: string; game: GameSlug } {
   try {
     const decoded = base64urlDecode(state);
     if (decoded) {
@@ -35,27 +38,64 @@ function parseState(state: string): { token: string; game: GameSlug } {
   } catch {
     // fallthrough to legacy
   }
-  // 旧形式: state == access_token
   return { token: state, game: DEFAULT_GAME };
 }
 
-export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const code = searchParams.get("code");
-  const state = searchParams.get("state");
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-  const host = request.headers.get("host") || "localhost:3000";
-  const protocol = request.headers.get("x-forwarded-proto") || "http";
-  const origin = `${protocol}://${host}`;
+export async function GET(request: NextRequest) {
+  const reqUrl = new URL(request.url);
+  const code = reqUrl.searchParams.get("code");
+  const state = reqUrl.searchParams.get("state");
+
+  // origin は start route と完全一致させる（new URL(request.url).origin）。
+  // 不一致だと Discord token exchange の redirect_uri 検証で失敗する
+  const origin = reqUrl.origin;
 
   if (!code || !state) {
     return NextResponse.redirect(new URL("/home?discord=error", origin));
   }
 
-  const { token: accessTokenSupabase, game } = parseState(state);
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    (await getServerEnv("SUPABASE_SERVICE_ROLE_KEY"))!,
+  );
+
+  // 1. state を解析してユーザー特定
+  let userId: string;
+  let game: GameSlug;
+
+  if (UUID_RE.test(state)) {
+    // 新方式: discord_oauth_states から atomic consume（DELETE ... RETURNING）
+    // 同一 nonce が並列 callback に来ても片方しか成功しない
+    const { data, error } = await supabaseAdmin
+      .from("discord_oauth_states")
+      .delete()
+      .eq("nonce", state)
+      .gte("expires_at", new Date().toISOString())
+      .select("user_id, game_title")
+      .maybeSingle();
+
+    if (error || !data) {
+      console.error("discord_oauth_states consume failed:", error);
+      return NextResponse.redirect(new URL(`/${DEFAULT_GAME}/home?discord=error`, origin));
+    }
+    userId = data.user_id;
+    game = isGameSlug(data.game_title) ? data.game_title : DEFAULT_GAME;
+  } else {
+    // 旧方式: state に Supabase access_token が埋め込まれている（in-flight 救済）
+    const legacy = parseLegacyState(state);
+    game = legacy.game;
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(legacy.token);
+    if (authError || !user) {
+      console.error("legacy state auth failed:", authError);
+      return NextResponse.redirect(new URL(`/${game}/home?discord=error`, origin));
+    }
+    userId = user.id;
+  }
 
   try {
-    // 1. Discord token 交換
+    // 2. Discord token 交換
     const tokenRes = await fetch("https://discord.com/api/v10/oauth2/token", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -79,7 +119,7 @@ export async function GET(request: NextRequest) {
     const expiresIn: number = tokens.expires_in;
     const tokenExpiresAt = new Date(Date.now() + expiresIn * 1000).toISOString();
 
-    // 2. Discord user info
+    // 3. Discord user info
     const userRes = await fetch("https://discord.com/api/v10/users/@me", {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
@@ -90,7 +130,7 @@ export async function GET(request: NextRequest) {
     const discordId: string = discordUser.id;
     const discordUsername: string = discordUser.global_name ?? discordUser.username;
 
-    // 3. Guilds
+    // 4. Guilds
     const guildsRes = await fetch("https://discord.com/api/v10/users/@me/guilds", {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
@@ -104,24 +144,12 @@ export async function GET(request: NextRequest) {
       icon: g.icon ? `https://cdn.discordapp.com/icons/${g.id}/${g.icon}.png` : null,
     }));
 
-    // 4. Supabase JWT 検証
-    const supabaseAdmin = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      (await getServerEnv("SUPABASE_SERVICE_ROLE_KEY"))!
-    );
-
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(accessTokenSupabase);
-    if (authError || !user) {
-      console.error("Supabase auth failed:", authError);
-      return NextResponse.redirect(new URL(`/${game}/home?discord=error`, origin));
-    }
-
     // 5. discord_connections UPSERT: onConflict は (user_id, game_title)
     const { error: upsertError } = await supabaseAdmin
       .from("discord_connections")
       .upsert(
         {
-          user_id: user.id,
+          user_id: userId,
           game_title: game,
           discord_id: discordId,
           discord_username: discordUsername,
@@ -140,7 +168,7 @@ export async function GET(request: NextRequest) {
 
     // 6. Team 同期 (p_game_title 付き)
     const { error: syncError } = await supabaseAdmin.rpc("sync_team_membership", {
-      p_user_id: user.id,
+      p_user_id: userId,
       p_discord_username: discordUsername,
       p_guilds: guildData,
       p_game_title: game,

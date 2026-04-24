@@ -1,75 +1,13 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-import { DEFAULT_GAME, isGameSlug } from "@/lib/games";
+import { NextResponse } from "next/server";
 
-import { getServerEnv } from "@/lib/cf-env";
-export async function POST(request: NextRequest) {
-  try {
-    const { accessToken, game: bodyGame } = await request.json();
-    const game = isGameSlug(bodyGame) ? bodyGame : DEFAULT_GAME;
-    if (!accessToken) {
-      return NextResponse.json({ error: "missing accessToken" }, { status: 400 });
-    }
-
-    // Verify user via Supabase JWT in Authorization header
-    const authHeader = request.headers.get("authorization");
-    const jwt = authHeader?.replace("Bearer ", "");
-    if (!jwt) {
-      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-    }
-
-    const supabaseAdmin = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      (await getServerEnv("SUPABASE_SERVICE_ROLE_KEY"))!
-    );
-
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(jwt);
-    if (authError || !user) {
-      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-    }
-
-    // Get discord connection to retrieve discord username
-    const { data: conn } = await supabaseAdmin
-      .from("discord_connections")
-      .select("discord_username, access_token")
-      .eq("user_id", user.id)
-      .single();
-
-    if (!conn) {
-      return NextResponse.json({ error: "no discord connection" }, { status: 404 });
-    }
-
-    // Fetch guilds from Discord
-    const guildsRes = await fetch("https://discord.com/api/v10/users/@me/guilds", {
-      headers: { Authorization: `Bearer ${conn.access_token}` },
-    });
-
-    if (!guildsRes.ok) {
-      return NextResponse.json({ error: "discord api error" }, { status: 502 });
-    }
-
-    const guilds = await guildsRes.json();
-    const guildData = (guilds as { id: string; name: string; icon: string | null }[]).map((g) => ({
-      id: g.id,
-      name: g.name,
-      icon: g.icon ? `https://cdn.discordapp.com/icons/${g.id}/${g.icon}.png` : null,
-    }));
-
-    // Sync
-    const { error: syncError } = await supabaseAdmin.rpc("sync_team_membership", {
-      p_user_id: user.id,
-      p_discord_username: conn.discord_username,
-      p_guilds: guildData,
-    });
-
-    if (syncError) {
-      console.error("sync error:", syncError);
-      return NextResponse.json({ error: "sync failed" }, { status: 500 });
-    }
-
-    return NextResponse.json({ ok: true, guildCount: guildData.length });
-  } catch (err) {
-    console.error("refresh-guilds error:", err);
-    return NextResponse.json({ error: "internal error" }, { status: 500 });
-  }
+/**
+ * 旧 refresh-guilds API。discord_connections を game_title なしで取得していたため、
+ * 複数ゲーム連携時にゲーム混線リスクがあった。一般公開前のセキュリティハードニングで閉塞。
+ * 現行は /api/discord/refresh-guilds（新方式、game_title 絞り付き）を使用。
+ */
+export function POST() {
+  return NextResponse.json(
+    { error: "gone", message: "This endpoint has been deprecated. Use /api/discord/refresh-guilds." },
+    { status: 410 },
+  );
 }

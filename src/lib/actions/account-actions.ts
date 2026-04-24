@@ -26,11 +26,7 @@ export async function updateDisplayName(name: string): Promise<void> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
 
-  const { error } = await supabase
-    .from("profiles")
-    .update({ display_name: name })
-    .eq("id", user.id);
-
+  const { error } = await supabase.rpc("update_my_display_name", { p_display_name: name });
   if (error) throw error;
 }
 
@@ -98,41 +94,18 @@ export async function getXConnectionStatus(): Promise<{
 
 export async function syncXAccountFromAuth(): Promise<boolean> {
   const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return false;
-
-  console.log("[syncX] identities:", user.identities?.map(i => i.provider));
-
-  const twitterIdentity = user.identities?.find(i => i.provider === "twitter");
-  if (!twitterIdentity) {
-    console.log("[syncX] no twitter identity found");
-    return false;
-  }
-
-  console.log("[syncX] identity_data keys:", Object.keys(twitterIdentity.identity_data ?? {}));
-
-  const xUsername = twitterIdentity.identity_data?.user_name
-    ?? twitterIdentity.identity_data?.preferred_username;
-  const xUserId = twitterIdentity.identity_data?.provider_id
-    ?? twitterIdentity.id;
-
-  if (!xUsername) {
-    console.log("[syncX] no xUsername in identity_data");
-    return false;
-  }
-
-  const { error } = await supabase
-    .from("profiles")
-    .update({ x_user_id: xUserId, x_username: xUsername })
-    .eq("id", user.id);
+  // sync_my_x_connection は auth.identities から server 側で読み取る。
+  // クライアント入力値を信用しないため、ユーザーが自分の profile に任意の X 名を
+  // 書き込むことはできない。
+  const { data: ok, error } = await supabase.rpc("sync_my_x_connection");
 
   if (error) {
-    console.log("[syncX] update error:", error);
+    console.log("[syncX] rpc error:", error);
     return false;
   }
 
-  console.log("[syncX] success:", xUsername);
-  return true;
+  console.log("[syncX] result:", ok);
+  return ok ?? false;
 }
 
 export async function unlinkXAccount(): Promise<{ success: boolean; error?: string }> {
@@ -151,11 +124,8 @@ export async function unlinkXAccount(): Promise<{ success: boolean; error?: stri
     if (error) return { success: false, error: error.message };
   }
 
-  // DB更新
-  await supabase
-    .from("profiles")
-    .update({ x_user_id: null, x_username: null })
-    .eq("id", user.id);
+  // DB 更新（clear_my_x_connection は auth.uid() 本人の行のみクリア）
+  await supabase.rpc("clear_my_x_connection");
 
   return { success: true };
 }

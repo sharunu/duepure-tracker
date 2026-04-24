@@ -1,5 +1,5 @@
-const CACHE_NAME = "dp-tracker-v1";
-const PRECACHE_URLS = ["/battle", "/decks", "/stats", "/manifest.json"];
+const CACHE_NAME = "dp-tracker-v2";
+const PRECACHE_URLS = ["/manifest.json"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -22,18 +22,31 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
-  // Network-first for API/data requests
-  if (event.request.url.includes("/api/") || event.request.method !== "GET") {
-    return;
-  }
+  const req = event.request;
+  if (req.method !== "GET") return;
+
+  const url = new URL(req.url);
+  if (url.origin !== self.location.origin) return;
+  if (url.pathname.startsWith("/api/")) return;
+
+  // 個人情報がレンダリングされた HTML を端末に残さない
+  const accept = req.headers.get("accept") || "";
+  if (req.mode === "navigate" || accept.includes("text/html")) return;
+
+  const isStatic =
+    url.pathname.startsWith("/_next/static/") ||
+    /\.(png|jpg|jpeg|svg|webp|ico|woff2?|ttf|css|js)$/.test(url.pathname);
+  if (!isStatic) return;
 
   event.respondWith(
-    fetch(event.request)
+    fetch(req)
       .then((response) => {
-        const clone = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        if (response.ok) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(req, clone));
+        }
         return response;
       })
-      .catch(() => caches.match(event.request))
+      .catch(() => caches.match(req))
   );
 });
