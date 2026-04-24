@@ -44,13 +44,13 @@ function parseLegacyState(state: string): { token: string; game: GameSlug } {
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const code = searchParams.get("code");
-  const state = searchParams.get("state");
+  const reqUrl = new URL(request.url);
+  const code = reqUrl.searchParams.get("code");
+  const state = reqUrl.searchParams.get("state");
 
-  const host = request.headers.get("host") || "localhost:3000";
-  const protocol = request.headers.get("x-forwarded-proto") || "http";
-  const origin = `${protocol}://${host}`;
+  // origin は start route と完全一致させる（new URL(request.url).origin）。
+  // 不一致だと Discord token exchange の redirect_uri 検証で失敗する
+  const origin = reqUrl.origin;
 
   if (!code || !state) {
     return NextResponse.redirect(new URL("/home?discord=error", origin));

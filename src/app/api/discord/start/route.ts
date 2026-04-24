@@ -53,14 +53,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "state creation failed" }, { status: 500 });
     }
 
-    // 5. origin はリクエスト由来（NEXT_PUBLIC_APP_URL は本番固定のため preview で事故る）
+    // 5. origin はリクエスト由来（NEXT_PUBLIC_APP_URL は本番固定のため preview で事故る）。
+    // callback の redirect_uri と完全一致させるため、両 route で同じ算出（new URL(request.url).origin）を使う
     const clientId = process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID;
     if (!clientId) {
       return NextResponse.json({ error: "discord client id not configured" }, { status: 500 });
     }
-    const host = request.headers.get("host") || "localhost:3000";
-    const protocol = request.headers.get("x-forwarded-proto") || "https";
-    const origin = `${protocol}://${host}`;
+    const origin = new URL(request.url).origin;
 
     const params = new URLSearchParams({
       client_id: clientId,
