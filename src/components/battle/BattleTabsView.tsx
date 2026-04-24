@@ -233,10 +233,11 @@ export function BattleTabsView(props: Props) {
         <div className="overflow-hidden" ref={emblaRef}>
           <div className="flex">
             <div
-              className="flex-[0_0_100%] min-w-0"
+              className={`flex-[0_0_100%] min-w-0 ${currentSlide === "input" ? "" : "h-0 overflow-hidden"}`}
               role="tabpanel"
               id="battle-panel-input"
               aria-labelledby="battle-tab-input"
+              aria-hidden={currentSlide !== "input"}
             >
               <BattleRecordForm
                 decks={props.decks}
@@ -250,10 +251,11 @@ export function BattleTabsView(props: Props) {
             </div>
 
             <div
-              className="flex-[0_0_100%] min-w-0 space-y-4"
+              className={`flex-[0_0_100%] min-w-0 space-y-4 ${currentSlide === "history" ? "" : "h-0 overflow-hidden"}`}
               role="tabpanel"
               id="battle-panel-history"
               aria-labelledby="battle-tab-history"
+              aria-hidden={currentSlide !== "history"}
             >
               {props.historyLoading ? (
                 <div className="space-y-3">

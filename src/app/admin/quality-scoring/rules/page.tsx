@@ -19,13 +19,10 @@ type Rule = {
 const paramLabels: Record<string, Record<string, string>> = {
   throwaway_suspect: { max_days: "判定期間（日）" },
   long_term_user: { min_days: "最低利用期間（日）" },
-  recent_battles: { period_days: "判定期間（日）", min_battles: "最低戦闘数" },
   opponent_diversity: { last_n_battles: "直近N戦", min_distinct: "最低種類数" },
   normal_winrate: { min_battles: "最低戦闘数", min_rate: "下限勝率(%)", max_rate: "上限勝率(%)" },
-  normal_input_pace: { window_hours: "ウィンドウ（時間）", min_battles: "最低戦闘数", max_battles: "上限戦闘数" },
   extreme_winrate_q: { min_battles: "最低戦闘数", high_rate: "上限勝率(%)", low_rate: "下限勝率(%)" },
   repetitive_pattern_q: { max_consecutive: "連続回数" },
-  excessive_input: { window_hours: "ウィンドウ（時間）", max_battles: "閾値（戦闘数）" },
 };
 
 const categoryLabels: Record<string, string> = {
@@ -36,7 +33,8 @@ const categoryLabels: Record<string, string> = {
   behavior_minus: "行動（減点）",
 };
 
-const categoryOrder = ["account_trust", "activity", "data_quality", "behavior_plus", "behavior_minus"];
+const categoryOrder = ["account_trust", "data_quality", "behavior_plus", "behavior_minus"];
+const hiddenRuleKeys = new Set(["recent_battles", "normal_input_pace", "excessive_input"]);
 
 export default function QualityScoringRulesPage() {
   const router = useRouter();
@@ -50,7 +48,7 @@ export default function QualityScoringRulesPage() {
 
   useEffect(() => {
     getQualityScoringRules().then((data) => {
-      const r = data as Rule[];
+      const r = (data as Rule[]).filter((rule) => !hiddenRuleKeys.has(rule.rule_key));
       setRules(r);
       const params: Record<string, Record<string, number>> = {};
       const scores: Record<string, number> = {};
