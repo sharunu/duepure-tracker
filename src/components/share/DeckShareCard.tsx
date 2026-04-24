@@ -128,8 +128,8 @@ function MatchupRow({
   const width = maxTotal > 0 ? Math.max(8, (total / maxTotal) * 100) : 0;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, minHeight: 30 }}>
         <div
           style={{
             flex: 1,
@@ -137,6 +137,10 @@ function MatchupRow({
             fontSize: 15,
             fontWeight: 800,
             color: "#e6eaf5",
+            lineHeight: "26px",
+            height: 26,
+            paddingBottom: 4,
+            boxSizing: "content-box",
             overflow: "hidden",
             textOverflow: "ellipsis",
             whiteSpace: "nowrap",
@@ -144,10 +148,10 @@ function MatchupRow({
         >
           {matchup.name}
         </div>
-        <div style={{ fontFamily: MONO, fontSize: 15, fontWeight: 900, color }}>
+        <div style={{ fontFamily: MONO, fontSize: 15, fontWeight: 900, color, lineHeight: "26px" }}>
           {rateText(rate)}
         </div>
-        <div style={{ width: 76, textAlign: "right", fontSize: 12, fontWeight: 700, color: "#8e96aa" }}>
+        <div style={{ width: 76, textAlign: "right", fontSize: 12, fontWeight: 700, color: "#8e96aa", lineHeight: "26px" }}>
           {formatWLTJa(matchup.wins, matchup.losses, matchup.draws, game)}
         </div>
       </div>
@@ -355,7 +359,7 @@ export const DeckShareCard = forwardRef<HTMLDivElement, Props>(
                   padding: "18px 20px",
                   display: "flex",
                   flexDirection: "column",
-                  gap: 13,
+                  gap: 9,
                 }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
