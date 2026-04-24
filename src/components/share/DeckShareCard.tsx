@@ -18,7 +18,7 @@ const shellStyle: CSSProperties = {
   position: "absolute",
   inset: 0,
   background:
-    "repeating-linear-gradient(90deg, rgba(255,255,255,0.028) 0 1px, transparent 1px 74px), repeating-linear-gradient(0deg, rgba(255,255,255,0.024) 0 1px, transparent 1px 74px), linear-gradient(135deg, #070914 0%, #0b1422 46%, #151128 100%)",
+    "repeating-linear-gradient(90deg, rgba(255,255,255,0.018) 0 1px, transparent 1px 78px), repeating-linear-gradient(0deg, rgba(255,255,255,0.014) 0 1px, transparent 1px 78px), linear-gradient(135deg, #070914 0%, #0b1322 54%, #111023 100%)",
 };
 
 function calcRate(wins: number, losses: number): number | null {
@@ -49,10 +49,10 @@ function accentColor(rate: number | null | undefined): string {
 }
 
 function nameFontSize(name: string): number {
-  if (name.length >= 28) return 30;
-  if (name.length >= 20) return 34;
-  if (name.length >= 14) return 39;
-  return 46;
+  if (name.length >= 28) return 29;
+  if (name.length >= 20) return 33;
+  if (name.length >= 14) return 38;
+  return 44;
 }
 
 function TurnTile({
@@ -212,20 +212,12 @@ export const DeckShareCard = forwardRef<HTMLDivElement, Props>(
         <div
           style={{
             position: "absolute",
-            inset: "0 0 auto 0",
-            height: 9,
-            background: `linear-gradient(90deg, ${heroColor} 0%, #38bdf8 42%, #f59e0b 72%, transparent 100%)`,
-          }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            right: -130,
-            top: 86,
-            width: 520,
-            height: 520,
-            transform: "rotate(28deg)",
-            border: "1px solid rgba(148,163,184,0.12)",
+            left: 0,
+            right: 0,
+            top: 0,
+            height: 5,
+            opacity: 0.86,
+            background: `linear-gradient(90deg, ${heroColor} 0%, #38bdf8 42%, #f59e0b 72%, rgba(245,158,11,0.12) 100%)`,
           }}
         />
         <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", height: "100%" }}>
@@ -277,12 +269,13 @@ export const DeckShareCard = forwardRef<HTMLDivElement, Props>(
                 border: "1px solid rgba(148,163,184,0.16)",
                 borderRadius: 8,
                 background:
-                  "linear-gradient(180deg, rgba(15,23,42,0.82) 0%, rgba(17,24,39,0.54) 100%)",
-                padding: "26px 30px 28px",
+                  `linear-gradient(180deg, rgba(15,23,42,0.86) 0%, rgba(17,24,39,0.58) 100%), linear-gradient(135deg, ${heroColor}16 0%, transparent 56%)`,
+                padding: "32px 34px 30px",
                 display: "flex",
                 flexDirection: "column",
-                justifyContent: "space-between",
-                boxShadow: "0 26px 80px rgba(0,0,0,0.32)",
+                justifyContent: "center",
+                gap: 28,
+                boxShadow: "0 26px 80px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.04)",
               }}
             >
               <div>
@@ -292,11 +285,10 @@ export const DeckShareCard = forwardRef<HTMLDivElement, Props>(
                     fontSize: nameFontSize(displayName),
                     fontWeight: 900,
                     color: "#f8fafc",
-                    lineHeight: 1.12,
-                    marginTop: 10,
-                    maxHeight: 104,
-                    overflow: "hidden",
+                    lineHeight: 1.22,
+                    marginTop: 12,
                     wordBreak: "break-word",
+                    overflowWrap: "break-word",
                   }}
                 >
                   {displayName}
@@ -304,28 +296,46 @@ export const DeckShareCard = forwardRef<HTMLDivElement, Props>(
               </div>
 
               <div>
-                <div style={{ fontSize: 18, fontWeight: 900, color: "#cbd5e1" }}>勝率</div>
+                <div style={{ fontSize: 18, fontWeight: 900, color: "#dbe4f0" }}>勝率</div>
                 <div
                   style={{
                     display: "flex",
                     alignItems: "baseline",
-                    marginTop: 6,
+                    marginTop: 8,
                     color: heroColor,
                     textShadow: `0 14px 46px ${heroColor}66`,
                   }}
                 >
-                  <span style={{ fontFamily: MONO, fontSize: 144, fontWeight: 900, lineHeight: 0.92 }}>
+                  <span style={{ fontFamily: MONO, fontSize: 136, fontWeight: 900, lineHeight: 1 }}>
                     {data.winRate === null ? "--" : data.winRate}
                   </span>
-                  <span style={{ fontFamily: MONO, fontSize: 72, fontWeight: 900, lineHeight: 1 }}>%</span>
+                  <span style={{ fontFamily: MONO, fontSize: 68, fontWeight: 900, lineHeight: 1 }}>%</span>
                 </div>
-                <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginTop: 10 }}>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginTop: 8 }}>
                   <div style={{ fontSize: 28, fontWeight: 900, color: "#f8fafc" }}>
                     {formatWLTJa(data.totalWins, data.totalLosses, data.totalDraws, data.game)}
                   </div>
                   <div style={{ fontFamily: MONO, fontSize: 17, fontWeight: 800, color: "#8e96aa" }}>
                     / {totalBattles}戦
                   </div>
+                </div>
+                <div
+                  style={{
+                    height: 9,
+                    borderRadius: 999,
+                    background: "rgba(148,163,184,0.14)",
+                    overflow: "hidden",
+                    marginTop: 16,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: `${clampPercent(data.winRate ?? 0)}%`,
+                      height: "100%",
+                      borderRadius: 999,
+                      background: `linear-gradient(90deg, ${heroColor} 0%, #f59e0b 100%)`,
+                    }}
+                  />
                 </div>
               </div>
             </section>
@@ -365,11 +375,11 @@ export const DeckShareCard = forwardRef<HTMLDivElement, Props>(
             </section>
           </div>
 
-          <footer style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 20 }}>
-            <div style={{ display: "flex", gap: 10, alignItems: "center", color: "#8e96aa", fontSize: 12, fontWeight: 900 }}>
-              <span style={{ color: rateColor(firstRate) }}>先 {rateText(firstRate)}</span>
-              <span style={{ color: "#475569" }}>/</span>
-              <span style={{ color: rateColor(secondRate) }}>後 {rateText(secondRate)}</span>
+          <footer style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 18 }}>
+            <div style={{ display: "flex", gap: 10, alignItems: "center", color: "#7d879b", fontSize: 12, fontWeight: 900 }}>
+              <span>先攻 {rateText(firstRate)}</span>
+              <span style={{ color: "#3e4658" }}>/</span>
+              <span>後攻 {rateText(secondRate)}</span>
             </div>
             <div style={{ fontFamily: MONO, fontSize: 12, fontWeight: 800, color: "#687084" }}>
               {appUrl.replace(/^https?:\/\//, "")}
