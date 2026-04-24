@@ -44,6 +44,7 @@ export function TeamServerCard({ teams, activeTeamId, onTeamSelect, members, sel
           className="absolute opacity-0 w-0 h-0"
           tabIndex={-1}
         >
+          <option value="" disabled>サーバーを選択</option>
           {teams.map((t) => (
             <option key={t.id} value={t.id}>{t.name}</option>
           ))}

@@ -322,7 +322,11 @@ export default function AccountPage() {
                 </div>
               ) : (
                 <div>
-                  <p className="text-[11px] text-gray-400 mb-3">X連携すると、優良ユーザーとして認定されやすくなり、分析タブのシェア機能も利用可能になります。</p>
+                  <p className="text-[11px] text-gray-400 mb-3">
+                    {premiumUiVisible
+                      ? "X連携すると、優良ユーザーとして認定されやすくなり、分析タブのシェア機能も利用可能になります。"
+                      : "X連携すると、分析タブのシェア機能が利用可能になります。"}
+                  </p>
                   <button
                     onClick={handleLinkX}
                     disabled={xLoading}

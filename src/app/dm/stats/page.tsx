@@ -79,6 +79,14 @@ function StatsPageInner() {
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(() => {
     return searchParams.get("member") || null;
   });
+  const activeVisibleTeamId = useMemo(
+    () => visibleTeams.some((t) => t.id === activeTeamId) ? activeTeamId : null,
+    [visibleTeams, activeTeamId]
+  );
+  const handleTeamSelect = useCallback((teamId: string) => {
+    setActiveTeamId(teamId);
+    setSelectedMemberId(null);
+  }, [setActiveTeamId]);
 
   // Load visible teams
   useEffect(() => {
@@ -91,14 +99,21 @@ function StatsPageInner() {
     getPremiumUiVisible().then(setPremiumUiVisible);
   }, []);
 
-  // Load team members when activeTeamId changes
+  // Load team members when active team changes
   useEffect(() => {
-    if (activeTeamId) {
-      getTeamMembers(activeTeamId).then(setTeamMembers);
+    if (activeVisibleTeamId) {
+      getTeamMembers(activeVisibleTeamId).then(setTeamMembers);
     } else {
       setTeamMembers([]);
     }
-  }, [activeTeamId]);
+  }, [activeVisibleTeamId]);
+
+  // Discordタブ内でもサーバーを選べるよう、未選択時は最初の共有中サーバーを仮選択する
+  useEffect(() => {
+    if (scope !== "team" || !teamReady || visibleTeams.length === 0 || activeVisibleTeamId) return;
+    setActiveTeamId(visibleTeams[0].id);
+    setSelectedMemberId(null);
+  }, [scope, teamReady, visibleTeams, activeVisibleTeamId, setActiveTeamId]);
 
   // Reset selectedMemberId when scope changes away from team
   useEffect(() => {
@@ -168,7 +183,7 @@ function StatsPageInner() {
       return;
     }
 
-    if (scope === "team" && !activeTeamId) {
+    if (scope === "team" && !activeVisibleTeamId) {
       setLoading(false);
       return;
     }
@@ -191,11 +206,11 @@ function StatsPageInner() {
       const maxStage = premiumFilter ? 1 : undefined;
       const t = await getDeckTrendByRange(startDate, endDate, format, false, maxStage);
       setTrendData(t);
-    } else if (scope === "team" && activeTeamId && view === "stats") {
-      const s = await getTeamStatsByRange(activeTeamId, selectedMemberId, format, startDate, endDate);
+    } else if (scope === "team" && activeVisibleTeamId && view === "stats") {
+      const s = await getTeamStatsByRange(activeVisibleTeamId, selectedMemberId, format, startDate, endDate);
       setTeamStats(s);
-    } else if (scope === "team" && activeTeamId && view === "trend") {
-      const t = await getTeamDeckTrendByRange(activeTeamId, selectedMemberId, startDate, endDate, format);
+    } else if (scope === "team" && activeVisibleTeamId && view === "trend") {
+      const t = await getTeamDeckTrendByRange(activeVisibleTeamId, selectedMemberId, startDate, endDate, format);
       setTrendData(t);
     }
 
@@ -205,7 +220,7 @@ function StatsPageInner() {
     } finally {
       setLoading(false);
     }
-  }, [format, startDate, endDate, ready, teamReady, scope, view, activeTeamId, selectedMemberId, premiumFilter]);
+  }, [format, startDate, endDate, ready, teamReady, scope, view, activeVisibleTeamId, selectedMemberId, premiumFilter]);
 
   const loadCounts = useCallback((year: number, month: number) => {
     if (!ready) return;
@@ -231,10 +246,10 @@ function StatsPageInner() {
       return <p className="text-center text-red-400 py-12 text-sm">{error}</p>;
     }
 
-    if (scope === "team" && !activeTeamId) {
+    if (scope === "team" && !activeVisibleTeamId) {
       return (
         <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-          <p className="text-sm">ホームタブで Discord サーバーを選択してください</p>
+          <p className="text-sm">Discord サーバーを選択してください</p>
         </div>
       );
     }
@@ -334,11 +349,11 @@ function StatsPageInner() {
             {scope === "global" && categoryMap.size > 0 && (
               <p className="text-xs text-muted-foreground">※ 使用率の低いデッキは「その他」に集約されています</p>
             )}
-            <MyDeckStatsSection stats={myDeckData} startDate={startDate} endDate={endDate} scope={scope} teamId={activeTeamId ?? undefined} memberId={selectedMemberId} memberName={selectedMemberId ? (teamMembers.find(m => m.user_id === selectedMemberId)?.discord_username ?? null) : null} otherDeckNames={otherMyDeckNames} premiumFilter={premiumFilter} game="dm" />
+            <MyDeckStatsSection stats={myDeckData} startDate={startDate} endDate={endDate} scope={scope} teamId={activeVisibleTeamId ?? undefined} memberId={selectedMemberId} memberName={selectedMemberId ? (teamMembers.find(m => m.user_id === selectedMemberId)?.discord_username ?? null) : null} otherDeckNames={otherMyDeckNames} premiumFilter={premiumFilter} game="dm" />
           </div>
           <div>
             <h2 className="text-base font-bold mb-2">対面デッキ別</h2>
-            <OpponentDeckStatsSection stats={stats.opponentDeckStats} startDate={startDate} endDate={endDate} scope={scope} teamId={activeTeamId ?? undefined} memberId={selectedMemberId} memberName={selectedMemberId ? (teamMembers.find(m => m.user_id === selectedMemberId)?.discord_username ?? null) : null} premiumFilter={premiumFilter} game="dm" />
+            <OpponentDeckStatsSection stats={stats.opponentDeckStats} startDate={startDate} endDate={endDate} scope={scope} teamId={activeVisibleTeamId ?? undefined} memberId={selectedMemberId} memberName={selectedMemberId ? (teamMembers.find(m => m.user_id === selectedMemberId)?.discord_username ?? null) : null} premiumFilter={premiumFilter} game="dm" />
           </div>
         </>
       );
@@ -499,11 +514,11 @@ function StatsPageInner() {
                 </div>
               </div>
             )}
-            {scope === "team" && activeTeamId && (
+            {scope === "team" && visibleTeams.length > 0 && (
               <TeamServerCard
                 teams={visibleTeams}
-                activeTeamId={activeTeamId}
-                onTeamSelect={setActiveTeamId}
+                activeTeamId={activeVisibleTeamId}
+                onTeamSelect={handleTeamSelect}
                 members={teamMembers}
                 selectedMemberId={selectedMemberId}
                 onMemberSelect={setSelectedMemberId}
