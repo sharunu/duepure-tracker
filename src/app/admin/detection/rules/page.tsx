@@ -22,11 +22,19 @@ const paramLabels: Record<string, Record<string, string>> = {
     min_winrate: "下限勝率",
   },
   rapid_input: {
+    period_hours: "検出期間（時間）",
     window_hours: "ウィンドウ（時間）",
     max_battles: "閾値（戦闘数）",
   },
   repetitive_pattern: {
+    period_days: "検出期間（日）",
     max_consecutive: "連続回数",
+  },
+};
+
+const paramHints: Record<string, Record<string, string>> = {
+  rapid_input: {
+    period_hours: "※ 窓（時間）未満を指定すると自動補正されます",
   },
 };
 
@@ -58,8 +66,15 @@ export default function DetectionRulesPage() {
   const handleSave = async (ruleKey: string) => {
     setSaving(ruleKey);
     setMessage("");
+    const paramsToSave = { ...editParams[ruleKey] };
+    if (ruleKey === "rapid_input") {
+      const pH = paramsToSave.period_hours ?? 24;
+      const wH = paramsToSave.window_hours ?? 1;
+      paramsToSave.period_hours = Math.max(pH, wH);
+    }
     try {
-      await updateDetectionRule(ruleKey, editParams[ruleKey], editEnabled[ruleKey]);
+      await updateDetectionRule(ruleKey, paramsToSave, editEnabled[ruleKey]);
+      setEditParams((prev) => ({ ...prev, [ruleKey]: paramsToSave }));
       setMessage("保存しました");
     } catch {
       setMessage("保存に失敗しました");
@@ -94,6 +109,7 @@ export default function DetectionRulesPage() {
       <div className="space-y-4">
         {rules.map((rule) => {
           const labels = paramLabels[rule.rule_key] || {};
+          const hints = paramHints[rule.rule_key] || {};
           return (
             <div key={rule.id} className="bg-[#232640] rounded-[10px] px-4 py-4">
               <div className="flex items-center justify-between mb-2">
@@ -117,8 +133,13 @@ export default function DetectionRulesPage() {
 
               <div className="space-y-2 mt-3">
                 {Object.entries(editParams[rule.rule_key] || {}).map(([key, value]) => (
-                  <div key={key} className="flex items-center justify-between">
-                    <label className="text-[12px] text-gray-400">{labels[key] || key}</label>
+                  <div key={key} className="flex items-center justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <label className="text-[12px] text-gray-400 block">{labels[key] || key}</label>
+                      {hints[key] && (
+                        <p className="text-[10px] text-gray-500 mt-0.5 leading-tight">{hints[key]}</p>
+                      )}
+                    </div>
                     <input
                       type="number"
                       step={key.includes("rate") ? "0.01" : "1"}
@@ -132,7 +153,7 @@ export default function DetectionRulesPage() {
                           }));
                         }
                       }}
-                      className="w-24 bg-[#1a1d2e] rounded-[6px] px-2 py-1.5 text-[13px] text-right focus:outline-none"
+                      className="w-24 flex-shrink-0 bg-[#1a1d2e] rounded-[6px] px-2 py-1.5 text-[13px] text-right focus:outline-none"
                       style={{ border: "0.5px solid #333355" }}
                     />
                   </div>
