@@ -566,21 +566,14 @@ export async function updateUserStage(
   userId: string, newStage: number, reason: string
 ): Promise<void> {
   const supabase = await requireAdmin();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  const { data: profile } = await supabase
-    .from("profiles").select("stage").eq("id", userId).single();
-  const fromStage = profile?.stage ?? 2;
-
-  await supabase.from("profiles").update({ stage: newStage }).eq("id", userId);
-
-  await supabase.from("user_stage_history").insert({
-    user_id: userId,
-    from_stage: fromStage,
-    to_stage: newStage,
-    reason,
-    changed_by: user!.id,
+  // admin_update_user_stage は RPC 内で admin 判定 + stage 更新 + user_stage_history INSERT を
+  // 1 トランザクションで実行（changed_by = auth.uid()）
+  const { error } = await supabase.rpc("admin_update_user_stage", {
+    p_user_id: userId,
+    p_new_stage: newStage,
+    p_reason: reason,
   });
+  if (error) throw new Error(error.message);
 }
 
 export async function getUserStageHistory(userId: string) {

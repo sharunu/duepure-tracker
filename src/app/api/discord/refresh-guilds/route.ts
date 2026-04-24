@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
       const newRefreshToken = tokens.refresh_token ?? conn.refresh_token;
       const tokenExpiresAt = new Date(Date.now() + tokens.expires_in * 1000).toISOString();
 
-      // Update tokens in discord_connections
+      // Update tokens in discord_connections (game_title 絞りがないと複数ゲーム連携時に他ゲームの token を上書きしてしまう)
       await supabaseAdmin
         .from("discord_connections")
         .update({
@@ -80,7 +80,8 @@ export async function POST(request: NextRequest) {
           token_expires_at: tokenExpiresAt,
           updated_at: new Date().toISOString(),
         })
-        .eq("user_id", user.id);
+        .eq("user_id", user.id)
+        .eq("game_title", game);
     }
 
     // Fetch Discord user info to update username

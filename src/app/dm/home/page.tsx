@@ -14,14 +14,6 @@ import { MemberAvatar } from "@/components/ui/MemberAvatar";
 import { getWinRateColor } from "@/lib/stats-utils";
 
 
-// base64url エンコード: btoa の出力から '+'→'-', '/'→'_', '='→'' へ置換
-function base64urlEncode(input: string): string {
-  if (typeof btoa === "function") {
-    return btoa(input).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
-  }
-  return "";
-}
-
 function HomePageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -149,21 +141,22 @@ function HomePageInner() {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
 
-    const clientId = process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID;
-    if (!clientId) {
-      alert("Discord Client IDが設定されていません");
+    const res = await fetch("/api/discord/start", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ game: "dm" }),
+    });
+
+    if (!res.ok) {
+      alert("Discord 連携の開始に失敗しました。時間をおいて再試行してください。");
       return;
     }
 
-    const params = new URLSearchParams({
-      client_id: clientId,
-      redirect_uri: `${window.location.origin}/api/discord/callback`,
-      response_type: "code",
-      scope: "identify guilds",
-      state: base64urlEncode(JSON.stringify({ t: session.access_token, g: "dm" })),
-    });
-
-    window.location.href = `https://discord.com/oauth2/authorize?${params.toString()}`;
+    const { authorizeUrl } = await res.json();
+    window.location.href = authorizeUrl;
   };
 
   const handleDisconnect = async () => {

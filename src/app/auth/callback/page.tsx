@@ -35,15 +35,9 @@ export default function AuthCallbackPage() {
         if (user) {
           const tw = user.identities?.find((i: { provider: string }) => i.provider === "twitter");
           if (tw) {
-            const xUsername = tw.identity_data?.user_name ?? tw.identity_data?.preferred_username;
-            const xUserId = tw.identity_data?.provider_id ?? tw.id;
-            console.log("[X link] syncing:", { xUsername, xUserId });
-            if (xUsername) {
-              await supabase.from("profiles").update({
-                x_user_id: xUserId,
-                x_username: xUsername,
-              }).eq("id", user.id);
-            }
+            console.log("[X link] syncing via sync_my_x_connection");
+            // RPC 側で auth.identities から読み取り、クライアント入力値を信用しない
+            await supabase.rpc("sync_my_x_connection");
           } else {
             console.log("[X link] no twitter identity found");
             localStorage.removeItem('x_link_pending');

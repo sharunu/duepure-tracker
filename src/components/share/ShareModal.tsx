@@ -115,7 +115,7 @@ export function ShareModal({ type, data, onClose }: Props) {
       // Upload captured image to Supabase Storage so X can use it as og:image
       let imageUrl: string | null = null;
       try {
-        const filePath = `${id}.png`;
+        const filePath = `${user.id}/${id}.png`;
         const { error: uploadError } = await supabase.storage
           .from("share-images")
           .upload(filePath, imageBlob, {

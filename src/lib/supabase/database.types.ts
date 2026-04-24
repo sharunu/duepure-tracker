@@ -316,6 +316,30 @@ export type Database = {
           },
         ]
       }
+      discord_oauth_states: {
+        Row: {
+          created_at: string
+          expires_at: string
+          game_title: string
+          nonce: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          game_title: string
+          nonce?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          game_title?: string
+          nonce?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       feedback: {
         Row: {
           category: string
@@ -802,6 +826,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_update_user_stage: {
+        Args: { p_new_stage: number; p_reason: string; p_user_id: string }
+        Returns: undefined
+      }
       apply_limitless_snapshot: {
         Args: {
           p_format: string
@@ -825,6 +853,7 @@ export type Database = {
             Returns: undefined
           }
       calculate_quality_score: { Args: { p_user_id: string }; Returns: Json }
+      clear_my_x_connection: { Args: never; Returns: undefined }
       delete_own_account: { Args: never; Returns: undefined }
       detect_extreme_winrate: {
         Args: { p_params: Json }
@@ -1204,6 +1233,7 @@ export type Database = {
       run_daily_opponent_deck_batch: { Args: never; Returns: undefined }
       run_detection_scan: { Args: never; Returns: number }
       run_quality_scoring: { Args: { p_auto_update?: boolean }; Returns: Json }
+      sync_my_x_connection: { Args: never; Returns: boolean }
       sync_team_membership:
         | {
             Args: {
@@ -1224,6 +1254,10 @@ export type Database = {
           }
       update_feedback_status: {
         Args: { p_feedback_id: string; p_status: string }
+        Returns: undefined
+      }
+      update_my_display_name: {
+        Args: { p_display_name: string }
         Returns: undefined
       }
     }
