@@ -2,7 +2,7 @@
 import { useGame } from "@/lib/games/context";
 
 import { useState, useEffect, useRef } from "react";
-import { X, Download, ExternalLink, Loader2 } from "lucide-react";
+import { X, Download, Loader2 } from "lucide-react";
 import type { StatsShareData, DeckShareData } from "./ShareButton";
 import { StatsShareCard } from "./StatsShareCard";
 import { DeckShareCard } from "./DeckShareCard";
@@ -45,6 +45,10 @@ export function ShareModal({ type, data, onClose }: Props) {
     const capture = async () => {
       if (!cardRef.current) return;
       try {
+        if (document.fonts?.ready) {
+          await document.fonts.ready;
+        }
+        await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
         const html2canvas = (await import("html2canvas")).default;
         const canvas = await html2canvas(cardRef.current, {
           scale: 2,
@@ -52,6 +56,9 @@ export function ShareModal({ type, data, onClose }: Props) {
           backgroundColor: null,
           width: 1200,
           height: 630,
+          windowWidth: 1200,
+          windowHeight: 630,
+          logging: false,
         });
         canvas.toBlob((blob) => {
           if (blob) {
