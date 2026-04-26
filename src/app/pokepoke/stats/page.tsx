@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { getDetailedPersonalStats, getGlobalStatsByRange, getDeckTrendByRange, getTeamStatsByRange, getTeamDeckTrendByRange } from "@/lib/actions/stats-actions";
 import type { DetailedPersonalStats, TrendRow } from "@/lib/actions/stats-actions";
 import { getDailyBattleCounts, getOpponentDeckSuggestions } from "@/lib/actions/battle-actions";
-import { getOpponentDeckNameMap, type OpponentDeckNameMap } from "@/lib/actions/opponent-deck-display";
+import { getOpponentDeckNameMap, displayDeckName, type OpponentDeckNameMap } from "@/lib/actions/opponent-deck-display";
 import { getTeamMembers, getMyTeamsWithVisibility } from "@/lib/actions/team-actions";
 import type { TeamMember, TeamWithVisibility } from "@/lib/actions/team-actions";
 import { useFormat } from "@/hooks/use-format";
@@ -72,6 +72,7 @@ function StatsPageInner() {
   const [trendData, setTrendData] = useState<TrendRow[]>([]);
   const [deckCategories, setDeckCategories] = useState<{ major: string[]; minor: string[]; other: string[] }>({ major: [], minor: [], other: [] });
   const [opponentDeckNameMap, setOpponentDeckNameMap] = useState<OpponentDeckNameMap>({});
+  const [nameMapReady, setNameMapReady] = useState(false);
   const [trendMode, setTrendMode] = useState<"line" | "heatmap">("line");
   const [trendCalcMode, setTrendCalcMode] = useState<"daily" | "cumulative">("daily");
 
@@ -127,8 +128,12 @@ function StatsPageInner() {
   // Fetch deck categories
   useEffect(() => {
     if (!ready) return;
+    setNameMapReady(false);
     getOpponentDeckSuggestions(format, "pokepoke").then(setDeckCategories);
-    getOpponentDeckNameMap(format, "pokepoke").then(setOpponentDeckNameMap);
+    getOpponentDeckNameMap(format, "pokepoke").then((map) => {
+      setOpponentDeckNameMap(map);
+      setNameMapReady(true);
+    });
   }, [format, ready]);
 
   const categoryMap = useMemo(() => {
@@ -410,7 +415,7 @@ function StatsPageInner() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-bold">分析</h1>
-            {scope === "personal" && view === "stats" && (() => {
+            {scope === "personal" && view === "stats" && nameMapReady && (() => {
               const stats = personalStats;
               const totalWins = stats.myDeckStats.reduce((sum, d) => sum + d.wins, 0);
               const totalLosses = stats.myDeckStats.reduce((sum, d) => sum + d.losses, 0);
@@ -433,7 +438,7 @@ function StatsPageInner() {
                 unknownLosses: stats.turnOrder.unknownLosses,
                 unknownDraws: stats.turnOrder.unknownDraws,
                 encounterDistribution: (() => {
-                  const allOpponents = stats.opponentDeckStats.map(d => ({ name: d.deckName, count: d.wins + d.losses + d.draws, winRate: d.winRate }));
+                  const allOpponents = stats.opponentDeckStats.map(d => ({ name: displayDeckName(d.deckName, opponentDeckNameMap), count: d.wins + d.losses + d.draws, winRate: d.winRate }));
                   const topN = allOpponents.slice(0, 5);
                   const otherWins = stats.opponentDeckStats.slice(5).reduce((s, d) => s + d.wins, 0);
                   const otherLosses = stats.opponentDeckStats.slice(5).reduce((s, d) => s + d.losses, 0);

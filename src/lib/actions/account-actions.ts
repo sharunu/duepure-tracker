@@ -58,6 +58,13 @@ export async function getAuthProvider(): Promise<string> {
   return user.app_metadata?.provider ?? "email";
 }
 
+export async function hasGoogleIdentity(): Promise<boolean> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return false;
+  return (user.identities ?? []).some((i) => i.provider === "google");
+}
+
 export async function deleteAccount(): Promise<void> {
   const supabase = createClient();
   const { error } = await supabase.rpc("delete_own_account");

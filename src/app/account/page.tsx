@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { getDisplayName, updateDisplayName, getAuthProvider, getEmail, getXConnectionStatus, unlinkXAccount, getUserStage } from "@/lib/actions/account-actions";
+import { getDisplayName, updateDisplayName, getAuthProvider, getEmail, getXConnectionStatus, unlinkXAccount, getUserStage, hasGoogleIdentity } from "@/lib/actions/account-actions";
 import { submitFeedback } from "@/lib/actions/feedback-actions";
 import { checkIsAdmin, getPremiumUiVisible } from "@/lib/actions/admin-actions";
 import { BottomNav } from "@/components/layout/BottomNav";
@@ -20,6 +20,7 @@ export default function AccountPage() {
   const [nameLoading, setNameLoading] = useState(false);
 
   const [provider, setProvider] = useState("");
+  const [hasGoogle, setHasGoogle] = useState(false);
 
   // フィードバック関連
   const [feedbackOpen, setFeedbackOpen] = useState(false);
@@ -41,7 +42,7 @@ export default function AccountPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const [name, prov, mail, admin, xStatus, stage, puiVisible] = await Promise.all([getDisplayName(), getAuthProvider(), getEmail(), checkIsAdmin(), getXConnectionStatus(), getUserStage(), getPremiumUiVisible()]);
+        const [name, prov, mail, admin, xStatus, stage, puiVisible, googleLinked] = await Promise.all([getDisplayName(), getAuthProvider(), getEmail(), checkIsAdmin(), getXConnectionStatus(), getUserStage(), getPremiumUiVisible(), hasGoogleIdentity()]);
         setDisplayName(name);
         setProvider(prov);
         setEmail(mail);
@@ -51,6 +52,7 @@ export default function AccountPage() {
         setXConnected(xStatus.isConnected);
         setXUsername(xStatus.xUsername);
         setXSource(xStatus.source);
+        setHasGoogle(googleLinked);
       } catch {
         console.error("Failed to load account data");
       } finally {
@@ -94,7 +96,7 @@ export default function AccountPage() {
   };
 
   const handleSwitchAccount = async () => {
-    if (provider === "google") {
+    if (hasGoogle) {
       await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
@@ -224,7 +226,7 @@ export default function AccountPage() {
               )}
             </div>
           </div>
-          {provider === "google" && (
+          {hasGoogle && (
             <button
               onClick={handleSwitchAccount}
               className="flex-shrink-0 bg-[#1e2138] text-[#818cf8] text-[11px] px-3 py-1.5 rounded-[6px] hover:opacity-80 transition-opacity"
