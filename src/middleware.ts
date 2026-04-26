@@ -23,29 +23,61 @@ async function getRateLimiter(): Promise<RateLimitBinding | undefined> {
   }
 }
 
-async function checkRateLimit(request: NextRequest): Promise<NextResponse | null> {
-  const limiter = await getRateLimiter();
-  if (!limiter) return null;
+type RateLimitDiagnostic = {
+  binding: "present" | "missing";
+  result: "success" | "blocked" | "error";
+  errorMsg?: string;
+  ip: string;
+};
+
+async function checkRateLimit(
+  request: NextRequest
+): Promise<{ response: NextResponse | null; diagnostic: RateLimitDiagnostic }> {
   const ip = request.headers.get("CF-Connecting-IP") ?? "unknown";
+  const limiter = await getRateLimiter();
+  if (!limiter) {
+    return { response: null, diagnostic: { binding: "missing", result: "success", ip } };
+  }
   try {
     const { success } = await limiter.limit({ key: ip });
     if (!success) {
-      return new NextResponse("Too Many Requests", {
-        status: 429,
-        headers: { "Retry-After": "60" },
-      });
+      return {
+        response: new NextResponse("Too Many Requests", {
+          status: 429,
+          headers: {
+            "Retry-After": "60",
+            "X-Ratelimit-Binding": "present",
+            "X-Ratelimit-Result": "blocked",
+            "X-Ratelimit-Ip": ip,
+          },
+        }),
+        diagnostic: { binding: "present", result: "blocked", ip },
+      };
     }
-    return null;
-  } catch {
+    return { response: null, diagnostic: { binding: "present", result: "success", ip } };
+  } catch (err) {
     // limit 呼び出しが何かの理由で失敗した場合、本番障害を引き起こさないよう素通し
-    return null;
+    const msg = err instanceof Error ? err.message : "unknown";
+    return {
+      response: null,
+      diagnostic: { binding: "present", result: "error", errorMsg: msg.slice(0, 80), ip },
+    };
   }
+}
+
+// 一時的な診断ヘッダ。原因切り分け後に削除する
+function applyDiagnosticHeaders(response: NextResponse, diagnostic: RateLimitDiagnostic): NextResponse {
+  response.headers.set("X-Ratelimit-Binding", diagnostic.binding);
+  response.headers.set("X-Ratelimit-Result", diagnostic.result);
+  response.headers.set("X-Ratelimit-Ip", diagnostic.ip);
+  if (diagnostic.errorMsg) response.headers.set("X-Ratelimit-Error", diagnostic.errorMsg);
+  return response;
 }
 
 export async function middleware(request: NextRequest) {
   // 0) Rate limit (Next.js App Router DoS GHSA-q4gf-8mx6-v5v3 暫定緩和)
   //    Cloudflare Workers Rate Limiting binding 経由で IP 単位の per-minute 制限
-  const rateLimitResponse = await checkRateLimit(request);
+  const { response: rateLimitResponse, diagnostic } = await checkRateLimit(request);
   if (rateLimitResponse) return rateLimitResponse;
 
   // 1) Supabase セッション更新（既存処理を維持）
@@ -90,7 +122,7 @@ export async function middleware(request: NextRequest) {
     const newUrl = request.nextUrl.clone();
     newUrl.pathname = `/${game}/battle`;
     newUrl.searchParams.set("tab", "history");
-    return NextResponse.redirect(newUrl, 308);
+    return applyDiagnosticHeaders(NextResponse.redirect(newUrl, 308), diagnostic);
   }
 
   // 3) 旧URLを /{game}/... へ 308 リダイレクト
@@ -103,10 +135,10 @@ export async function middleware(request: NextRequest) {
     const newUrl = request.nextUrl.clone();
     newUrl.pathname = `/${game}${pathname}`;
     // searchParams は nextUrl.clone() で自動的に保持される
-    return NextResponse.redirect(newUrl, 308);
+    return applyDiagnosticHeaders(NextResponse.redirect(newUrl, 308), diagnostic);
   }
 
-  return supabaseResponse;
+  return applyDiagnosticHeaders(supabaseResponse, diagnostic);
 }
 
 export const config = {
