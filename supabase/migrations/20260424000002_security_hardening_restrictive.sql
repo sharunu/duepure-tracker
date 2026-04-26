@@ -1,17 +1,14 @@
 -- Phase 2: profiles の直 UPDATE を完全閉塞し share-images 旧 policy を削除する破壊的 migration
 --
--- 重要: このファイルは supabase/pending/ に保管されており、`npx supabase db push` の対象外である。
--- Phase 1 のコード変更が main ブランチに merge され、本番で 1 時間以上 RPC 経由の操作が安定稼働している
--- ことを確認してから、ユーザー明示指示で supabase/migrations/ に移動して適用する。
+-- 適用状況: 2026-04-24 に本番 DB に適用済み (`supabase migration list` で remote にも記録あり)。
+-- 過去のコメントでは supabase/pending/ に保管とされていたが、実体は当初から migrations/ にあり db push で適用された。
+-- 履歴として残す目的でリポジトリに保持。`DROP POLICY IF EXISTS` 等で冪等に書かれているため再適用も安全。
 --
--- 移動条件チェックリスト:
+-- 当時の適用条件チェックリスト (記録用):
 --   - Phase 1 コードが main に merge 済み、Cloudflare 本番デプロイ済み
 --   - 本番で display_name 更新 / X 連携 link+unlink / stage 更新 / auth/callback での X 連携自動同期 /
 --     共有画像アップロード（{userId}/{shareId}.png パス）が全て RPC 経由で成功している
 --   - information_schema.role_table_grants で profiles の UPDATE 付与が service_role 以外に残っていない
---
--- 適用後の確認:
---   クライアントから profiles.update({is_admin:true}) を試みて 403 / policy violation になること
 
 -- 1. profiles の本人 UPDATE policy を削除し UPDATE 権限も revoke
 DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
