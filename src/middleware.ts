@@ -5,7 +5,51 @@ import { DEFAULT_GAME, isGameSlug } from "@/lib/games";
 // 旧URL（ゲーム導入前）をスラッグ付きパスへ 308 リダイレクト対象
 const LEGACY_ROOTS = ["/home", "/battle", "/decks", "/stats"];
 
+// Cloudflare Workers Rate Limiting binding (wrangler.jsonc の ratelimits.name と一致)
+type RateLimitBinding = {
+  limit: (opts: { key: string }) => Promise<{ success: boolean }>;
+};
+
+// Cloudflare Workers の env binding を OpenNext 経由で取得。
+// ローカル dev (next dev) や `@opennextjs/cloudflare` 未ロード環境では undefined を返し、rate limit を素通し。
+async function getRateLimiter(): Promise<RateLimitBinding | undefined> {
+  try {
+    const mod = await import("@opennextjs/cloudflare");
+    const ctx = mod.getCloudflareContext?.();
+    const env = ctx?.env as Record<string, unknown> | undefined;
+    return env?.NEXTJS_DOS_LIMITER as RateLimitBinding | undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+async function checkRateLimit(request: NextRequest): Promise<NextResponse | null> {
+  const limiter = await getRateLimiter();
+  if (!limiter) return null;
+  const ip = request.headers.get("CF-Connecting-IP") ?? "unknown";
+  try {
+    const { success } = await limiter.limit({ key: ip });
+    if (!success) {
+      return new NextResponse("Too Many Requests", {
+        status: 429,
+        headers: { "Retry-After": "60" },
+      });
+    }
+    return null;
+  } catch {
+    // limit 呼び出しが何かの理由で失敗した場合、本番障害を引き起こさないよう素通し
+    return null;
+  }
+}
+
 export async function middleware(request: NextRequest) {
+  // 0) Rate limit (Next.js App Router DoS GHSA-q4gf-8mx6-v5v3 暫定緩和)
+  //    Cloudflare Workers Rate Limiting binding 経由で IP 単位の per-minute 制限。
+  //    Cloudflare の rate limiter は best-effort (approximate) なので短期バーストは多少素通りするが、
+  //    持続攻撃 (DoS の本命) には効く。完全な fix は T5 (Next.js 16.2.3+ 取り込み) 完了まで保留。
+  const rateLimitResponse = await checkRateLimit(request);
+  if (rateLimitResponse) return rateLimitResponse;
+
   // 1) Supabase セッション更新（既存処理を維持）
   let supabaseResponse = NextResponse.next({ request });
 
