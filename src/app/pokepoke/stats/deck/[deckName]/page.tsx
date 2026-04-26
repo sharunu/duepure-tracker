@@ -47,7 +47,8 @@ export default function DeckDetailPage() {
   const [viewMode, setViewMode] = useState<"visual" | "table">("visual");
   const [deckCategories, setDeckCategories] = useState<{ major: string[]; minor: string[]; other: string[] }>({ major: [], minor: [], other: [] });
   const [opponentDeckNameMap, setOpponentDeckNameMap] = useState<OpponentDeckNameMap>({});
-  const [nameMapReady, setNameMapReady] = useState(false);
+  const [nameMapFormat, setNameMapFormat] = useState<string | null>(null);
+  const nameMapReady = nameMapFormat === format;
 
   const [startDate, setStartDate] = useState(() => {
     return searchParams.get("start") || (() => {
@@ -63,12 +64,16 @@ export default function DeckDetailPage() {
   // Fetch deck categories for donut chart aggregation
   useEffect(() => {
     if (!ready) return;
-    setNameMapReady(false);
-    getOpponentDeckSuggestions(format, "pokepoke").then(setDeckCategories);
-    getOpponentDeckNameMap(format, "pokepoke").then((map) => {
-      setOpponentDeckNameMap(map);
-      setNameMapReady(true);
+    let cancelled = false;
+    getOpponentDeckSuggestions(format, "pokepoke").then((cats) => {
+      if (!cancelled) setDeckCategories(cats);
     });
+    getOpponentDeckNameMap(format, "pokepoke").then((map) => {
+      if (cancelled) return;
+      setOpponentDeckNameMap(map);
+      setNameMapFormat(format);
+    });
+    return () => { cancelled = true; };
   }, [format, ready]);
 
   const categoryMap = useMemo(() => {

@@ -35,7 +35,8 @@ export default function OpponentDeckDetailPage() {
   const [stats, setStats] = useState<OpponentDeckDetailStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [opponentDeckNameMap, setOpponentDeckNameMap] = useState<OpponentDeckNameMap>({});
-  const [nameMapReady, setNameMapReady] = useState(false);
+  const [nameMapFormat, setNameMapFormat] = useState<string | null>(null);
+  const nameMapReady = nameMapFormat === format;
   const [battleCounts, setBattleCounts] = useState<Record<string, number>>({});
   const [sortBy, setSortBy] = useState<"count" | "winRate">("count");
   const [viewMode, setViewMode] = useState<"visual" | "table">("visual");
@@ -76,11 +77,13 @@ export default function OpponentDeckDetailPage() {
 
   useEffect(() => {
     if (!ready) return;
-    setNameMapReady(false);
+    let cancelled = false;
     getOpponentDeckNameMap(format, "pokepoke").then((map) => {
+      if (cancelled) return;
       setOpponentDeckNameMap(map);
-      setNameMapReady(true);
+      setNameMapFormat(format);
     });
+    return () => { cancelled = true; };
   }, [format, ready]);
 
   useEffect(() => {
