@@ -35,6 +35,8 @@ export default function OpponentDeckDetailPage() {
   const [stats, setStats] = useState<OpponentDeckDetailStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [opponentDeckNameMap, setOpponentDeckNameMap] = useState<OpponentDeckNameMap>({});
+  const [nameMapFormat, setNameMapFormat] = useState<string | null>(null);
+  const nameMapReady = nameMapFormat === format;
   const [battleCounts, setBattleCounts] = useState<Record<string, number>>({});
   const [sortBy, setSortBy] = useState<"count" | "winRate">("count");
   const [viewMode, setViewMode] = useState<"visual" | "table">("visual");
@@ -74,9 +76,14 @@ export default function OpponentDeckDetailPage() {
   }, [format, ready]);
 
   useEffect(() => {
-    if (ready) {
-      getOpponentDeckNameMap(format, "pokepoke").then(setOpponentDeckNameMap);
-    }
+    if (!ready) return;
+    let cancelled = false;
+    getOpponentDeckNameMap(format, "pokepoke").then((map) => {
+      if (cancelled) return;
+      setOpponentDeckNameMap(map);
+      setNameMapFormat(format);
+    });
+    return () => { cancelled = true; };
   }, [format, ready]);
 
   useEffect(() => {
@@ -137,7 +144,7 @@ export default function OpponentDeckDetailPage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-bold">{`vs ${displayDeckName(deckName, opponentDeckNameMap)}${titleSuffix}`}</h1>
-            {scope === "personal" && stats && stats.overallTotal > 0 && (() => {
+            {scope === "personal" && stats && stats.overallTotal > 0 && nameMapReady && (() => {
               const fW = stats.overall.reduce((s, o) => s + o.firstWins, 0);
               const fL = stats.overall.reduce((s, o) => s + o.firstLosses, 0);
               const fD = stats.overall.reduce((s, o) => s + o.firstDraws, 0);
@@ -145,7 +152,7 @@ export default function OpponentDeckDetailPage() {
               const sL = stats.overall.reduce((s, o) => s + o.secondLosses, 0);
               const sD = stats.overall.reduce((s, o) => s + o.secondDraws, 0);
               const shareData: DeckShareData = {
-                deckName,
+                deckName: displayDeckName(deckName, opponentDeckNameMap),
                 totalWins: stats.overallWins,
                 totalLosses: stats.overallLosses,
                 totalDraws: stats.overallDraws,

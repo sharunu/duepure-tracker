@@ -58,6 +58,18 @@ export async function getAuthProvider(): Promise<string> {
   return user.app_metadata?.provider ?? "email";
 }
 
+export async function hasGoogleIdentity(): Promise<boolean> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return false;
+  // identities が未取得/空のケースに備えて app_metadata の provider/providers も fallback で見る
+  const fromIdentities = (user.identities ?? []).some((i) => i.provider === "google");
+  const fromProvider = user.app_metadata?.provider === "google";
+  const providersArr = user.app_metadata?.providers;
+  const fromProvidersArr = Array.isArray(providersArr) && (providersArr as unknown[]).includes("google");
+  return fromIdentities || fromProvider || fromProvidersArr;
+}
+
 export async function deleteAccount(): Promise<void> {
   const supabase = createClient();
   const { error } = await supabase.rpc("delete_own_account");

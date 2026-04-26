@@ -47,11 +47,16 @@ export function OpponentDeckSelector({
 
   const display = (name: string) => displayDeckName(name, nameMap);
 
+  const normalizeQuery = (s: string): string =>
+    s.normalize("NFKC")
+      .toLowerCase()
+      .replace(/[ぁ-ゖ]/g, (ch) => String.fromCharCode(ch.charCodeAt(0) + 0x60));
+
   const filterByQuery = (items: string[]) => {
     if (!searchText) return items;
-    const q = searchText.toLowerCase();
+    const q = normalizeQuery(searchText);
     return items.filter((s) => {
-      return s.toLowerCase().includes(q) || display(s).toLowerCase().includes(q);
+      return normalizeQuery(s).includes(q) || normalizeQuery(display(s)).includes(q);
     });
   };
 
@@ -64,6 +69,12 @@ export function OpponentDeckSelector({
 
   const handleSelect = (name: string) => {
     onChange(name);
+    // 検索 UI が表示されている時のみ検索欄を表示名で同期する。
+    // 主要候補チップだけのタップでは UI を勝手に開かない。
+    const searchUiVisible = showOther || searchText.trim().length > 0;
+    if (searchUiVisible) {
+      setSearchText(display(name));
+    }
   };
 
   const chipStyle = (name: string) => {

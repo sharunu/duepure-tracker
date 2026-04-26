@@ -5,7 +5,7 @@ import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { getDeckDetailStats, getGlobalDeckDetailStats, getTeamDeckDetailStats, getGlobalDeckDetailStatsMulti } from "@/lib/actions/stats-actions";
 import type { DeckDetailStats } from "@/lib/actions/stats-actions";
 import { getDailyBattleCounts, getOpponentDeckSuggestions } from "@/lib/actions/battle-actions";
-import { getOpponentDeckNameMap, type OpponentDeckNameMap } from "@/lib/actions/opponent-deck-display";
+import { getOpponentDeckNameMap, displayDeckName, type OpponentDeckNameMap } from "@/lib/actions/opponent-deck-display";
 import { useFormat } from "@/hooks/use-format";
 import { FormatSelector } from "@/components/ui/FormatSelector";
 import { DateRangeCalendar } from "@/components/battle/DateRangeCalendar";
@@ -47,6 +47,8 @@ export default function DeckDetailPage() {
   const [viewMode, setViewMode] = useState<"visual" | "table">("visual");
   const [deckCategories, setDeckCategories] = useState<{ major: string[]; minor: string[]; other: string[] }>({ major: [], minor: [], other: [] });
   const [opponentDeckNameMap, setOpponentDeckNameMap] = useState<OpponentDeckNameMap>({});
+  const [nameMapFormat, setNameMapFormat] = useState<string | null>(null);
+  const nameMapReady = nameMapFormat === format;
 
   const [startDate, setStartDate] = useState(() => {
     return searchParams.get("start") || (() => {
@@ -61,10 +63,17 @@ export default function DeckDetailPage() {
 
   // Fetch deck categories for donut chart aggregation
   useEffect(() => {
-    if (ready) {
-      getOpponentDeckSuggestions(format, "pokepoke").then(setDeckCategories);
-      getOpponentDeckNameMap(format, "pokepoke").then(setOpponentDeckNameMap);
-    }
+    if (!ready) return;
+    let cancelled = false;
+    getOpponentDeckSuggestions(format, "pokepoke").then((cats) => {
+      if (!cancelled) setDeckCategories(cats);
+    });
+    getOpponentDeckNameMap(format, "pokepoke").then((map) => {
+      if (cancelled) return;
+      setOpponentDeckNameMap(map);
+      setNameMapFormat(format);
+    });
+    return () => { cancelled = true; };
   }, [format, ready]);
 
   const categoryMap = useMemo(() => {
@@ -187,7 +196,7 @@ export default function DeckDetailPage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-bold">{`${deckName}${titleSuffix}`}</h1>
-            {scope === "personal" && stats && stats.overallTotal > 0 && (() => {
+            {scope === "personal" && stats && stats.overallTotal > 0 && nameMapReady && (() => {
               const fW = stats.overall.reduce((s, o) => s + o.firstWins, 0);
               const fL = stats.overall.reduce((s, o) => s + o.firstLosses, 0);
               const fD = stats.overall.reduce((s, o) => s + o.firstDraws, 0);
@@ -202,7 +211,7 @@ export default function DeckDetailPage() {
                 winRate: stats.overallWinRate,
                 firstWins: fW, firstLosses: fL, firstDraws: fD,
                 secondWins: sW, secondLosses: sL, secondDraws: sD,
-                topMatchups: stats.overall.slice(0, 5).map(o => ({ name: o.opponentName, wins: o.wins, losses: o.losses, draws: o.draws, winRate: o.winRate })),
+                topMatchups: stats.overall.slice(0, 5).map(o => ({ name: displayDeckName(o.opponentName, opponentDeckNameMap), wins: o.wins, losses: o.losses, draws: o.draws, winRate: o.winRate })),
                 period: `${startDate} ~ ${endDate}`,
                 format,
                 game: "pokepoke",
