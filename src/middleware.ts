@@ -24,6 +24,12 @@ async function getRateLimiter(): Promise<RateLimitBinding | undefined> {
 }
 
 async function checkRateLimit(request: NextRequest): Promise<NextResponse | null> {
+  // GHSA-q4gf-8mx6-v5v3 は App Router Server Function endpoint への POST に対する DoS。
+  // GET / RSC prefetch / 静的ナビゲーションまで rate limit すると通常操作 (画面遷移時の
+  // RSC payload や Link prefetch 等で 1 ページあたり 5-10 req 発生) で誤爆するため、
+  // 攻撃の本命である POST に対象を限定する。
+  if (request.method !== "POST") return null;
+
   const limiter = await getRateLimiter();
   if (!limiter) return null;
   const ip = request.headers.get("CF-Connecting-IP") ?? "unknown";
