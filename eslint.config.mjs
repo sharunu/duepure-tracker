@@ -15,6 +15,8 @@ const eslintConfig = defineConfig([
     // OpenNext / Cloudflare Workers 生成物
     ".open-next/**",
     ".wrangler/**",
+    // Claude Code worktrees
+    ".claude/worktrees/**",
   ]),
 ]);
 

@@ -1,11 +1,19 @@
 import { Metadata } from "next";
 import { createClient } from "@supabase/supabase-js";
 import { headers } from "next/headers";
-import { redirect } from "next/navigation";
-import { getGameMetaBySlug } from "@/lib/games/server";
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import { getGameMetaBySlug, normalizeGameTitle } from "@/lib/games/server";
 import { APP_BRAND } from "@/lib/games";
 
 type Props = { params: Promise<{ id: string }> };
+
+type ShareRow = {
+  share_type: "stats" | "deck" | "opponent";
+  share_data: Record<string, unknown>;
+  image_url: string | null;
+  game_title: string | null;
+};
 
 async function resolveAppUrl(): Promise<string> {
   const h = await headers();
@@ -17,51 +25,58 @@ async function resolveAppUrl(): Promise<string> {
   return process.env.NEXT_PUBLIC_APP_URL ?? "";
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { id } = await params;
-
+async function loadShare(id: string): Promise<ShareRow | null> {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
-
-  const { data: share } = await supabase
+  const { data } = await supabase
     .from("shares")
     .select("share_type, share_data, image_url, game_title")
     .eq("id", id)
     .single();
+  return (data as ShareRow | null) ?? null;
+}
+
+function buildTitleAndDescription(share: ShareRow): { title: string; description: string } {
+  const d = share.share_data as Record<string, unknown>;
+  const dGame = (typeof d.game === "string" ? d.game : share.game_title) ?? "dm";
+  const drawSuffix = dGame === "pokepoke" ? `${(d.totalDraws as number) ?? 0}分` : "";
+  const wlText = `${d.totalWins}勝${d.totalLosses}敗${drawSuffix}`;
+  const winRateText = d.winRate === null || d.winRate === undefined ? "--" : d.winRate;
+  const period = (d.period as string) ?? "";
+  const deckName = (d.deckName as string) ?? "";
+
+  if (share.share_type === "stats") {
+    return {
+      title: `勝率 ${winRateText}% - 戦績サマリー`,
+      description: `${wlText} | ${period}`,
+    };
+  }
+  if (share.share_type === "deck") {
+    return {
+      title: `${deckName} 勝率 ${winRateText}%`,
+      description: `${wlText} | ${period}`,
+    };
+  }
+  return {
+    title: `vs ${deckName} 勝率 ${winRateText}%`,
+    description: `${wlText} | ${period}`,
+  };
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params;
+  const share = await loadShare(id);
 
   if (!share) {
     return { title: APP_BRAND.name };
   }
 
   const appUrl = await resolveAppUrl();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const imageUrl = (share as any).image_url as string | null | undefined;
-  const ogImageUrl = imageUrl ?? `${appUrl}/api/og/${id}`;
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const d = share.share_data as any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const gameTitle = (share as any).game_title as string | null | undefined;
-  const gameMeta = getGameMetaBySlug(gameTitle);
-  let title: string;
-  let description: string;
-
-  const dGame = (d.game as string | undefined) ?? gameTitle ?? "dm";
-  const drawSuffix = dGame === "pokepoke" ? `${(d.totalDraws as number) ?? 0}分` : "";
-  const wlText = `${d.totalWins}勝${d.totalLosses}敗${drawSuffix}`;
-  const winRateText = d.winRate === null || d.winRate === undefined ? "--" : d.winRate;
-  if (share.share_type === "stats") {
-    title = `勝率 ${winRateText}% - 戦績サマリー`;
-    description = `${wlText} | ${d.period}`;
-  } else if (share.share_type === "deck") {
-    title = `${d.deckName} 勝率 ${winRateText}%`;
-    description = `${wlText} | ${d.period}`;
-  } else {
-    title = `vs ${d.deckName} 勝率 ${winRateText}%`;
-    description = `${wlText} | ${d.period}`;
-  }
+  const ogImageUrl = share.image_url ?? `${appUrl}/api/og/${id}`;
+  const gameMeta = getGameMetaBySlug(share.game_title);
+  const { title, description } = buildTitleAndDescription(share);
 
   return {
     title: `${title} | ${gameMeta.trackerName}`,
@@ -80,6 +95,61 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function SharePage() {
-  redirect("/auth");
+export default async function SharePage({ params }: Props) {
+  const { id } = await params;
+  const share = await loadShare(id);
+
+  if (!share) {
+    notFound();
+  }
+
+  const appUrl = await resolveAppUrl();
+  const ogImageUrl = share.image_url ?? `${appUrl}/api/og/${id}`;
+  const gameSlug = normalizeGameTitle(share.game_title);
+  const gameMeta = getGameMetaBySlug(gameSlug);
+  const { title, description } = buildTitleAndDescription(share);
+
+  return (
+    <main className="min-h-screen bg-slate-950 text-slate-100">
+      <div className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-10">
+        <header className="flex items-center justify-between">
+          <Link
+            href={`/${gameSlug}/home`}
+            className="text-sm text-slate-400 hover:text-slate-200"
+          >
+            {gameMeta.trackerName}
+          </Link>
+        </header>
+
+        <h1 className="text-2xl font-bold leading-tight">{title}</h1>
+        <p className="text-sm text-slate-300">{description}</p>
+
+        <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={ogImageUrl}
+            alt={title}
+            width={1200}
+            height={630}
+            className="h-auto w-full"
+          />
+        </div>
+
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <Link
+            href={`/${gameSlug}/home`}
+            className="inline-flex flex-1 items-center justify-center rounded-xl bg-indigo-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-400"
+          >
+            アプリで開く
+          </Link>
+          <Link
+            href="/auth"
+            className="inline-flex flex-1 items-center justify-center rounded-xl border border-slate-700 px-5 py-3 text-sm font-semibold text-slate-200 transition hover:bg-slate-800"
+          >
+            ログイン / 新規登録
+          </Link>
+        </div>
+      </div>
+    </main>
+  );
 }

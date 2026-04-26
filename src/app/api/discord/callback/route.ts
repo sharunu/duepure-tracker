@@ -4,43 +4,6 @@ import { DEFAULT_GAME, isGameSlug, type GameSlug } from "@/lib/games";
 
 import { getServerEnv } from "@/lib/cf-env";
 
-/**
- * base64url を decode。'-'→'+', '_'→'/', padding を復元。
- * atob が使える Next.js Edge/Node 両ランタイムで動作。
- */
-function base64urlDecode(input: string): string {
-  let b64 = input.replace(/-/g, "+").replace(/_/g, "/");
-  while (b64.length % 4) b64 += "=";
-  try {
-    return typeof atob === "function"
-      ? atob(b64)
-      : Buffer.from(b64, "base64").toString("utf-8");
-  } catch {
-    return "";
-  }
-}
-
-/**
- * 旧形式 state パース（base64url JSON + 最古の raw access_token fallback）。
- * 新方式（UUID nonce + discord_oauth_states）に移行済みだが、デプロイ直前に authorize を
- * 開始したユーザーの in-flight OAuth を破壊しないため暫定継続。
- * TODO: Phase 2 完了後 1 週間以上経過した別 PR で削除予定。
- */
-function parseLegacyState(state: string): { token: string; game: GameSlug } {
-  try {
-    const decoded = base64urlDecode(state);
-    if (decoded) {
-      const parsed = JSON.parse(decoded) as { t?: string; g?: string };
-      if (parsed?.t && isGameSlug(parsed.g)) {
-        return { token: parsed.t, game: parsed.g };
-      }
-    }
-  } catch {
-    // fallthrough to legacy
-  }
-  return { token: state, game: DEFAULT_GAME };
-}
-
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function GET(request: NextRequest) {
@@ -61,38 +24,28 @@ export async function GET(request: NextRequest) {
     (await getServerEnv("SUPABASE_SERVICE_ROLE_KEY"))!,
   );
 
-  // 1. state を解析してユーザー特定
-  let userId: string;
-  let game: GameSlug;
-
-  if (UUID_RE.test(state)) {
-    // 新方式: discord_oauth_states から atomic consume（DELETE ... RETURNING）
-    // 同一 nonce が並列 callback に来ても片方しか成功しない
-    const { data, error } = await supabaseAdmin
-      .from("discord_oauth_states")
-      .delete()
-      .eq("nonce", state)
-      .gte("expires_at", new Date().toISOString())
-      .select("user_id, game_title")
-      .maybeSingle();
-
-    if (error || !data) {
-      console.error("discord_oauth_states consume failed:", error);
-      return NextResponse.redirect(new URL(`/${DEFAULT_GAME}/home?discord=error`, origin));
-    }
-    userId = data.user_id;
-    game = isGameSlug(data.game_title) ? data.game_title : DEFAULT_GAME;
-  } else {
-    // 旧方式: state に Supabase access_token が埋め込まれている（in-flight 救済）
-    const legacy = parseLegacyState(state);
-    game = legacy.game;
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(legacy.token);
-    if (authError || !user) {
-      console.error("legacy state auth failed:", authError);
-      return NextResponse.redirect(new URL(`/${game}/home?discord=error`, origin));
-    }
-    userId = user.id;
+  // state は UUID nonce のみ受け付ける (discord_oauth_states に紐付く)
+  if (!UUID_RE.test(state)) {
+    console.error("non-uuid state rejected");
+    return NextResponse.redirect(new URL(`/${DEFAULT_GAME}/home?discord=error`, origin));
   }
+
+  // discord_oauth_states から atomic consume（DELETE ... RETURNING）
+  // 同一 nonce が並列 callback に来ても片方しか成功しない
+  const { data: stateRow, error: stateError } = await supabaseAdmin
+    .from("discord_oauth_states")
+    .delete()
+    .eq("nonce", state)
+    .gte("expires_at", new Date().toISOString())
+    .select("user_id, game_title")
+    .maybeSingle();
+
+  if (stateError || !stateRow) {
+    console.error("discord_oauth_states consume failed:", stateError);
+    return NextResponse.redirect(new URL(`/${DEFAULT_GAME}/home?discord=error`, origin));
+  }
+  const userId: string = stateRow.user_id;
+  const game: GameSlug = isGameSlug(stateRow.game_title) ? stateRow.game_title : DEFAULT_GAME;
 
   try {
     // 2. Discord token 交換
