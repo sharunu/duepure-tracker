@@ -78,6 +78,9 @@ type Settings = {
 };
 
 const categoryCycle: Record<string, string> = { major: "minor", minor: "other", other: "major" };
+const LIMITLESS_SYNC_PAUSED = true;
+const LIMITLESS_SYNC_PAUSED_MESSAGE =
+  "APIキー受領までLimitlessTCGからの新規取得を停止中です。既存キャッシュのみ表示しています。";
 
 // --- Sortable deck item for Mode 1 ---
 function SortableDeckItem({
@@ -358,6 +361,11 @@ export function OpponentDeckManager({
   };
 
   const handleLimitlessSync = async () => {
+    if (LIMITLESS_SYNC_PAUSED) {
+      setLimitlessMessage(LIMITLESS_SYNC_PAUSED_MESSAGE);
+      return;
+    }
+
     setLimitlessSyncing(true);
     setLimitlessMessage("取得中...");
     try {
@@ -548,7 +556,9 @@ export function OpponentDeckManager({
           minor_fixed_count: minorFixed,
         };
         // 分類方式・閾値を変えた場合は再同期でカテゴリ再計算させる
-        await triggerLimitlessSync().catch(() => {});
+        if (!LIMITLESS_SYNC_PAUSED) {
+          await triggerLimitlessSync().catch(() => {});
+        }
         const freshDecks = await getOpponentDeckMasterList(format, game);
         setDecks(freshDecks);
         savedDecksRef.current = freshDecks;
@@ -755,8 +765,9 @@ export function OpponentDeckManager({
       {mode === "limitless" ? (
         <>
           <div className="bg-[#1e2138] rounded-[10px] px-4 py-3 text-[12px] text-gray-400 leading-relaxed">
-            LimitlessTCG の公式大会 <span className="text-gray-200">standard</span> データを取得し、
+            LimitlessTCG の公式大会 <span className="text-gray-200">standard</span> データを既存キャッシュとして表示し、
             ポケポケの <span className="text-gray-200">RANKED / RANDOM</span> 両フォーマットに流用しています。
+            APIキー受領まで新規取得は停止中です。
             自分自身の戦績（battles）の使用率は反映されません。
           </div>
 
@@ -778,12 +789,13 @@ export function OpponentDeckManager({
               </div>
               <button
                 onClick={handleLimitlessSync}
-                disabled={limitlessSyncing || applying}
+                disabled={LIMITLESS_SYNC_PAUSED || limitlessSyncing || applying}
                 className="bg-[#3d4070] text-white rounded-[6px] px-4 py-2 text-[13px] font-medium hover:opacity-90 disabled:opacity-50 min-h-[40px]"
               >
-                {limitlessSyncing ? "取得中..." : "今すぐ取得"}
+                {LIMITLESS_SYNC_PAUSED ? "取得停止中" : limitlessSyncing ? "取得中..." : "今すぐ取得"}
               </button>
             </div>
+            <p className="text-[11px] text-amber-300/80">{LIMITLESS_SYNC_PAUSED_MESSAGE}</p>
             {limitlessMessage && (
               <p className="text-[11px] text-gray-500">{limitlessMessage}</p>
             )}
