@@ -4,7 +4,8 @@
  * /api/internal/limitless-sync (cron, X-Internal-Key 認証) と
  * /api/admin/limitless-sync    (管理者 UI, session + checkIsAdmin) の両方から呼ばれる。
  *
- * 処理:
+ * API キー受領までは HTML スクレイピングを停止し、既存キャッシュのみ利用する。
+ * 再開時の処理:
  *   1. 多重実行防止: 直近 60 秒以内に同期済みなら skipped を返す (force=true で無視)
  *   2. play.limitlesstcg.com/decks?game=POCKET&format=standard を取得
  *   3. parseDeckTable で行配列化
@@ -25,6 +26,9 @@ const USER_AGENT = "duepure-tracker/0.1 (+https://github.com/sharunu/duepure-tra
 const GAME_TITLE = "pokepoke";
 const TARGET_FORMATS = ["RANKED", "RANDOM"] as const;
 const RECENT_SYNC_GUARD_SECONDS = 60;
+const LIMITLESS_HTML_SYNC_PAUSED = true;
+const LIMITLESS_HTML_SYNC_PAUSED_REASON =
+  "Limitless HTML scraping is paused while waiting for official API access approval";
 
 export type SyncResult =
   | { ok: true; skipped: true; reason: string }
@@ -34,6 +38,14 @@ export type SyncResult =
 export async function runLimitlessSync(
   opts: { force?: boolean } = {},
 ): Promise<SyncResult> {
+  if (LIMITLESS_HTML_SYNC_PAUSED) {
+    return {
+      ok: true,
+      skipped: true,
+      reason: LIMITLESS_HTML_SYNC_PAUSED_REASON,
+    };
+  }
+
   const supabase = await createServiceRoleClient();
   if (!supabase) {
     return { ok: false, error: "supabase configuration missing" };
