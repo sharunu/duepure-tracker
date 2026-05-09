@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getGameMetaBySlug, normalizeGameTitle } from "@/lib/games/server";
 import { APP_BRAND } from "@/lib/games";
+import { getServerEnv } from "@/lib/cf-env";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -26,9 +27,12 @@ async function resolveAppUrl(): Promise<string> {
 }
 
 async function loadShare(id: string): Promise<ShareRow | null> {
+  const serviceRoleKey = await getServerEnv("SUPABASE_SERVICE_ROLE_KEY");
+  if (!serviceRoleKey) return null;
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    serviceRoleKey,
+    { auth: { persistSession: false } }
   );
   const { data } = await supabase
     .from("shares")
