@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getUserStage } from "@/lib/actions/account-actions";
 
-const EXCLUDED_PATHS = ["/auth", "/terms", "/privacy"];
+const EXCLUDED_PATHS = ["/auth", "/terms", "/privacy", "/share"];
 
 export function BanGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
