@@ -135,6 +135,7 @@
 - `--accent` は新規UIでは使わない。移行期間中は `--warning` と同値のlegacy aliasとして扱う。既存参照がすべて `--warning` 等へ置換され、`rg "accent|--accent"` で利用箇所がなくなった段階でaliasを削除する
 - `--surface-1` / `--surface-2` / `--surface-3` を追加し、カード、入力欄、選択面の階層を表現する
 - 現状頻出している `#1a1d2e` は `--surface-1` に集約する。`--card` は既存互換として残し、新規の外枠カード背景は `--surface-1` を使う
+- `--card` は当面 `#1e293b` の既存互換tokenとして維持する。`bg-card` / `text-card-foreground` 参照が `--surface-1` 系へ十分に置換された段階で、`--card: var(--surface-1)` のaliasへ切り替える
 - surface系の上に載る通常テキストは `--foreground` を使う。現時点では `--surface-*-foreground` は増やさない
 - `--border` は既存互換の既定borderとして残し、必要に応じて `--border-subtle` / `--border-strong` を使い分ける
 - ゲーム別の `--game-accent` は当面追加しない。ゲームの識別はテキスト、フォーマット、ページ文脈で行う
