@@ -205,7 +205,7 @@ export default function AccountPage() {
 
         {/* プロフィールカード */}
         <div className="bg-surface-2 rounded-[10px] px-4 py-[14px] flex items-center gap-3">
-          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#5b8def] to-[#7c5bf0] flex items-center justify-center flex-shrink-0">
+          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary-soft flex items-center justify-center flex-shrink-0">
             <span className="text-white text-[15px] font-medium">{initials}</span>
           </div>
           <div className="min-w-0 flex-1">
