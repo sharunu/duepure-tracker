@@ -46,8 +46,14 @@ export const metadata: Metadata = {
   },
 };
 
+// 注: themeColor は OS chrome (status bar) のテーマ色を制御する metadata。
+// dark 値は --background と一致させ、light 値は light --background と一致させる。
+// SSR metadata で CSS 変数を読めないため hex 直書き必須 (本 plan の例外領域)。
 export const viewport: Viewport = {
-  themeColor: "#6366f1",
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#0f172a" },
+    { media: "(prefers-color-scheme: light)", color: "#f8fafc" },
+  ],
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,

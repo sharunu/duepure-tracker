@@ -17,7 +17,7 @@ export default function PrivacyPage() {
         <h1 className="text-[20px] font-medium">プライバシーポリシー</h1>
       </div>
 
-      <div className="bg-[#232640] rounded-[10px] px-4 py-5 space-y-5 text-[13px] text-gray-300 leading-relaxed">
+      <div className="bg-surface-2 rounded-[10px] px-4 py-5 space-y-5 text-[13px] text-foreground leading-relaxed">
         <p className="text-[11px] text-gray-500">最終更新日: 2026年4月18日</p>
 
         <section>

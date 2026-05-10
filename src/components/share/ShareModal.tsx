@@ -207,13 +207,12 @@ export function ShareModal({ type, data, onClose }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-[70] flex items-center justify-center"
-      style={{ backgroundColor: "rgba(0,0,0,0.6)" }}
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
-        className="w-full max-w-lg mx-4 rounded-[12px] overflow-hidden"
-        style={{ backgroundColor: "#1a1d2e", border: "0.5px solid rgba(100,100,150,0.3)" }}
+        className="w-full max-w-lg mx-4 rounded-[12px] overflow-hidden bg-surface-1"
+        style={{ border: "0.5px solid var(--border-subtle)" }}
       >
         {/* ヘッダー */}
         <div className="flex items-center justify-between px-5 py-4">
@@ -227,7 +226,7 @@ export function ShareModal({ type, data, onClose }: Props) {
         <div className="px-5 pb-4">
           {capturing ? (
             <div className="flex items-center justify-center h-[200px]">
-              <div className="animate-spin h-6 w-6 border-2 border-[#818cf8] border-t-transparent rounded-full" />
+              <div className="animate-spin h-6 w-6 border-2 border-primary-soft border-t-transparent rounded-full" />
             </div>
           ) : error ? (
             <div className="text-center py-8">
@@ -248,7 +247,7 @@ export function ShareModal({ type, data, onClose }: Props) {
         {uploadFailed && (
           <div
             className="mx-5 mb-3 rounded-[8px] px-3 py-3"
-            style={{ backgroundColor: "rgba(239,68,68,0.1)", border: "0.5px solid rgba(239,68,68,0.4)" }}
+            style={{ backgroundColor: "color-mix(in srgb, var(--destructive) 10%, transparent)", border: "0.5px solid color-mix(in srgb, var(--destructive) 40%, transparent)" }}
           >
             <div className="flex items-start gap-2 mb-3">
               <AlertCircle size={16} className="text-red-400 mt-0.5 shrink-0" />
@@ -260,15 +259,15 @@ export function ShareModal({ type, data, onClose }: Props) {
               <button
                 onClick={handleRetryUpload}
                 disabled={posting || uploadRetrying}
-                className="flex-1 bg-[#6366f1] text-white rounded-[8px] px-3 py-2 text-[12px] font-medium hover:opacity-90 disabled:opacity-50"
+                className="flex-1 bg-primary text-primary-foreground rounded-[8px] px-3 py-2 text-[12px] font-medium hover:opacity-90 disabled:opacity-50"
               >
                 {uploadRetrying ? "再試行中..." : "再試行"}
               </button>
               <button
                 onClick={handlePostWithoutImage}
                 disabled={posting || uploadRetrying}
-                className="flex-1 bg-[#232640] text-white rounded-[8px] px-3 py-2 text-[12px] font-medium hover:opacity-90 disabled:opacity-50"
-                style={{ border: "0.5px solid rgba(100,100,150,0.3)" }}
+                className="flex-1 bg-surface-2 text-foreground rounded-[8px] px-3 py-2 text-[12px] font-medium hover:opacity-90 disabled:opacity-50"
+                style={{ border: "0.5px solid var(--border-subtle)" }}
               >
                 画像なしで投稿
               </button>
@@ -288,7 +287,7 @@ export function ShareModal({ type, data, onClose }: Props) {
           {isMobile && canNativeShare && imageBlob ? (
             <button
               onClick={handleMobileShare}
-              className="w-full bg-[#6366f1] text-white rounded-[10px] px-4 py-3 text-[14px] font-medium hover:opacity-90"
+              className="w-full bg-primary text-primary-foreground rounded-[10px] px-4 py-3 text-[14px] font-medium hover:opacity-90"
             >
               シェアする
             </button>
@@ -297,8 +296,8 @@ export function ShareModal({ type, data, onClose }: Props) {
               {imageBlob && (
                 <button
                   onClick={handleDownload}
-                  className="w-full bg-[#232640] text-white rounded-[10px] px-4 py-3 text-[14px] font-medium hover:opacity-90 flex items-center justify-center gap-2"
-                  style={{ border: "0.5px solid rgba(100,100,150,0.3)" }}
+                  className="w-full bg-surface-2 text-foreground rounded-[10px] px-4 py-3 text-[14px] font-medium hover:opacity-90 flex items-center justify-center gap-2"
+                  style={{ border: "0.5px solid var(--border-subtle)" }}
                 >
                   <Download size={16} />
                   画像を保存
@@ -307,8 +306,8 @@ export function ShareModal({ type, data, onClose }: Props) {
               <button
                 onClick={handleXPost}
                 disabled={posting || uploadFailed}
-                className="w-full bg-[#232640] text-white rounded-[10px] px-4 py-3 text-[14px] font-medium hover:opacity-90 flex items-center justify-center gap-2 disabled:opacity-50"
-                style={{ border: "0.5px solid rgba(100,100,150,0.3)" }}
+                className="w-full bg-surface-2 text-foreground rounded-[10px] px-4 py-3 text-[14px] font-medium hover:opacity-90 flex items-center justify-center gap-2 disabled:opacity-50"
+                style={{ border: "0.5px solid var(--border-subtle)" }}
               >
                 {posting ? (
                   <Loader2 size={14} className="animate-spin" />

@@ -26,14 +26,14 @@ export default function Error({
         <div className="flex flex-col gap-3">
           <button
             onClick={() => reset()}
-            className="rounded-[10px] px-5 py-3 text-sm font-medium bg-[#6366f1] hover:bg-[#5558e6] transition-colors"
+            className="rounded-[10px] px-5 py-3 text-sm font-medium bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
           >
             再読み込み
           </button>
           <Link
             href="/home"
-            className="rounded-[10px] px-5 py-3 text-sm font-medium bg-[#1a1d2e] hover:bg-[#232640] transition-colors"
-            style={{ border: "0.5px solid #333355" }}
+            className="rounded-[10px] px-5 py-3 text-sm font-medium bg-surface-1 hover:bg-surface-2 transition-colors"
+            style={{ border: "0.5px solid var(--border)" }}
           >
             ホームに戻る
           </Link>

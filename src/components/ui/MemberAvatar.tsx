@@ -18,7 +18,7 @@ export function MemberAvatar({ userId, username, size = 32, selected = false, sh
   return (
     <div className="flex flex-col items-center gap-0.5">
       <div
-        className={"rounded-full flex items-center justify-center flex-shrink-0 transition-shadow" + (selected ? " ring-2 ring-primary ring-offset-1 ring-offset-[#0f172a]" : "")}
+        className={"rounded-full flex items-center justify-center flex-shrink-0 transition-shadow" + (selected ? " ring-2 ring-primary ring-offset-1 ring-offset-background" : "")}
         style={{
           width: size,
           height: size,

@@ -74,7 +74,7 @@ export function AdminUserDecks({ userId, format, game = DEFAULT_GAME }: Props) {
               <div className="px-4 pb-3 pl-11">
                 <div className="space-y-1">
                   {deck.deck_tunings.map((t) => (
-                    <div key={t.id} className="text-[12px] text-[#8888aa] py-1 px-2 bg-[#1a1d2e] rounded-[4px]">
+                    <div key={t.id} className="text-[12px] text-muted-foreground py-1 px-2 bg-surface-1 rounded-[4px]">
                       {t.name}
                     </div>
                   ))}

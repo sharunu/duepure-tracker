@@ -16,7 +16,7 @@ export function TeamServerCard({ teams, activeTeamId, onTeamSelect, members, sel
   const activeTeam = teams.find((t) => t.id === activeTeamId);
 
   return (
-    <div className="rounded-xl border border-muted/20 overflow-hidden" style={{ backgroundColor: "#1a1d35" }}>
+    <div className="rounded-xl border border-muted/20 overflow-hidden bg-surface-1">
       {/* 上段: サーバー選択 */}
       <div className="px-3 py-2.5">
         <p className="text-[11px] text-muted-foreground mb-1.5">Discordサーバー</p>
@@ -32,8 +32,8 @@ export function TeamServerCard({ teams, activeTeamId, onTeamSelect, members, sel
             <select
               value={activeTeamId ?? ""}
               onChange={(e) => { if (e.target.value) onTeamSelect(e.target.value); }}
-              className="w-full appearance-none rounded-[8px] bg-[#232640] px-3 py-2 pr-9 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/60 disabled:opacity-60"
-              style={{ border: "0.5px solid #333355" }}
+              className="w-full appearance-none rounded-[8px] bg-surface-2 px-3 py-2 pr-9 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/60 disabled:opacity-60"
+              style={{ border: "0.5px solid var(--border)" }}
               disabled={teams.length <= 1}
             >
               <option value="" disabled>サーバーを選択</option>
@@ -61,7 +61,7 @@ export function TeamServerCard({ teams, activeTeamId, onTeamSelect, members, sel
         <div
           className="flex gap-3 px-3 py-2.5 overflow-x-auto"
           style={{
-            borderTop: "0.5px solid #2a2d48",
+            borderTop: "0.5px solid var(--surface-3)",
             scrollbarWidth: "none",
             msOverflowStyle: "none",
           }}
@@ -72,8 +72,8 @@ export function TeamServerCard({ teams, activeTeamId, onTeamSelect, members, sel
             className="flex flex-col items-center gap-0.5 flex-shrink-0"
           >
             <div
-              className={"w-8 h-8 rounded-full flex items-center justify-center transition-shadow" + (selectedMemberId === null ? " ring-2 ring-primary ring-offset-1 ring-offset-[#1a1d35]" : "")}
-              style={{ backgroundColor: "rgba(100,100,150,0.25)" }}
+              className={"w-8 h-8 rounded-full flex items-center justify-center transition-shadow" + (selectedMemberId === null ? " ring-2 ring-primary ring-offset-1 ring-offset-surface-1" : "")}
+              style={{ backgroundColor: "var(--border-subtle)" }}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-muted-foreground">
                 <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />

@@ -479,10 +479,10 @@ function StatsPageInner() {
                 className="rounded-[8px] px-3 py-2.5"
                 style={{
                   border: userStage === 1
-                    ? "1px solid rgba(217, 170, 59, 0.35)"
-                    : "1px solid rgba(100, 100, 150, 0.2)",
+                    ? "1px solid color-mix(in srgb, var(--warning) 35%, transparent)"
+                    : "1px solid var(--border-subtle)",
                   background: userStage === 1
-                    ? "linear-gradient(135deg, rgba(217, 170, 59, 0.08), rgba(180, 130, 30, 0.04))"
+                    ? "linear-gradient(135deg, color-mix(in srgb, var(--warning) 8%, transparent), color-mix(in srgb, var(--warning) 4%, transparent))"
                     : "var(--surface-2)",
                 }}
               >
