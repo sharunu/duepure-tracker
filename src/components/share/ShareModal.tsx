@@ -2,7 +2,7 @@
 import { useGame } from "@/lib/games/context";
 
 import { useState, useEffect, useRef } from "react";
-import { X, Download, Loader2 } from "lucide-react";
+import { X, Download, Loader2, AlertCircle } from "lucide-react";
 import type { StatsShareData, DeckShareData } from "./ShareButton";
 import { StatsShareCard } from "./StatsShareCard";
 import { DeckShareCard } from "./DeckShareCard";
@@ -24,6 +24,8 @@ export function ShareModal({ type, data, onClose }: Props) {
   const [error, setError] = useState(false);
   const [capturing, setCapturing] = useState(true);
   const [posting, setPosting] = useState(false);
+  const [uploadFailed, setUploadFailed] = useState(false);
+  const [uploadRetrying, setUploadRetrying] = useState(false);
 
   const appUrl = typeof window !== "undefined" ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL ?? "");
 
@@ -105,7 +107,7 @@ export function ShareModal({ type, data, onClose }: Props) {
     a.click();
   };
 
-  const handleXPost = async () => {
+  const proceedXPost = async ({ skipUpload }: { skipUpload: boolean }) => {
     setPosting(true);
 
     // モバイルのポップアップブロック回避: async処理の前にウィンドウを同期的に開く
@@ -121,21 +123,26 @@ export function ShareModal({ type, data, onClose }: Props) {
 
       // Upload captured image to Supabase Storage so X can use it as og:image
       let imageUrl: string | null = null;
-      try {
-        const filePath = `${user.id}/${id}.png`;
-        const { error: uploadError } = await supabase.storage
-          .from("share-images")
-          .upload(filePath, imageBlob, {
-            contentType: "image/png",
-            upsert: true,
-            cacheControl: "604800",
-          });
-        if (!uploadError) {
+      if (!skipUpload) {
+        // upload error 専用 catch — auth / shares INSERT 失敗とは混同しない
+        try {
+          const filePath = `${user.id}/${id}.png`;
+          const { error: uploadError } = await supabase.storage
+            .from("share-images")
+            .upload(filePath, imageBlob, {
+              contentType: "image/png",
+              upsert: true,
+              cacheControl: "604800",
+            });
+          if (uploadError) throw uploadError;
           const { data: pub } = supabase.storage.from("share-images").getPublicUrl(filePath);
           imageUrl = pub.publicUrl;
+        } catch {
+          // upload 失敗時のみ警告 UI に遷移、newWindow リーク対策
+          if (newWindow && !newWindow.closed) newWindow.close();
+          setUploadFailed(true);
+          return;
         }
-      } catch {
-        // upload失敗時は image_url なしでINSERT、OGP route がSatori fallback
       }
 
       const insertPayload: Record<string, unknown> = {
@@ -162,7 +169,7 @@ export function ShareModal({ type, data, onClose }: Props) {
         window.location.href = intentUrl;
       }
     } catch {
-      // フォールバック: OGPなしの従来テキストのみ投稿
+      // upload 以外のエラー (auth / shares INSERT 失敗等) は従来の silent fallback (テキストのみ)
       const fallbackText = `${shareText}\n${appUrl}`;
       const fallbackUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(fallbackText)}`;
       if (newWindow) {
@@ -173,6 +180,27 @@ export function ShareModal({ type, data, onClose }: Props) {
     } finally {
       setPosting(false);
     }
+  };
+
+  const handleXPost = () => proceedXPost({ skipUpload: false });
+
+  const handleRetryUpload = async () => {
+    setUploadRetrying(true);
+    setUploadFailed(false);
+    try {
+      await proceedXPost({ skipUpload: false });
+    } finally {
+      setUploadRetrying(false);
+    }
+  };
+
+  const handlePostWithoutImage = () => {
+    setUploadFailed(false);
+    return proceedXPost({ skipUpload: true });
+  };
+
+  const handleCancelUploadError = () => {
+    setUploadFailed(false);
   };
 
   const isMobile = typeof navigator !== "undefined" && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
@@ -217,6 +245,43 @@ export function ShareModal({ type, data, onClose }: Props) {
           ) : null}
         </div>
 
+        {/* Upload error 警告ブロック */}
+        {uploadFailed && (
+          <div
+            className="mx-5 mb-3 rounded-[8px] px-3 py-3"
+            style={{ backgroundColor: "rgba(239,68,68,0.1)", border: "0.5px solid rgba(239,68,68,0.4)" }}
+          >
+            <div className="flex items-start gap-2 mb-3">
+              <AlertCircle size={16} className="text-red-400 mt-0.5 shrink-0" />
+              <p className="text-[13px] text-red-300">
+                画像のアップロードに失敗しました。再試行するか、画像なしで投稿できます。
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={handleRetryUpload}
+                disabled={uploadRetrying}
+                className="flex-1 bg-[#6366f1] text-white rounded-[8px] px-3 py-2 text-[12px] font-medium hover:opacity-90 disabled:opacity-50"
+              >
+                {uploadRetrying ? "再試行中..." : "再試行"}
+              </button>
+              <button
+                onClick={handlePostWithoutImage}
+                className="flex-1 bg-[#232640] text-white rounded-[8px] px-3 py-2 text-[12px] font-medium hover:opacity-90"
+                style={{ border: "0.5px solid rgba(100,100,150,0.3)" }}
+              >
+                画像なしで投稿
+              </button>
+              <button
+                onClick={handleCancelUploadError}
+                className="flex-1 bg-transparent text-gray-400 rounded-[8px] px-3 py-2 text-[12px] font-medium hover:text-gray-200"
+              >
+                キャンセル
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* アクション */}
         <div className="px-5 pb-5 space-y-3">
           {isMobile && canNativeShare && imageBlob ? (
@@ -240,7 +305,7 @@ export function ShareModal({ type, data, onClose }: Props) {
               )}
               <button
                 onClick={handleXPost}
-                disabled={posting}
+                disabled={posting || uploadFailed}
                 className="w-full bg-[#232640] text-white rounded-[10px] px-4 py-3 text-[14px] font-medium hover:opacity-90 flex items-center justify-center gap-2 disabled:opacity-50"
                 style={{ border: "0.5px solid rgba(100,100,150,0.3)" }}
               >
