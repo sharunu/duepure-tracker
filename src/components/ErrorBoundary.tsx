@@ -28,7 +28,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
           </p>
           <button
             onClick={() => window.location.reload()}
-            className="rounded-[8px] bg-[#6366f1] px-4 py-2 text-[13px] text-white hover:opacity-90 transition-opacity"
+            className="rounded-[8px] bg-primary px-4 py-2 text-[13px] text-primary-foreground hover:opacity-90 transition-opacity"
           >
             再読み込み
           </button>

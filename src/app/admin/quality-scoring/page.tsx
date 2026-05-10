@@ -103,15 +103,15 @@ export default function QualityScoringPage() {
         <button
           onClick={handleRun}
           disabled={running}
-          className="flex items-center gap-1.5 bg-[#6366f1] text-white rounded-[8px] px-3 py-2 text-[12px] font-medium hover:opacity-90 disabled:opacity-50"
+          className="flex items-center gap-1.5 bg-primary text-primary-foreground rounded-[8px] px-3 py-2 text-[12px] font-medium hover:opacity-90 disabled:opacity-50"
         >
           <Play size={14} />
           {running ? "実行中..." : "今すぐ再計算"}
         </button>
         <button
           onClick={() => router.push("/admin/quality-scoring/rules")}
-          className="flex items-center gap-1.5 bg-[#232640] text-gray-300 rounded-[8px] px-3 py-2 text-[12px] font-medium hover:opacity-90"
-          style={{ border: "0.5px solid rgba(100,100,150,0.2)" }}
+          className="flex items-center gap-1.5 bg-surface-2 text-foreground rounded-[8px] px-3 py-2 text-[12px] font-medium hover:opacity-90"
+          style={{ border: "0.5px solid var(--border-subtle)" }}
         >
           <Settings size={14} />
           ルール設定
@@ -126,7 +126,7 @@ export default function QualityScoringPage() {
 
       {/* 再計算結果 */}
       {result && (
-        <div className="bg-[#232640] rounded-[10px] px-4 py-4 mb-4">
+        <div className="bg-surface-2 rounded-[10px] px-4 py-4 mb-4">
           <p className="text-[14px] font-medium mb-3">再計算結果</p>
           <div className="space-y-2 text-[13px]">
             <div className="flex justify-between">
@@ -150,7 +150,7 @@ export default function QualityScoringPage() {
       )}
 
       {/* 閾値設定 */}
-      <div className="bg-[#232640] rounded-[10px] px-4 py-4">
+      <div className="bg-surface-2 rounded-[10px] px-4 py-4">
         <p className="text-[14px] font-medium mb-1">優良判定の閾値</p>
         <p className="text-[11px] text-gray-500 mb-3">合計スコアがこの値以上で優良ユーザーと判定されます</p>
         <div className="flex items-center gap-3">
@@ -161,14 +161,14 @@ export default function QualityScoringPage() {
               const num = parseInt(e.target.value);
               if (!isNaN(num)) setEditThreshold(num);
             }}
-            className="w-24 bg-[#1a1d2e] rounded-[6px] px-2 py-1.5 text-[13px] text-right focus:outline-none"
-            style={{ border: "0.5px solid #333355" }}
+            className="w-24 bg-surface-1 rounded-[6px] px-2 py-1.5 text-[13px] text-right focus:outline-none"
+            style={{ border: "0.5px solid var(--border)" }}
           />
           <span className="text-[12px] text-gray-500">点</span>
           <button
             onClick={handleSaveThreshold}
             disabled={savingThreshold || editThreshold === threshold}
-            className="ml-auto bg-[#3d4070] text-white rounded-[6px] px-4 py-1.5 text-[12px] font-medium hover:opacity-90 disabled:opacity-50"
+            className="ml-auto bg-primary text-primary-foreground rounded-[6px] px-4 py-1.5 text-[12px] font-medium hover:opacity-90 disabled:opacity-50"
           >
             {savingThreshold ? "保存中..." : "保存"}
           </button>
@@ -177,7 +177,7 @@ export default function QualityScoringPage() {
       </div>
 
       {/* 優良ユーザーUI表示設定 */}
-      <div className="bg-[#232640] rounded-[10px] px-4 py-4 mt-4">
+      <div className="bg-surface-2 rounded-[10px] px-4 py-4 mt-4">
         <div className="flex items-center justify-between">
           <div className="min-w-0 flex-1">
             <p className="text-[14px] font-medium mb-1">優良ユーザーUI表示</p>
@@ -189,7 +189,7 @@ export default function QualityScoringPage() {
             onClick={handleTogglePremiumUi}
             disabled={savingPremiumUi}
             className={`relative w-10 h-5 rounded-full transition-colors flex-shrink-0 ml-3 ${
-              premiumUiVisible ? "bg-[#6366f1]" : "bg-[#333355]"
+              premiumUiVisible ? "bg-primary" : "bg-muted"
             } ${savingPremiumUi ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
           >
             <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all duration-200 ${

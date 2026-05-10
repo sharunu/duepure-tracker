@@ -93,7 +93,7 @@ function AdminUserDetailInner() {
       <AdminUserStageControl userId={userId} />
 
       {/* ゲームタブ */}
-      <div className="flex gap-1 mb-3 border-b border-[#232640]">
+      <div className="flex gap-1 mb-3 border-b border-surface-2">
         {GAME_SLUGS.map((g) => {
           const isActive = g === game;
           return (
@@ -103,8 +103,8 @@ function AdminUserDetailInner() {
               onClick={() => changeGame(g)}
               className={`px-4 py-2 text-sm transition-colors -mb-px border-b-2 ${
                 isActive
-                  ? "border-[#818cf8] text-white font-medium"
-                  : "border-transparent text-gray-500 hover:text-gray-300"
+                  ? "border-primary-soft text-foreground font-medium"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
               {GAMES[g].shortName}

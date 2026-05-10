@@ -19,7 +19,7 @@ export function MemberAvatarStack({ members, max = 5 }: Props) {
         return (
           <div
             key={m.user_id}
-            className="w-6 h-6 rounded-full flex items-center justify-center border-2 border-[#0f172a]"
+            className="w-6 h-6 rounded-full flex items-center justify-center border-2 border-background"
             style={{
               backgroundColor: color,
               marginLeft: i === 0 ? 0 : -6,
@@ -32,7 +32,7 @@ export function MemberAvatarStack({ members, max = 5 }: Props) {
       })}
       {remaining > 0 && (
         <div
-          className="w-6 h-6 rounded-full flex items-center justify-center border-2 border-[#0f172a] bg-muted/50"
+          className="w-6 h-6 rounded-full flex items-center justify-center border-2 border-background bg-muted/50"
           style={{ marginLeft: -6, zIndex: 0 }}
         >
           <span className="text-[8px] text-muted-foreground font-medium">+{remaining}</span>

@@ -98,7 +98,7 @@ function AdminOpponentDecksInner() {
       </div>
 
       {/* ゲームタブ */}
-      <div className="flex gap-1 mb-4 border-b border-[#232640]">
+      <div className="flex gap-1 mb-4 border-b border-surface-2">
         {GAME_SLUGS.map((g) => {
           const isActive = g === game;
           return (
@@ -108,8 +108,8 @@ function AdminOpponentDecksInner() {
               onClick={() => changeGame(g)}
               className={`px-4 py-2 text-sm transition-colors -mb-px border-b-2 ${
                 isActive
-                  ? "border-[#818cf8] text-white font-medium"
-                  : "border-transparent text-gray-500 hover:text-gray-300"
+                  ? "border-primary-soft text-foreground font-medium"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
               {GAMES[g].shortName}
@@ -118,14 +118,14 @@ function AdminOpponentDecksInner() {
         })}
       </div>
 
-      <div className="bg-[#232640] rounded-[10px] px-4 py-3 mb-4 flex items-center gap-3">
+      <div className="bg-surface-2 rounded-[10px] px-4 py-3 mb-4 flex items-center gap-3">
         <div className="flex-1">
           <FormatSelector format={format} setFormat={setFormat} game={game} />
         </div>
         <button
             onClick={() => applyRef.current?.()}
             disabled={!dirty || applying}
-            className="bg-[#6366f1] text-white rounded-[8px] px-4 py-2 text-[13px] font-medium hover:bg-[#5558e6] disabled:opacity-50 transition-colors whitespace-nowrap min-h-[40px]"
+            className="bg-primary text-primary-foreground rounded-[8px] px-4 py-2 text-[13px] font-medium hover:opacity-90 disabled:opacity-50 transition-colors whitespace-nowrap min-h-[40px]"
           >
             {applying ? "反映中..." : "変更内容反映"}
           </button>

@@ -55,7 +55,7 @@ export function AdminUserDecks({ userId, format, game = DEFAULT_GAME }: Props) {
         const hasTunings = deck.deck_tunings.length > 0;
 
         return (
-          <div key={deck.id} className="bg-[#232640] rounded-[10px] overflow-hidden">
+          <div key={deck.id} className="bg-surface-2 rounded-[10px] overflow-hidden">
             <button
               onClick={() => hasTunings && setExpandedDeck(isExpanded ? null : deck.id)}
               className={`w-full px-4 py-3 flex items-center gap-3 text-left ${hasTunings ? "cursor-pointer" : "cursor-default"}`}
@@ -74,7 +74,7 @@ export function AdminUserDecks({ userId, format, game = DEFAULT_GAME }: Props) {
               <div className="px-4 pb-3 pl-11">
                 <div className="space-y-1">
                   {deck.deck_tunings.map((t) => (
-                    <div key={t.id} className="text-[12px] text-[#8888aa] py-1 px-2 bg-[#1a1d2e] rounded-[4px]">
+                    <div key={t.id} className="text-[12px] text-muted-foreground py-1 px-2 bg-surface-1 rounded-[4px]">
                       {t.name}
                     </div>
                   ))}

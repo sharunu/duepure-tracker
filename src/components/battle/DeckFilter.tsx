@@ -13,8 +13,8 @@ export function DeckFilter({ deckNames, selectedDeck, onSelect }: Props) {
         onClick={() => onSelect(null)}
         className={`rounded-[20px] border px-3 py-1.5 text-xs font-medium transition-colors ${
           selectedDeck === null
-            ? "bg-[rgba(91,141,239,0.15)] text-[#5b8def] font-medium border-transparent"
-            : "bg-[#232640] text-[#8888aa] border-transparent"
+            ? "bg-primary/15 text-primary font-medium border-transparent"
+            : "bg-surface-2 text-muted-foreground border-transparent"
         }`}
       >
         すべて
@@ -25,8 +25,8 @@ export function DeckFilter({ deckNames, selectedDeck, onSelect }: Props) {
           onClick={() => onSelect(name)}
           className={`rounded-[20px] border px-3 py-1.5 text-xs font-medium transition-colors ${
             selectedDeck === name
-              ? "bg-[rgba(91,141,239,0.15)] text-[#5b8def] font-medium border-transparent"
-              : "bg-[#232640] text-[#8888aa] border-transparent"
+              ? "bg-primary/15 text-primary font-medium border-transparent"
+              : "bg-surface-2 text-muted-foreground border-transparent"
           }`}
         >
           {name}

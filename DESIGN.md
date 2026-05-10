@@ -167,8 +167,6 @@ OS設定追従だけを前提にしない。アプリ内トグルの設定が最
   --warning: #f59e0b;
   --destructive: #ef4444;
 
-  --accent: var(--warning);
-
   --muted: #334155;
   --muted-foreground: #94a3b8;
 
@@ -184,6 +182,12 @@ OS設定追従だけを前提にしない。アプリ内トグルの設定が最
   --chart-6: #ec4899;
   --chart-7: #14b8a6;
   --chart-8: #64748b;
+
+  /* Phase 8a 追加: primary 派生 (薄い indigo、リンク文字 / soft accent) */
+  --primary-soft: #818cf8;
+
+  /* Phase 8a 追加: popover/dropdown shadow (Tailwind utility 化しない、style props 直接参照) */
+  --shadow-popover: 0 8px 24px rgba(0, 0, 0, 0.5);
 }
 
 @theme inline {
@@ -196,10 +200,10 @@ OS設定追従だけを前提にしない。アプリ内トグルの設定が最
   --color-surface-3: var(--surface-3);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-soft: var(--primary-soft);
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-destructive: var(--destructive);
-  --color-accent: var(--accent);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-border: var(--border);
@@ -213,6 +217,7 @@ OS設定追従だけを前提にしない。アプリ内トグルの設定が最
   --color-chart-6: var(--chart-6);
   --color-chart-7: var(--chart-7);
   --color-chart-8: var(--chart-8);
+  /* 注: --shadow-popover は Tailwind utility 化しないため @theme inline へは露出させない。TSX 側は style={{ boxShadow: "var(--shadow-popover)" }} で直接参照 */
 }
 ```
 
@@ -221,12 +226,14 @@ OS設定追従だけを前提にしない。アプリ内トグルの設定が最
 - `--background` / `--foreground` / `--card` / `--card-foreground` / `--primary` / `--primary-foreground` / `--success` / `--muted` / `--muted-foreground` / `--border` は維持する
 - `--destructive` は危険操作、LOSE、エラー系の意味色として維持する。`--danger` は追加しない
 - `--warning` を追加し、DRAW、注意、中立寄りの判定に使う
-- `--accent` は新規UIでは使わない。移行期間中は `--warning` と同値のlegacy aliasとして扱う。既存参照がすべて `--warning` 等へ置換され、`rg "accent|--accent"` で利用箇所がなくなった段階でaliasを削除する
+- `--accent` は **Phase 8e-3 で削除済**。意図色は `--warning` (DRAW、注意、中立寄りの判定) または `--primary-soft` (リンク文字、soft accent) を直接使う。新規 UI で `--accent` を再導入しない
 - 現状頻出している `#1a1d2e` は `--surface-1` に集約する
 - `--card` は当面 `#1e293b` の既存互換tokenとして維持する。`bg-card` / `text-card-foreground` 参照が `--surface-1` 系へ十分に置換された段階で、`--card: var(--surface-1)` のaliasへ切り替える
 - surface系の通常テキストは `--foreground` を使う。現時点では `--surface-*-foreground` は増やさない
 - ゲーム別の `--game-accent` は当面追加しない
 - `--chart-*` はdark / lightで別値を持てるsemantic tokenとして扱う。チャート実装側で固定hexを直接参照しない
+- `--primary-soft` は `--primary` の薄い派生で、リンク文字や soft accent 用途。`--primary` (主要 CTA / button 背景) とは用途を分離する。dark / light で別値を持つ
+- `--shadow-popover` は popover / dropdown / モーダル系の影。色 token とは別軸で `:root` 内に定義し、`@theme inline` には露出させない (Tailwind utility 化しない、TSX で `style={{ boxShadow: "var(--shadow-popover)" }}` 直接参照)。dark / light で別値を持つ
 
 ### Status Colors
 

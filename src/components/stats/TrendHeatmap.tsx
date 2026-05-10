@@ -15,19 +15,19 @@ function getCellStyle(pct: number, maxPct: number): {
   fontWeight: number;
 } {
   if (pct === 0 || maxPct === 0) {
-    return { background: "rgba(255,255,255,0.04)", color: "transparent", fontWeight: 400 };
+    return { background: "color-mix(in srgb, var(--foreground) 4%, transparent)", color: "transparent", fontWeight: 400 };
   }
   const ratio = pct / maxPct;
-  const opacity = 0.08 + ratio * 0.82;
-  const background = `rgba(99,102,241,${opacity.toFixed(2)})`;
+  const opacityPct = (0.08 + ratio * 0.82) * 100;
+  const background = `color-mix(in srgb, var(--primary) ${opacityPct.toFixed(0)}%, transparent)`;
 
   if (ratio <= 0.25) {
-    return { background, color: "rgba(255,255,255,0.5)", fontWeight: 400 };
+    return { background, color: "color-mix(in srgb, var(--primary-foreground) 50%, transparent)", fontWeight: 400 };
   }
   if (ratio <= 0.6) {
-    return { background, color: "rgba(255,255,255,0.75)", fontWeight: 400 };
+    return { background, color: "color-mix(in srgb, var(--primary-foreground) 75%, transparent)", fontWeight: 400 };
   }
-  return { background, color: "#ffffff", fontWeight: 700 };
+  return { background, color: "var(--primary-foreground)", fontWeight: 700 };
 }
 
 export function TrendHeatmap({ data }: { data: TrendDataPoint[] }) {
@@ -197,12 +197,12 @@ export function TrendHeatmap({ data }: { data: TrendDataPoint[] }) {
         <div className="flex justify-end items-center gap-1 mt-2 pr-1 text-[10px] text-muted-foreground">
           <span>少ない</span>
           {[
-            "rgba(255,255,255,0.04)",
-            "rgba(99,102,241,0.08)",
-            "rgba(99,102,241,0.28)",
-            "rgba(99,102,241,0.49)",
-            "rgba(99,102,241,0.69)",
-            "rgba(99,102,241,0.90)",
+            "color-mix(in srgb, var(--foreground) 4%, transparent)",
+            "color-mix(in srgb, var(--primary) 8%, transparent)",
+            "color-mix(in srgb, var(--primary) 28%, transparent)",
+            "color-mix(in srgb, var(--primary) 49%, transparent)",
+            "color-mix(in srgb, var(--primary) 69%, transparent)",
+            "color-mix(in srgb, var(--primary) 90%, transparent)",
           ].map((bg, i) => (
             <div
               key={i}

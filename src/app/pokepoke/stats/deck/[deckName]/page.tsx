@@ -284,7 +284,7 @@ export default function DeckDetailPage() {
 
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                      <span style={{ fontSize: 11, color: "#666688", fontWeight: 500 }}>表示形式</span>
+                      <span style={{ fontSize: 11, color: "var(--muted-foreground)", fontWeight: 500 }}>表示形式</span>
                       <div className="flex rounded-full border border-border overflow-hidden">
                         <button
                           onClick={() => setViewMode("visual")}

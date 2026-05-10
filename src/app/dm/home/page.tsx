@@ -215,11 +215,11 @@ function HomePageInner() {
     return (
       <>
         <div className="min-h-screen pb-20 px-4 pt-6 max-w-lg mx-auto">
-          <div className="animate-pulse rounded-[8px] bg-[#232640] h-6 w-28 mb-5" />
+          <div className="animate-pulse rounded-[8px] bg-surface-2 h-6 w-28 mb-5" />
           <div className="space-y-3">
-            <div className="animate-pulse rounded-[10px] bg-[#232640] h-[72px]" />
-            <div className="animate-pulse rounded-[10px] bg-[#232640] h-[72px]" />
-            <div className="animate-pulse rounded-[10px] bg-[#232640] h-[72px]" />
+            <div className="animate-pulse rounded-[10px] bg-surface-2 h-[72px]" />
+            <div className="animate-pulse rounded-[10px] bg-surface-2 h-[72px]" />
+            <div className="animate-pulse rounded-[10px] bg-surface-2 h-[72px]" />
           </div>
         </div>
         <BottomNav />
@@ -303,7 +303,7 @@ function HomePageInner() {
 
         {/* 展開時のメンバー一覧 */}
         {isShared && isExpanded && (
-          <div style={{ backgroundColor: "#1b1e35", borderTop: "0.5px solid #2a2d48" }}>
+          <div style={{ backgroundColor: "var(--surface-1)", borderTop: "0.5px solid var(--surface-3)" }}>
             {!memberStats ? (
               <div className="flex justify-center py-4">
                 <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
@@ -316,7 +316,7 @@ function HomePageInner() {
                   key={member.user_id}
                   onClick={(e) => { e.stopPropagation(); handleMemberTap(team.id, member); }}
                   className="flex items-center gap-3 w-full px-4 py-2.5 text-left transition-colors hover:bg-white/5"
-                  style={{ borderBottom: "0.5px solid #2a2d48" }}
+                  style={{ borderBottom: "0.5px solid var(--surface-3)" }}
                 >
                   <MemberAvatar userId={member.user_id} username={member.discord_username} size={32} />
                   <div className="flex-1 min-w-0">
@@ -507,10 +507,10 @@ export default function HomePage() {
     <Suspense
       fallback={
         <><div className="min-h-screen pb-20 px-4 pt-6 max-w-lg mx-auto">
-          <div className="animate-pulse rounded-[8px] bg-[#232640] h-6 w-28 mb-5" />
+          <div className="animate-pulse rounded-[8px] bg-surface-2 h-6 w-28 mb-5" />
           <div className="space-y-3">
-            <div className="animate-pulse rounded-[10px] bg-[#232640] h-[72px]" />
-            <div className="animate-pulse rounded-[10px] bg-[#232640] h-[72px]" />
+            <div className="animate-pulse rounded-[10px] bg-surface-2 h-[72px]" />
+            <div className="animate-pulse rounded-[10px] bg-surface-2 h-[72px]" />
           </div>
         </div><BottomNav /></>
       }
