@@ -1,10 +1,10 @@
 export function getWinRateColor(rate: number | null): string {
-  if (rate === null) return "#8888aa";
-  if (rate >= 65) return "#50c878";
-  if (rate >= 55) return "#7dcea0";
-  if (rate >= 45) return "#f0a030";
-  if (rate >= 35) return "#e87585";
-  return "#e85d75";
+  if (rate === null) return "var(--win-rate-empty)";
+  if (rate >= 65) return "var(--win-rate-high)";
+  if (rate >= 55) return "var(--win-rate-mid-high)";
+  if (rate >= 45) return "var(--win-rate-mid)";
+  if (rate >= 35) return "var(--win-rate-mid-low)";
+  return "var(--win-rate-low)";
 }
 
 export const COLORS = [
