@@ -14,6 +14,7 @@ import { MatchupTable } from "@/components/stats/MatchupTable";
 import { EncounterDonutChart } from "@/components/stats/EncounterDonutChart";
 import { TurnOrderCards } from "@/components/stats/TurnOrderCards";
 import { BottomNav } from "@/components/layout/BottomNav";
+import { PageShell } from "@/components/ui/PageShell";
 import { ShareButton } from "@/components/share/ShareButton";
 import type { DeckShareData } from "@/components/share/ShareButton";
 
@@ -124,7 +125,7 @@ export default function OpponentDeckDetailPage() {
 
   return (
     <>
-      <div className="min-h-screen pb-20 px-4 pt-6 max-w-lg mx-auto space-y-4">
+      <PageShell>
         <button
           onClick={() => {
             const p = new URLSearchParams();
@@ -280,7 +281,7 @@ export default function OpponentDeckDetailPage() {
             </div>
           </>
         )}
-      </div>
+      </PageShell>
       <BottomNav />
     </>
   );

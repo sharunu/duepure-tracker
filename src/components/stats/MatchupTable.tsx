@@ -19,7 +19,7 @@ type MatchupTableProps = {
 
 type SubRow = {
   label: string;
-  labelColor: string;
+  labelClass: string;
   total: number;
   wins: number;
   losses: number;
@@ -29,11 +29,11 @@ type SubRow = {
 
 function buildSubRows(d: OpponentDetail): SubRow[] {
   const subs: SubRow[] = [
-    { label: "合計", labelColor: "#8888aa", total: d.total, wins: d.wins, losses: d.losses, draws: d.draws, winRate: d.winRate },
+    { label: "合計", labelClass: "text-muted-foreground", total: d.total, wins: d.wins, losses: d.losses, draws: d.draws, winRate: d.winRate },
   ];
-  if (d.firstTotal > 0) subs.push({ label: "先攻", labelColor: "#f0a030", total: d.firstTotal, wins: d.firstWins, losses: d.firstLosses, draws: d.firstDraws, winRate: d.firstWinRate });
-  if (d.secondTotal > 0) subs.push({ label: "後攻", labelColor: "#5b8def", total: d.secondTotal, wins: d.secondWins, losses: d.secondLosses, draws: d.secondDraws, winRate: d.secondWinRate });
-  if (d.unknownTotal > 0) subs.push({ label: "不明", labelColor: "#666688", total: d.unknownTotal, wins: d.unknownWins, losses: d.unknownLosses, draws: d.unknownDraws, winRate: d.unknownWinRate });
+  if (d.firstTotal > 0) subs.push({ label: "先攻", labelClass: "text-warning", total: d.firstTotal, wins: d.firstWins, losses: d.firstLosses, draws: d.firstDraws, winRate: d.firstWinRate });
+  if (d.secondTotal > 0) subs.push({ label: "後攻", labelClass: "text-primary", total: d.secondTotal, wins: d.secondWins, losses: d.secondLosses, draws: d.secondDraws, winRate: d.secondWinRate });
+  if (d.unknownTotal > 0) subs.push({ label: "不明", labelClass: "text-muted-foreground", total: d.unknownTotal, wins: d.unknownWins, losses: d.unknownLosses, draws: d.unknownDraws, winRate: d.unknownWinRate });
   return subs;
 }
 
@@ -63,54 +63,76 @@ export function MatchupTable({ rows, showTotal = true, opponentDeckNameMap, game
   const showDraws = supportsDraw(game);
 
   return (
-    <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
-      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+    <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
+      <table className="w-full text-xs border-collapse">
         <thead>
-          <tr style={{ fontSize: 10, color: "#666688", fontWeight: 500, borderBottom: "1px solid #2a2d48" }}>
-            <th style={{ textAlign: "left", padding: "4px 6px", position: "sticky", left: 0, zIndex: 1, background: "#1a1c2e", whiteSpace: "nowrap" }}>対面</th>
-            <th style={{ textAlign: "left", padding: "4px 6px", whiteSpace: "nowrap" }}></th>
-            <th style={{ textAlign: "right", padding: "4px 6px" }}>試合</th>
-            <th style={{ textAlign: "right", padding: "4px 6px" }}>勝利</th>
-            <th style={{ textAlign: "right", padding: "4px 6px" }}>敗北</th>
-            {showDraws && <th style={{ textAlign: "right", padding: "4px 6px" }}>引分</th>}
-            <th style={{ textAlign: "right", padding: "4px 6px" }}>勝率</th>
+          <tr className="text-[10px] text-muted-foreground font-medium border-b border-border-subtle">
+            <th className="text-left px-1.5 py-1 sticky left-0 z-[1] bg-surface-1 whitespace-nowrap">対面</th>
+            <th className="text-left px-1.5 py-1 whitespace-nowrap"></th>
+            <th className="text-right px-1.5 py-1">試合</th>
+            <th className="text-right px-1.5 py-1">勝利</th>
+            <th className="text-right px-1.5 py-1">敗北</th>
+            {showDraws && <th className="text-right px-1.5 py-1">引分</th>}
+            <th className="text-right px-1.5 py-1">勝率</th>
           </tr>
         </thead>
         <tbody>
           {rows.map((row, gi) => {
             const subs = buildSubRows(row);
-            const bg = gi % 2 === 0 ? "rgba(91,141,239,0.04)" : "transparent";
+            const bgClass = gi % 2 === 0 ? "bg-primary/5" : "";
             return subs.map((sub, si) => (
-              <tr key={`${row.name}-${sub.label}`} style={{ background: bg, borderTop: si === 0 && gi > 0 ? "1px solid #2a2d48" : undefined }}>
+              <tr
+                key={`${row.name}-${sub.label}`}
+                className={`${bgClass} ${si === 0 && gi > 0 ? "border-t border-border-subtle" : ""}`}
+              >
                 {si === 0 && (
-                  <td rowSpan={subs.length} style={{ padding: "4px 6px", fontSize: 12, fontWeight: 500, verticalAlign: "top", position: "sticky", left: 0, zIndex: 1, background: bg, whiteSpace: "nowrap" }}>
+                  <td
+                    rowSpan={subs.length}
+                    className={`px-1.5 py-1 text-xs font-medium align-top sticky left-0 z-[1] whitespace-nowrap ${bgClass || "bg-background"}`}
+                  >
                     {row.namePrefix}{displayDeckName(row.name, opponentDeckNameMap)}
                   </td>
                 )}
-                <td style={{ padding: "4px 6px", color: sub.labelColor, fontSize: 10, whiteSpace: "nowrap" }}>{sub.label}</td>
-                <td style={{ textAlign: "right", padding: "4px 6px", color: si === 0 ? undefined : "#aaaacc" }}>{sub.total}</td>
-                <td style={{ textAlign: "right", padding: "4px 6px", color: si === 0 ? undefined : "#aaaacc" }}>{sub.wins}</td>
-                <td style={{ textAlign: "right", padding: "4px 6px", color: si === 0 ? undefined : "#aaaacc" }}>{sub.losses}</td>
-                {showDraws && <td style={{ textAlign: "right", padding: "4px 6px", color: si === 0 ? undefined : "#aaaacc" }}>{sub.draws}</td>}
-                <td style={{ textAlign: "right", padding: "4px 6px", fontWeight: si === 0 ? 500 : undefined, color: sub.winRate === null ? "#8888aa" : getWinRateColor(sub.winRate) }}>{sub.winRate === null ? "--" : sub.winRate}%</td>
+                <td className={`px-1.5 py-1 text-[10px] whitespace-nowrap ${sub.labelClass}`}>{sub.label}</td>
+                <td className={`text-right px-1.5 py-1 ${si === 0 ? "" : "text-muted-foreground"}`}>{sub.total}</td>
+                <td className={`text-right px-1.5 py-1 ${si === 0 ? "" : "text-muted-foreground"}`}>{sub.wins}</td>
+                <td className={`text-right px-1.5 py-1 ${si === 0 ? "" : "text-muted-foreground"}`}>{sub.losses}</td>
+                {showDraws && <td className={`text-right px-1.5 py-1 ${si === 0 ? "" : "text-muted-foreground"}`}>{sub.draws}</td>}
+                <td
+                  className={`text-right px-1.5 py-1 ${si === 0 ? "font-medium" : ""}`}
+                  style={{ color: sub.winRate === null ? "var(--muted-foreground)" : getWinRateColor(sub.winRate) }}
+                >
+                  {sub.winRate === null ? "--" : sub.winRate}%
+                </td>
               </tr>
             ));
           })}
           {overall && (
             <>
               {overallSubs.map((sub, si) => (
-                <tr key={`overall-${sub.label}`} style={{ background: "rgba(91,141,239,0.04)", borderTop: si === 0 ? "2px solid #2a2d48" : undefined }}>
+                <tr
+                  key={`overall-${sub.label}`}
+                  className={`bg-primary/5 ${si === 0 ? "border-t-2 border-border-subtle" : ""}`}
+                >
                   {si === 0 && (
-                    <td rowSpan={overallSubs.length} style={{ padding: "4px 6px", fontSize: 12, fontWeight: 500, verticalAlign: "top", position: "sticky", left: 0, zIndex: 1, background: "rgba(91,141,239,0.04)", whiteSpace: "nowrap" }}>
+                    <td
+                      rowSpan={overallSubs.length}
+                      className="px-1.5 py-1 text-xs font-medium align-top sticky left-0 z-[1] bg-primary/5 whitespace-nowrap"
+                    >
                       全対面合計
                     </td>
                   )}
-                  <td style={{ padding: "4px 6px", color: sub.labelColor, fontSize: 10, whiteSpace: "nowrap", fontWeight: 500 }}>{sub.label}</td>
-                  <td style={{ textAlign: "right", padding: "4px 6px", fontWeight: 500 }}>{sub.total}</td>
-                  <td style={{ textAlign: "right", padding: "4px 6px", fontWeight: 500 }}>{sub.wins}</td>
-                  <td style={{ textAlign: "right", padding: "4px 6px", fontWeight: 500 }}>{sub.losses}</td>
-                  {showDraws && <td style={{ textAlign: "right", padding: "4px 6px", fontWeight: 500 }}>{sub.draws}</td>}
-                  <td style={{ textAlign: "right", padding: "4px 6px", fontWeight: 500, color: sub.winRate === null ? "#8888aa" : getWinRateColor(sub.winRate) }}>{sub.winRate === null ? "--" : sub.winRate}%</td>
+                  <td className={`px-1.5 py-1 text-[10px] whitespace-nowrap font-medium ${sub.labelClass}`}>{sub.label}</td>
+                  <td className="text-right px-1.5 py-1 font-medium">{sub.total}</td>
+                  <td className="text-right px-1.5 py-1 font-medium">{sub.wins}</td>
+                  <td className="text-right px-1.5 py-1 font-medium">{sub.losses}</td>
+                  {showDraws && <td className="text-right px-1.5 py-1 font-medium">{sub.draws}</td>}
+                  <td
+                    className="text-right px-1.5 py-1 font-medium"
+                    style={{ color: sub.winRate === null ? "var(--muted-foreground)" : getWinRateColor(sub.winRate) }}
+                  >
+                    {sub.winRate === null ? "--" : sub.winRate}%
+                  </td>
                 </tr>
               ))}
             </>
