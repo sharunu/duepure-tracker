@@ -49,3 +49,8 @@ AGENTS.md
 .wrangler
 .dev.vars
 cloudflare-env.d.ts
+
+# Claude Code 設定: 共有資産のみ追跡、個人設定とランタイム生成物は除外
+.claude/*
+!.claude/agents/
+!.claude/commands/
