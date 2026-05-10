@@ -241,7 +241,7 @@ export function DeckList({
   return (
     <div>
       {/* Upper area: registered decks */}
-      <div style={{ fontSize: 13, fontWeight: 500, color: "#ccccdd", marginBottom: 10 }}>
+      <div style={{ fontSize: 13, fontWeight: 500, color: "var(--foreground)", marginBottom: 10 }}>
         登録済みデッキ
       </div>
 
@@ -252,7 +252,7 @@ export function DeckList({
       ) : (
         <div className="space-y-3">
           {decks.map((deck) => (
-            <div key={deck.id} className="rounded-[10px] bg-[#232640] overflow-hidden">
+            <div key={deck.id} className="rounded-[10px] bg-surface-2 overflow-hidden">
               {/* Card header */}
               <div
                 className="flex items-center gap-2 px-4 py-3 cursor-pointer"
@@ -270,12 +270,12 @@ export function DeckList({
                         if (e.key === "Enter" && !e.nativeEvent.isComposing) handleUpdate(deck.id);
                       }}
                       onClick={(e) => e.stopPropagation()}
-                      className="flex-1 bg-transparent border-b border-[#5b8def] text-sm text-white focus:outline-none"
+                      className="flex-1 bg-transparent border-b border-primary text-sm text-white focus:outline-none"
                       autoFocus
                     />
                     <button
                       onClick={(e) => { e.stopPropagation(); handleUpdate(deck.id); }}
-                      className="text-sm text-[#5b8def]"
+                      className="text-sm text-primary"
                     >
                       保存
                     </button>
@@ -299,7 +299,7 @@ export function DeckList({
                         setEditName(deck.name);
                       }}
                       className="w-8 h-8 flex items-center justify-center rounded-md"
-                      style={{ backgroundColor: "rgba(91,141,239,0.1)", color: "#5b8def" }}
+                      style={{ backgroundColor: "color-mix(in srgb, var(--primary) 10%, transparent)", color: "var(--primary)" }}
                     >
                       <PencilIcon />
                     </button>
@@ -310,7 +310,7 @@ export function DeckList({
                         handleArchive(deck.id);
                       }}
                       className="w-8 h-8 flex items-center justify-center rounded-md"
-                      style={{ backgroundColor: "rgba(232,93,117,0.1)", color: "#e85d75" }}
+                      style={{ backgroundColor: "color-mix(in srgb, var(--destructive) 10%, transparent)", color: "var(--destructive)" }}
                     >
                       <XIcon />
                     </button>
@@ -323,16 +323,16 @@ export function DeckList({
 
               {/* Expanded tuning section */}
               {isExpanded(deck.id) && (
-                <div className="bg-[#1e2138] border-t border-[#333355]">
-                    <div style={{ fontSize: 10, color: "#666688", padding: "8px 16px 0 16px" }}>構築の調整パターンを追加できます</div>
+                <div className="bg-surface-1 border-t border-border">
+                    <div style={{ fontSize: 10, color: "var(--muted-foreground)", padding: "8px 16px 0 16px" }}>構築の調整パターンを追加できます</div>
                   {deck.deck_tunings.map((tuning, idx) => (
                     <div
                       key={tuning.id}
-                      className={"flex items-center gap-3 px-4 py-2.5" + (idx < deck.deck_tunings.length - 1 ? " border-b border-[#333355]" : "")}
+                      className={"flex items-center gap-3 px-4 py-2.5" + (idx < deck.deck_tunings.length - 1 ? " border-b border-border" : "")}
                     >
                       {editingTuningId === tuning.id ? (
                         <>
-                          <div className="w-[3px] self-stretch rounded-sm bg-[#5b8def] flex-shrink-0" />
+                          <div className="w-[3px] self-stretch rounded-sm bg-primary flex-shrink-0" />
                           <input
                             type="text"
                             value={editTuningName}
@@ -340,25 +340,25 @@ export function DeckList({
                             onKeyDown={(e) => {
                               if (e.key === "Enter" && !e.nativeEvent.isComposing) handleUpdateTuning(deck.id, tuning.id);
                             }}
-                            className="flex-1 bg-transparent border-b border-[#5b8def] text-[13px] text-white focus:outline-none"
+                            className="flex-1 bg-transparent border-b border-primary text-[13px] text-white focus:outline-none"
                             autoFocus
                           />
-                          <button onClick={() => handleUpdateTuning(deck.id, tuning.id)} className="text-xs text-[#5b8def]">保存</button>
+                          <button onClick={() => handleUpdateTuning(deck.id, tuning.id)} className="text-xs text-primary">保存</button>
                           <button onClick={() => setEditingTuningId(null)} className="text-xs text-gray-400">取消</button>
                         </>
                       ) : (
                         <>
-                          <div className="w-[3px] self-stretch rounded-sm bg-[#5b8def] flex-shrink-0" />
+                          <div className="w-[3px] self-stretch rounded-sm bg-primary flex-shrink-0" />
                           <span className="flex-1 text-[13px] text-gray-300">{tuning.name}</span>
                           <button
                             onClick={() => { setEditingTuningId(tuning.id); setEditTuningName(tuning.name); }}
-                            className="text-xs text-[#5b8def]"
+                            className="text-xs text-primary"
                           >
                             編集
                           </button>
                           <button
                             onClick={() => { if (!window.confirm(`「${tuning.name}」を削除しますか？`)) return; handleDeleteTuning(deck.id, tuning.id); }}
-                            className="text-xs text-[#e85d75]"
+                            className="text-xs text-destructive"
                           >
                             削除
                           </button>
@@ -367,7 +367,7 @@ export function DeckList({
                     </div>
                   ))}
 
-                  <div className="flex gap-2 px-4 py-3 border-t border-[#333355]">
+                  <div className="flex gap-2 px-4 py-3 border-t border-border">
                     <input
                       type="text"
                       placeholder="例：スパーク入り、クロック型"
@@ -376,21 +376,21 @@ export function DeckList({
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && !e.nativeEvent.isComposing) handleCreateTuning(deck.id);
                       }}
-                      className="flex-1 rounded-md bg-[#282b48] border-[0.5px] border-[#333355] px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-[#5b8def]"
+                      className="flex-1 rounded-md bg-surface-2 border-[0.5px] border-border px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-primary"
                     />
                     <button
                       onClick={() => handleCreateTuning(deck.id)}
                       disabled={!newTuningName.trim()}
                       className="rounded-md px-3 py-2 text-xs font-medium disabled:opacity-50"
-                      style={{ backgroundColor: "rgba(91,141,239,0.15)", color: "#5b8def" }}
+                      style={{ backgroundColor: "color-mix(in srgb, var(--primary) 15%, transparent)", color: "var(--primary)" }}
                     >
                       追加
                     </button>
                   </div>
                   {tuningError && isExpanded(deck.id) && (
-                    <p className="text-xs text-[#e85d75] px-4 pb-2">{tuningError}</p>
+                    <p className="text-xs text-destructive px-4 pb-2">{tuningError}</p>
                   )}
-                    <div style={{ fontSize: 10, color: "#666688", padding: "4px 16px 8px 16px" }}>※対戦記録登録時サーバー内で共有されます（他ユーザーには非公開）</div>
+                    <div style={{ fontSize: 10, color: "var(--muted-foreground)", padding: "4px 16px 8px 16px" }}>※対戦記録登録時サーバー内で共有されます（他ユーザーには非公開）</div>
                 </div>
               )}
             </div>
@@ -399,17 +399,17 @@ export function DeckList({
       )}
 
       {deckError && (
-        <p className="text-sm text-[#e85d75] mt-2">{deckError}</p>
+        <p className="text-sm text-destructive mt-2">{deckError}</p>
       )}
 
       {/* Border separator */}
-      <div style={{ borderTop: "0.5px solid #2a2d48", margin: "20px 0" }} />
+      <div style={{ borderTop: "0.5px solid var(--surface-3)", margin: "20px 0" }} />
 
       {/* Lower area: add deck */}
-      <div style={{ fontSize: 13, fontWeight: 500, color: "#ccccdd", marginBottom: 4 }}>
+      <div style={{ fontSize: 13, fontWeight: 500, color: "var(--foreground)", marginBottom: 4 }}>
         デッキを追加
       </div>
-      <div style={{ fontSize: 10, color: "#666688", marginBottom: 14 }}>
+      <div style={{ fontSize: 10, color: "var(--muted-foreground)", marginBottom: 14 }}>
         タップしてデッキを登録できます
       </div>
 
@@ -419,9 +419,9 @@ export function DeckList({
           display: "flex",
           alignItems: "center",
           gap: 8,
-          background: "#1e2138",
+          background: "var(--surface-1)",
           borderRadius: 8,
-          border: "0.5px solid #333355",
+          border: "0.5px solid var(--border)",
           padding: "8px 12px",
           marginBottom: 14,
         }}
@@ -437,14 +437,14 @@ export function DeckList({
             background: "transparent",
             border: "none",
             outline: "none",
-            color: "#e8e8ec",
+            color: "var(--foreground)",
             fontSize: 13,
           }}
         />
         {searchQuery && (
           <button
             onClick={() => setSearchQuery("")}
-            style={{ color: "#666688", fontSize: 14, lineHeight: 1 }}
+            style={{ color: "var(--muted-foreground)", fontSize: 14, lineHeight: 1 }}
           >
             ✕
           </button>
@@ -452,7 +452,7 @@ export function DeckList({
       </div>
 
       {noResults ? (
-        <p style={{ fontSize: 12, color: "#666688", textAlign: "center", padding: "12px 0" }}>
+        <p style={{ fontSize: 12, color: "var(--muted-foreground)", textAlign: "center", padding: "12px 0" }}>
           該当するデッキがありません。自由入力で追加してください。
         </p>
       ) : (
@@ -460,7 +460,7 @@ export function DeckList({
           {/* Major decks */}
           {filteredMajor.length > 0 && (
             <div style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: 10, color: "#666688", fontWeight: 500, marginBottom: 8 }}>
+              <div style={{ fontSize: 10, color: "var(--muted-foreground)", fontWeight: 500, marginBottom: 8 }}>
                 よく使われているデッキ
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
@@ -475,10 +475,10 @@ export function DeckList({
                       style={{
                         padding: "7px 14px",
                         fontSize: 12,
-                        background: isRegistered ? "#232640" : "#232640",
-                        border: isRegistered ? "0.5px solid #333355" : "0.5px solid #333355",
+                        background: "var(--surface-2)",
+                        border: "0.5px solid var(--border)",
                         borderRadius: 8,
-                        color: isRegistered ? "#ccccdd" : "#ccccdd",
+                        color: "var(--foreground)",
                         opacity: isRegistered ? 0.35 : 1,
                         pointerEvents: isRegistered ? "none" : "auto",
                         cursor: isRegistered ? "default" : "pointer",
@@ -497,7 +497,7 @@ export function DeckList({
           {/* Minor decks */}
           {filteredMinor.length > 0 && (
             <div style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: 10, color: "#666688", fontWeight: 500, marginBottom: 8 }}>
+              <div style={{ fontSize: 10, color: "var(--muted-foreground)", fontWeight: 500, marginBottom: 8 }}>
                 その他のデッキ
               </div>
               <div
@@ -520,10 +520,10 @@ export function DeckList({
                       style={{
                         padding: "6px 12px",
                         fontSize: 11,
-                        background: "#232640",
-                        border: "0.5px solid #333355",
+                        background: "var(--surface-2)",
+                        border: "0.5px solid var(--border)",
                         borderRadius: 8,
-                        color: "#ccccdd",
+                        color: "var(--foreground)",
                         opacity: isRegistered ? 0.35 : 1,
                         pointerEvents: isRegistered ? "none" : "auto",
                         cursor: isRegistered ? "default" : "pointer",
@@ -544,9 +544,9 @@ export function DeckList({
                     padding: "6px 14px",
                     fontSize: 11,
                     borderRadius: 8,
-                    background: "#232640",
-                    border: "1px dashed rgba(100,100,150,0.4)",
-                    color: "#999",
+                    background: "var(--surface-2)",
+                    border: "1px dashed var(--border-subtle)",
+                    color: "var(--muted-foreground)",
                     cursor: "pointer",
                   }}
                 >
@@ -579,10 +579,10 @@ export function DeckList({
                       style={{
                         padding: "6px 12px",
                         fontSize: 11,
-                        background: "#232640",
-                        border: "0.5px solid #333355",
+                        background: "var(--surface-2)",
+                        border: "0.5px solid var(--border)",
                         borderRadius: 8,
-                        color: "#ccccdd",
+                        color: "var(--foreground)",
                         opacity: isRegistered ? 0.35 : 1,
                         pointerEvents: isRegistered ? "none" : "auto",
                         cursor: isRegistered ? "default" : "pointer",
@@ -601,7 +601,7 @@ export function DeckList({
       )}
 
       {/* Free input section */}
-      <div style={{ borderTop: "0.5px solid #2a2d48", margin: "16px 0", paddingTop: 16 }}>
+      <div style={{ borderTop: "0.5px solid var(--surface-3)", margin: "16px 0", paddingTop: 16 }}>
         <div style={{ display: "flex", gap: 8 }}>
           <input
             type="text"
@@ -613,11 +613,11 @@ export function DeckList({
             }}
             style={{
               flex: 1,
-              background: "#1e2138",
+              background: "var(--surface-1)",
               borderRadius: 8,
-              border: "0.5px solid #333355",
+              border: "0.5px solid var(--border)",
               padding: "10px 14px",
-              color: "#e8e8ec",
+              color: "var(--foreground)",
               fontSize: 13,
               outline: "none",
             }}
@@ -626,9 +626,9 @@ export function DeckList({
             onClick={handleFreeCreate}
             disabled={loading || !freeInput.trim()}
             style={{
-              background: "#3d4070",
+              background: "var(--primary)",
               borderRadius: 8,
-              color: "#e8e8ec",
+              color: "var(--foreground)",
               padding: "10px 18px",
               fontSize: 13,
               fontWeight: 500,
@@ -640,7 +640,7 @@ export function DeckList({
             追加
           </button>
         </div>
-        <div style={{ fontSize: 10, color: "#666688", marginTop: 8 }}>
+        <div style={{ fontSize: 10, color: "var(--muted-foreground)", marginTop: 8 }}>
           同じデッキの構築調整は、デッキカードを開いてチューニングとして追加できます
         </div>
       </div>
@@ -653,12 +653,12 @@ export function DeckList({
             bottom: 80,
             left: "50%",
             transform: "translateX(-50%)",
-            background: "rgba(35,38,64,0.95)",
-            border: "1px solid #333355",
+            background: "color-mix(in srgb, var(--surface-2) 95%, transparent)",
+            border: "1px solid var(--border)",
             borderRadius: 10,
             padding: "10px 20px",
             fontSize: 13,
-            color: "#e8e8ec",
+            color: "var(--foreground)",
             zIndex: 9999,
             opacity: toastVisible ? 1 : 0,
             transition: "opacity 0.3s",
