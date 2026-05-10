@@ -114,11 +114,11 @@ function SecurityPageInner() {
       <>
         <div className="min-h-screen pb-20 px-4 pt-6 max-w-lg mx-auto">
           <div className="flex items-center gap-2 mb-5">
-            <div className="animate-pulse rounded-[8px] bg-[#232640] h-5 w-32" />
+            <div className="animate-pulse rounded-[8px] bg-surface-2 h-5 w-32" />
           </div>
           <div className="space-y-4">
-            <div className="animate-pulse rounded-[10px] bg-[#232640] h-32" />
-            <div className="animate-pulse rounded-[10px] bg-[#232640] h-24" />
+            <div className="animate-pulse rounded-[10px] bg-surface-2 h-32" />
+            <div className="animate-pulse rounded-[10px] bg-surface-2 h-24" />
           </div>
         </div>
         <BottomNav />
@@ -140,7 +140,7 @@ function SecurityPageInner() {
         <h1 className="text-[20px] font-medium mb-5">セキュリティ</h1>
 
         {/* パスワード変更カード */}
-        <div className="bg-[#232640] rounded-[10px] px-4 py-[14px]">
+        <div className="bg-surface-2 rounded-[10px] px-4 py-[14px]">
           {isSnsLogin || isGuest ? (
             <div className="flex items-center justify-between">
               <div>
@@ -149,7 +149,7 @@ function SecurityPageInner() {
                   {isSnsLogin ? "SNSログイン中のため変更できません" : "ゲストアカウントではパスワードを設定できません"}
                 </p>
               </div>
-              <span className="text-[10px] bg-[#1e2138] text-[#555577] px-2 py-0.5 rounded-full flex-shrink-0 ml-2">無効</span>
+              <span className="text-[10px] bg-surface-1 text-muted-foreground px-2 py-0.5 rounded-full flex-shrink-0 ml-2">無効</span>
             </div>
           ) : (
             <div>
@@ -157,7 +157,7 @@ function SecurityPageInner() {
                 {isRecovery ? "新しいパスワードを設定" : "パスワード変更"}
               </p>
               {isRecovery && (
-                <p className="text-[11px] text-[#818cf8] mb-3">
+                <p className="text-[11px] text-primary-soft mb-3">
                   パスワードリセットメールからのアクセスです。新しいパスワードを設定してください。
                 </p>
               )}
@@ -167,8 +167,8 @@ function SecurityPageInner() {
                     type="password"
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
-                    className="w-full bg-[#1a1d2e] rounded-[6px] px-3 py-2 text-[14px] focus:outline-none"
-                    style={{ border: "0.5px solid #333355" }}
+                    className="w-full bg-surface-1 rounded-[6px] px-3 py-2 text-[14px] focus:outline-none"
+                    style={{ border: "0.5px solid var(--border)" }}
                     placeholder="現在のパスワード"
                   />
                 )}
@@ -176,20 +176,20 @@ function SecurityPageInner() {
                   type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full bg-[#1a1d2e] rounded-[6px] px-3 py-2 text-[14px] focus:outline-none"
-                  style={{ border: "0.5px solid #333355" }}
+                  className="w-full bg-surface-1 rounded-[6px] px-3 py-2 text-[14px] focus:outline-none"
+                  style={{ border: "0.5px solid var(--border)" }}
                   placeholder="新しいパスワード（8文字以上）"
                 />
                 <button
                   onClick={handleChangePassword}
                   disabled={passwordLoading || (!isRecovery && !currentPassword) || !newPassword}
-                  className="w-full bg-[#3d4070] text-white rounded-[6px] px-3 py-2 text-[13px] font-medium hover:opacity-90 disabled:opacity-50"
+                  className="w-full bg-primary text-primary-foreground rounded-[6px] px-3 py-2 text-[13px] font-medium hover:opacity-90 disabled:opacity-50"
                 >
                   {isRecovery ? "パスワードを設定" : "パスワードを変更"}
                 </button>
               </div>
               {passwordMessage && (
-                <p className="text-xs text-accent mt-2">{passwordMessage}</p>
+                <p className="text-xs text-warning mt-2">{passwordMessage}</p>
               )}
             </div>
           )}
@@ -202,51 +202,51 @@ function SecurityPageInner() {
               <div
                 className="rounded-[10px] px-4 py-[14px] flex items-center justify-between cursor-pointer"
                 style={{
-                  backgroundColor: "rgba(232,93,117,0.06)",
-                  border: "0.5px solid rgba(232,93,117,0.2)",
+                  backgroundColor: "color-mix(in srgb, var(--destructive) 6%, transparent)",
+                  border: "0.5px solid color-mix(in srgb, var(--destructive) 20%, transparent)",
                 }}
                 onClick={() => { if (window.confirm("本当にアカウントを削除しますか？")) setDeleteStep(1); }}
               >
                 <div>
-                  <p className="text-[14px] text-[#e85d75]">アカウントを削除</p>
+                  <p className="text-[14px] text-destructive">アカウントを削除</p>
                   <p className="text-[11px] text-gray-500 mt-0.5">すべてのデータが完全に削除されます</p>
                 </div>
-                <span className="text-[#e85d75] text-[18px] flex-shrink-0">&rsaquo;</span>
+                <span className="text-destructive text-[18px] flex-shrink-0">&rsaquo;</span>
               </div>
             )}
 
             {deleteStep === 1 && (
-              <div className="bg-[#232640] rounded-[10px] px-4 py-[14px] space-y-3" style={{ border: "0.5px solid rgba(232,93,117,0.4)" }}>
-                <p className="text-[14px] font-medium text-[#e85d75]">アカウント削除の確認</p>
+              <div className="bg-surface-2 rounded-[10px] px-4 py-[14px] space-y-3" style={{ border: "0.5px solid color-mix(in srgb, var(--destructive) 40%, transparent)" }}>
+                <p className="text-[14px] font-medium text-destructive">アカウント削除の確認</p>
                 <p className="text-[11px] text-gray-500">
                   この操作は取り消せません。確認のためユーザー名を入力してください。
                 </p>
-                <p className="text-[12px] text-gray-400 bg-[#1a1d2e] rounded-[6px] px-3 py-2" style={{ border: "0.5px solid #333355" }}>
+                <p className="text-[12px] text-gray-400 bg-surface-1 rounded-[6px] px-3 py-2" style={{ border: "0.5px solid var(--border)" }}>
                   {confirmDisplayName || "（未設定）"}
                 </p>
                 <input
                   type="text"
                   value={deleteConfirmName}
                   onChange={(e) => setDeleteConfirmName(e.target.value)}
-                  className="w-full bg-[#1a1d2e] rounded-[6px] px-3 py-2 text-[14px] focus:outline-none"
-                  style={{ border: "0.5px solid #333355" }}
+                  className="w-full bg-surface-1 rounded-[6px] px-3 py-2 text-[14px] focus:outline-none"
+                  style={{ border: "0.5px solid var(--border)" }}
                   placeholder="上記のユーザー名を入力"
                 />
                 {deleteMessage && (
-                  <p className="text-xs text-[#e85d75]">{deleteMessage}</p>
+                  <p className="text-xs text-destructive">{deleteMessage}</p>
                 )}
                 <div className="flex gap-2">
                   <button
                     onClick={() => { setDeleteStep(0); setDeleteConfirmName(""); setDeleteMessage(""); }}
-                    className="flex-1 bg-[#1a1d2e] text-gray-400 rounded-[6px] px-3 py-2 text-[13px] hover:opacity-80"
-                    style={{ border: "0.5px solid #333355" }}
+                    className="flex-1 bg-surface-1 text-gray-400 rounded-[6px] px-3 py-2 text-[13px] hover:opacity-80"
+                    style={{ border: "0.5px solid var(--border)" }}
                   >
                     キャンセル
                   </button>
                   <button
                     onClick={handleDeleteAccount}
                     disabled={deleteLoading || !isDeleteConfirmed}
-                    className="flex-1 bg-[#e85d75] text-white rounded-[6px] px-3 py-2 text-[13px] font-medium hover:opacity-90 disabled:opacity-50"
+                    className="flex-1 bg-destructive text-white rounded-[6px] px-3 py-2 text-[13px] font-medium hover:opacity-90 disabled:opacity-50"
                   >
                     {deleteLoading ? "削除中..." : "削除する"}
                   </button>
@@ -266,10 +266,10 @@ export default function SecurityPage() {
     <Suspense
       fallback={
         <><div className="min-h-screen pb-20 px-4 pt-6 max-w-lg mx-auto">
-          <div className="animate-pulse rounded-[8px] bg-[#232640] h-5 w-32 mb-5" />
+          <div className="animate-pulse rounded-[8px] bg-surface-2 h-5 w-32 mb-5" />
           <div className="space-y-4">
-            <div className="animate-pulse rounded-[10px] bg-[#232640] h-32" />
-            <div className="animate-pulse rounded-[10px] bg-[#232640] h-24" />
+            <div className="animate-pulse rounded-[10px] bg-surface-2 h-32" />
+            <div className="animate-pulse rounded-[10px] bg-surface-2 h-24" />
           </div>
         </div><BottomNav /></>
       }

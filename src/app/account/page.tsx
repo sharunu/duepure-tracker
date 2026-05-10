@@ -184,12 +184,12 @@ export default function AccountPage() {
     return (
       <>
         <div className="min-h-screen pb-20 px-4 pt-6 max-w-lg mx-auto">
-          <div className="animate-pulse rounded-[8px] bg-[#232640] h-6 w-32 mb-5" />
-          <div className="animate-pulse rounded-[10px] bg-[#232640] h-[76px] mb-5" />
-          <div className="animate-pulse rounded-[8px] bg-[#232640] h-4 w-20 mb-2" />
-          <div className="animate-pulse rounded-[10px] bg-[#232640] h-[140px] mb-5" />
-          <div className="animate-pulse rounded-[8px] bg-[#232640] h-4 w-16 mb-2" />
-          <div className="animate-pulse rounded-[10px] bg-[#232640] h-[60px]" />
+          <div className="animate-pulse rounded-[8px] bg-surface-2 h-6 w-32 mb-5" />
+          <div className="animate-pulse rounded-[10px] bg-surface-2 h-[76px] mb-5" />
+          <div className="animate-pulse rounded-[8px] bg-surface-2 h-4 w-20 mb-2" />
+          <div className="animate-pulse rounded-[10px] bg-surface-2 h-[140px] mb-5" />
+          <div className="animate-pulse rounded-[8px] bg-surface-2 h-4 w-16 mb-2" />
+          <div className="animate-pulse rounded-[10px] bg-surface-2 h-[60px]" />
         </div>
         <BottomNav />
       </>
@@ -204,7 +204,7 @@ export default function AccountPage() {
         <h1 className="text-[20px] font-medium mb-5">アカウント設定</h1>
 
         {/* プロフィールカード */}
-        <div className="bg-[#232640] rounded-[10px] px-4 py-[14px] flex items-center gap-3">
+        <div className="bg-surface-2 rounded-[10px] px-4 py-[14px] flex items-center gap-3">
           <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#5b8def] to-[#7c5bf0] flex items-center justify-center flex-shrink-0">
             <span className="text-white text-[15px] font-medium">{initials}</span>
           </div>
@@ -214,8 +214,8 @@ export default function AccountPage() {
             <div className="flex items-center gap-1.5 mt-1">
               <span className={"inline-block text-[10px] px-2 py-0.5 rounded-full font-medium " + (
                 isSnsLogin
-                  ? "bg-[#1a2744] text-[#5b8def]"
-                  : "bg-[#2a1f44] text-[#9b7bef]"
+                  ? "bg-primary/10 text-primary-soft"
+                  : "bg-primary/10 text-primary-soft"
               )}>
                 {provider === "google" ? "Google" : provider === "twitter" ? "X" : isGuest ? "ゲスト" : "メール"}
               </span>
@@ -229,8 +229,8 @@ export default function AccountPage() {
           {hasGoogle && (
             <button
               onClick={handleSwitchAccount}
-              className="flex-shrink-0 bg-[#1e2138] text-[#818cf8] text-[11px] px-3 py-1.5 rounded-[6px] hover:opacity-80 transition-opacity"
-              style={{ border: "0.5px solid rgba(129,140,248,0.3)" }}
+              className="flex-shrink-0 bg-surface-1 text-primary-soft text-[11px] px-3 py-1.5 rounded-[6px] hover:opacity-80 transition-opacity"
+              style={{ border: "0.5px solid color-mix(in srgb, var(--primary-soft) 30%, transparent)" }}
             >
               アカウント切替
             </button>
@@ -240,7 +240,7 @@ export default function AccountPage() {
         {/* プロフィールセクション */}
         <div className="mt-5">
           <p className="text-[12px] text-gray-500 mb-2">プロフィール</p>
-          <div className={"bg-[#232640] rounded-[10px]" + (isGuest ? " opacity-50" : "")}>
+          <div className={"bg-surface-2 rounded-[10px]" + (isGuest ? " opacity-50" : "")}>
             {/* メールアドレス行 */}
             <div className="px-4 py-[14px] flex items-center justify-between">
               <div className="min-w-0 flex-1">
@@ -248,11 +248,11 @@ export default function AccountPage() {
                 <p className="text-[14px] truncate">{isGuest ? "ゲストアカウント" : (email || "未設定")}</p>
               </div>
               {isSnsLogin && (
-                <span className="text-[10px] bg-[#1e2138] text-[#555577] px-2 py-0.5 rounded-full flex-shrink-0 ml-2">変更不可</span>
+                <span className="text-[10px] bg-surface-1 text-muted-foreground px-2 py-0.5 rounded-full flex-shrink-0 ml-2">変更不可</span>
               )}
             </div>
             {/* 区切り線 */}
-            <div className="mx-4 border-t" style={{ borderColor: "rgba(100,100,150,0.2)", borderWidth: "0.5px" }} />
+            <div className="mx-4 border-t" style={{ borderColor: "var(--border-subtle)", borderWidth: "0.5px" }} />
             {/* ユーザー名行 */}
             <div className="px-4 py-[14px]">
               <p className="text-[11px] text-gray-500 mb-2">ユーザー名</p>
@@ -262,24 +262,24 @@ export default function AccountPage() {
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   disabled={isGuest}
-                  className="flex-1 bg-[#1a1d2e] rounded-[6px] px-3 py-2 text-[14px] focus:outline-none disabled:opacity-50"
-                  style={{ border: "0.5px solid #333355" }}
+                  className="flex-1 bg-surface-1 rounded-[6px] px-3 py-2 text-[14px] focus:outline-none disabled:opacity-50"
+                  style={{ border: "0.5px solid var(--border)" }}
                   placeholder="ユーザー名"
                 />
                 <button
                   onClick={handleUpdateName}
                   disabled={nameLoading || isGuest}
-                  className="bg-[#3d4070] text-white rounded-[6px] px-4 py-2 text-[13px] font-medium hover:opacity-90 disabled:opacity-50"
+                  className="bg-primary text-primary-foreground rounded-[6px] px-4 py-2 text-[13px] font-medium hover:opacity-90 disabled:opacity-50"
                 >
                   保存
                 </button>
               </div>
               {nameMessage && (
-                <p className="text-xs text-accent mt-2">{nameMessage}</p>
+                <p className="text-xs text-warning mt-2">{nameMessage}</p>
               )}
             </div>
             {/* 区切り線 */}
-            <div className="mx-4 border-t" style={{ borderColor: "rgba(100,100,150,0.2)", borderWidth: "0.5px" }} />
+            <div className="mx-4 border-t" style={{ borderColor: "var(--border-subtle)", borderWidth: "0.5px" }} />
             {/* セキュリティ行 */}
             <div
               className="px-4 py-[14px] flex items-center justify-between cursor-pointer"
@@ -298,7 +298,7 @@ export default function AccountPage() {
         {!isGuest && (
           <div className="mt-5">
             <p className="text-[12px] text-gray-500 mb-2">X連携</p>
-            <div className="bg-[#232640] rounded-[10px] px-4 py-[14px]">
+            <div className="bg-surface-2 rounded-[10px] px-4 py-[14px]">
               {xSource === "login" && xConnected ? (
                 <div className="flex items-center justify-between">
                   <div>
@@ -307,7 +307,7 @@ export default function AccountPage() {
                     </p>
                     <p className="text-[11px] text-gray-500 mt-0.5">ログイン連携</p>
                   </div>
-                  <span className="text-[10px] bg-[#1e2138] text-[#555577] px-2 py-0.5 rounded-full flex-shrink-0 ml-2">自動連携</span>
+                  <span className="text-[10px] bg-surface-1 text-muted-foreground px-2 py-0.5 rounded-full flex-shrink-0 ml-2">自動連携</span>
                 </div>
               ) : xConnected ? (
                 <div className="flex items-center justify-between">
@@ -317,7 +317,7 @@ export default function AccountPage() {
                   <button
                     onClick={handleUnlinkX}
                     disabled={xLoading}
-                    className="text-[12px] text-[#e85d75] hover:opacity-80 disabled:opacity-50 flex-shrink-0 ml-2"
+                    className="text-[12px] text-destructive hover:opacity-80 disabled:opacity-50 flex-shrink-0 ml-2"
                   >
                     連携解除
                   </button>
@@ -332,8 +332,8 @@ export default function AccountPage() {
                   <button
                     onClick={handleLinkX}
                     disabled={xLoading}
-                    className="w-full bg-[#232640] text-white rounded-[6px] px-4 py-2.5 text-[13px] font-medium hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
-                    style={{ border: "0.5px solid rgba(100,100,150,0.3)" }}
+                    className="w-full bg-surface-2 text-white rounded-[6px] px-4 py-2.5 text-[13px] font-medium hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
+                    style={{ border: "0.5px solid var(--border-subtle)" }}
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="white">
                       <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
@@ -341,7 +341,7 @@ export default function AccountPage() {
                     Xアカウントを連携
                   </button>
                   {xLinkError && (
-                    <p className="text-[11px] text-[#e85d75] mt-2">{xLinkError}</p>
+                    <p className="text-[11px] text-destructive mt-2">{xLinkError}</p>
                   )}
                 </div>
               )}
@@ -355,7 +355,7 @@ export default function AccountPage() {
           <div className="space-y-3">
             {isAdmin && (
               <div
-                className="bg-[#232640] rounded-[10px] px-4 py-[14px] flex items-center justify-between cursor-pointer"
+                className="bg-surface-2 rounded-[10px] px-4 py-[14px] flex items-center justify-between cursor-pointer"
                 onClick={() => router.push("/admin")}
               >
                 <div>
@@ -367,7 +367,7 @@ export default function AccountPage() {
             )}
             {/* ご意見・バグ報告 */}
             <div
-              className={"bg-[#232640] rounded-[10px] px-4 py-[14px] flex items-center justify-between " + (isGuest ? "opacity-50 cursor-not-allowed" : "cursor-pointer")}
+              className={"bg-surface-2 rounded-[10px] px-4 py-[14px] flex items-center justify-between " + (isGuest ? "opacity-50 cursor-not-allowed" : "cursor-pointer")}
               onClick={() => !isGuest && setFeedbackOpen(true)}
             >
               <div>
@@ -379,7 +379,7 @@ export default function AccountPage() {
 
             {/* 利用規約 */}
             <Link href="/terms">
-              <div className="bg-[#232640] rounded-[10px] px-4 py-[14px] flex items-center justify-between cursor-pointer">
+              <div className="bg-surface-2 rounded-[10px] px-4 py-[14px] flex items-center justify-between cursor-pointer">
                 <p className="text-[14px]">利用規約</p>
                 <span className="text-gray-500 text-[18px]">&rsaquo;</span>
               </div>
@@ -387,7 +387,7 @@ export default function AccountPage() {
 
             {/* プライバシーポリシー */}
             <Link href="/privacy">
-              <div className="bg-[#232640] rounded-[10px] px-4 py-[14px] flex items-center justify-between cursor-pointer mt-3">
+              <div className="bg-surface-2 rounded-[10px] px-4 py-[14px] flex items-center justify-between cursor-pointer mt-3">
                 <p className="text-[14px]">プライバシーポリシー</p>
                 <span className="text-gray-500 text-[18px]">&rsaquo;</span>
               </div>
@@ -397,8 +397,8 @@ export default function AccountPage() {
             <div
               className="rounded-[10px] px-4 py-[14px] flex items-center justify-between cursor-pointer mt-3"
               style={{
-                backgroundColor: "rgba(232,93,117,0.06)",
-                border: "0.5px solid rgba(232,93,117,0.15)",
+                backgroundColor: "color-mix(in srgb, var(--destructive) 6%, transparent)",
+                border: "0.5px solid color-mix(in srgb, var(--destructive) 15%, transparent)",
               }}
               onClick={handleLogout}
             >
@@ -408,9 +408,9 @@ export default function AccountPage() {
                   <polyline points="16 17 21 12 16 7" />
                   <line x1="21" y1="12" x2="9" y2="12" />
                 </svg>
-                <p className="text-[14px] text-[#e85d75]">ログアウト</p>
+                <p className="text-[14px] text-destructive">ログアウト</p>
               </div>
-              <span className="text-[#e85d75] text-[18px]">&rsaquo;</span>
+              <span className="text-destructive text-[18px]">&rsaquo;</span>
             </div>
           </div>
         </div>
@@ -419,13 +419,12 @@ export default function AccountPage() {
       {/* フィードバックモーダル */}
       {feedbackOpen && (
         <div
-          className="fixed inset-0 z-[60] flex items-end justify-center"
-          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+          className="fixed inset-0 z-[60] flex items-end justify-center bg-black/50"
           onClick={(e) => { if (e.target === e.currentTarget) setFeedbackOpen(false); }}
         >
           <div
             className="w-full max-w-lg rounded-t-[16px] px-5 pt-5 pb-8"
-            style={{ backgroundColor: "#1a1d2e" }}
+            style={{ backgroundColor: "var(--surface-1)" }}
           >
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-[16px] font-medium">ご意見・バグ報告</h2>
@@ -449,8 +448,8 @@ export default function AccountPage() {
                   onClick={() => setFeedbackCategory(item.value)}
                   className={"flex-1 rounded-[6px] py-2 text-[13px] font-medium transition-colors " + (
                     feedbackCategory === item.value
-                      ? "bg-[#6366f1] text-white"
-                      : "bg-[#232640] text-gray-400"
+                      ? "bg-primary text-white"
+                      : "bg-surface-2 text-gray-400"
                   )}
                 >
                   {item.label}
@@ -462,15 +461,15 @@ export default function AccountPage() {
             <textarea
               value={feedbackMessage}
               onChange={(e) => setFeedbackMessage(e.target.value)}
-              className="w-full bg-[#232640] rounded-[6px] px-3 py-2 text-[14px] focus:outline-none resize-none"
-              style={{ border: "0.5px solid #333355", minHeight: 120 }}
+              className="w-full bg-surface-2 rounded-[6px] px-3 py-2 text-[14px] focus:outline-none resize-none"
+              style={{ border: "0.5px solid var(--border)", minHeight: 120 }}
               placeholder="内容を入力してください"
             />
 
             <button
               onClick={handleSubmitFeedback}
               disabled={feedbackLoading || !feedbackMessage.trim()}
-              className="w-full mt-4 bg-[#6366f1] text-white rounded-[10px] px-4 py-3 text-[14px] font-medium hover:opacity-90 disabled:opacity-50"
+              className="w-full mt-4 bg-primary text-white rounded-[10px] px-4 py-3 text-[14px] font-medium hover:opacity-90 disabled:opacity-50"
             >
               {feedbackLoading ? "送信中..." : "送信"}
             </button>
@@ -486,13 +485,13 @@ export default function AccountPage() {
             bottom: 80,
             left: "50%",
             transform: "translateX(-50%)",
-            backgroundColor: "#232640",
-            color: "#fff",
+            backgroundColor: "var(--surface-2)",
+            color: "var(--foreground)",
             padding: "10px 20px",
             borderRadius: 10,
             fontSize: 13,
             zIndex: 9999,
-            border: "0.5px solid rgba(100,100,150,0.3)",
+            border: "0.5px solid var(--border-subtle)",
           }}
         >
           {feedbackToast}
