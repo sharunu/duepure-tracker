@@ -1,6 +1,8 @@
 @import "tailwindcss";
 
 :root {
+  color-scheme: dark;
+
   /* 既存維持 (DESIGN.md §4 Migration Rules) */
   --background: #0f172a;
   --foreground: #e2e8f0;
@@ -54,6 +56,63 @@
 
   /* Popover shadow (Phase 8a 追加: GameSelector 等の popover/dropdown で使う、Tailwind utility 化しない) */
   --shadow-popover: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+/* Phase 9a: Light mode token values (DESIGN.md §4 light-mode definition)
+   data-theme="light" 属性が html に付与された時に適用される。
+   :root の dark 値は変更せず、Phase 1-8 の見た目を完全保護。
+   Phase 9b で html に data-theme 属性を設定するまで本ブロックは効かない。 */
+[data-theme="light"] {
+  color-scheme: light;
+
+  --background: #f8fafc;
+  --foreground: #0f172a;
+
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+
+  --primary: #4f46e5;
+  --primary-foreground: #ffffff;
+
+  --success: #16a34a;
+  --destructive: #dc2626;
+
+  --muted: #e2e8f0;
+  --muted-foreground: #475569;
+
+  --border: #cbd5e1;
+
+  /* Surface 階層 (light は subtle gray scale で階層差を保つ) */
+  --surface-1: #f1f5f9;
+  --surface-2: #e2e8f0;
+  --surface-3: #cbd5e1;
+
+  --warning: #d97706;
+
+  --border-subtle: rgba(100, 116, 139, 0.25);
+  --border-strong: #94a3b8;
+
+  /* Chart palette (DESIGN.md §4 light 用に彩度・明度を再調整) */
+  --chart-1: #4f46e5;
+  --chart-2: #d97706;
+  --chart-3: #16a34a;
+  --chart-4: #dc2626;
+  --chart-5: #2563eb;
+  --chart-6: #db2777;
+  --chart-7: #0d9488;
+  --chart-8: #475569;
+
+  /* Win Rate gradient (light 背景でコントラスト確保のため濃いめ) */
+  --win-rate-high: #15803d;
+  --win-rate-mid-high: #4d7c0f;
+  --win-rate-mid: #ca8a04;
+  --win-rate-mid-low: #c2410c;
+  --win-rate-low: #b91c1c;
+  --win-rate-empty: #94a3b8;
+
+  --primary-soft: #6366f1;
+
+  --shadow-popover: 0 4px 12px rgba(15, 23, 42, 0.12);
 }
 
 @theme inline {
