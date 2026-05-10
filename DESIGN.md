@@ -167,8 +167,6 @@ OS設定追従だけを前提にしない。アプリ内トグルの設定が最
   --warning: #f59e0b;
   --destructive: #ef4444;
 
-  --accent: var(--warning);
-
   --muted: #334155;
   --muted-foreground: #94a3b8;
 
@@ -206,7 +204,6 @@ OS設定追従だけを前提にしない。アプリ内トグルの設定が最
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-destructive: var(--destructive);
-  --color-accent: var(--accent);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-border: var(--border);
@@ -229,7 +226,7 @@ OS設定追従だけを前提にしない。アプリ内トグルの設定が最
 - `--background` / `--foreground` / `--card` / `--card-foreground` / `--primary` / `--primary-foreground` / `--success` / `--muted` / `--muted-foreground` / `--border` は維持する
 - `--destructive` は危険操作、LOSE、エラー系の意味色として維持する。`--danger` は追加しない
 - `--warning` を追加し、DRAW、注意、中立寄りの判定に使う
-- `--accent` は新規UIでは使わない。移行期間中は `--warning` と同値のlegacy aliasとして扱う。既存参照がすべて `--warning` 等へ置換され、`rg "accent|--accent"` で利用箇所がなくなった段階でaliasを削除する
+- `--accent` は **Phase 8e-3 で削除済**。意図色は `--warning` (DRAW、注意、中立寄りの判定) または `--primary-soft` (リンク文字、soft accent) を直接使う。新規 UI で `--accent` を再導入しない
 - 現状頻出している `#1a1d2e` は `--surface-1` に集約する
 - `--card` は当面 `#1e293b` の既存互換tokenとして維持する。`bg-card` / `text-card-foreground` 参照が `--surface-1` 系へ十分に置換された段階で、`--card: var(--surface-1)` のaliasへ切り替える
 - surface系の通常テキストは `--foreground` を使う。現時点では `--surface-*-foreground` は増やさない

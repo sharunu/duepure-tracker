@@ -24,9 +24,8 @@
   --surface-2: #232640;
   --surface-3: #2a2d48;
 
-  /* Warning + accent alias (DESIGN.md §4 Migration Rules) */
+  /* Warning (DESIGN.md §4 Migration Rules) */
   --warning: #f59e0b;
-  --accent: var(--warning);
 
   /* Border 階層 */
   --border-subtle: rgba(100, 116, 139, 0.3);
@@ -69,7 +68,6 @@
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-border: var(--border);
-  --color-accent: var(--accent);
 
   --color-surface-1: var(--surface-1);
   --color-surface-2: var(--surface-2);
