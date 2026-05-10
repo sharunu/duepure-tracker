@@ -119,7 +119,7 @@ export default function QualityScoringRulesPage() {
                 {catRules.map((rule) => {
                   const labels = paramLabels[rule.rule_key] || {};
                   return (
-                    <div key={rule.id} className="bg-[#232640] rounded-[10px] px-4 py-4">
+                    <div key={rule.id} className="bg-surface-2 rounded-[10px] px-4 py-4">
                       <div className="flex items-center justify-between mb-2">
                         <div>
                           <p className="text-[14px] font-medium">{rule.display_name}</p>
@@ -130,7 +130,7 @@ export default function QualityScoringRulesPage() {
                         <button
                           onClick={() => setEditEnabled(prev => ({ ...prev, [rule.rule_key]: !prev[rule.rule_key] }))}
                           className={`relative w-10 h-5 rounded-full transition-colors ${
-                            editEnabled[rule.rule_key] ? "bg-[#6366f1]" : "bg-[#333355]"
+                            editEnabled[rule.rule_key] ? "bg-primary" : "bg-muted"
                           }`}
                         >
                           <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all duration-200 ${
@@ -152,8 +152,8 @@ export default function QualityScoringRulesPage() {
                                 setEditScores(prev => ({ ...prev, [rule.rule_key]: num }));
                               }
                             }}
-                            className="w-20 bg-[#1a1d2e] rounded-[6px] px-2 py-1.5 text-[13px] text-right focus:outline-none"
-                            style={{ border: "0.5px solid #333355" }}
+                            className="w-20 bg-surface-1 rounded-[6px] px-2 py-1.5 text-[13px] text-right focus:outline-none"
+                            style={{ border: "0.5px solid var(--border)" }}
                           />
                           <span className="text-[11px] text-gray-500">点</span>
                         </div>
@@ -178,8 +178,8 @@ export default function QualityScoringRulesPage() {
                                     }));
                                   }
                                 }}
-                                className="w-24 bg-[#1a1d2e] rounded-[6px] px-2 py-1.5 text-[13px] text-right focus:outline-none"
-                                style={{ border: "0.5px solid #333355" }}
+                                className="w-24 bg-surface-1 rounded-[6px] px-2 py-1.5 text-[13px] text-right focus:outline-none"
+                                style={{ border: "0.5px solid var(--border)" }}
                               />
                             </div>
                           ))}
@@ -189,7 +189,7 @@ export default function QualityScoringRulesPage() {
                       <button
                         onClick={() => handleSave(rule.rule_key)}
                         disabled={saving === rule.rule_key}
-                        className="w-full mt-3 bg-[#3d4070] text-white rounded-[6px] px-3 py-2 text-[12px] font-medium hover:opacity-90 disabled:opacity-50"
+                        className="w-full mt-3 bg-primary text-primary-foreground rounded-[6px] px-3 py-2 text-[12px] font-medium hover:opacity-90 disabled:opacity-50"
                       >
                         {saving === rule.rule_key ? "保存中..." : "保存"}
                       </button>

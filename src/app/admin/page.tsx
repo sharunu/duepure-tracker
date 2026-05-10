@@ -32,12 +32,12 @@ export default function AdminDashboardPage() {
         {/* 検知アラート */}
         <button
           onClick={() => router.push("/admin/detection")}
-          className="w-full bg-[#232640] rounded-[10px] px-4 py-4 flex items-center gap-4 text-left hover:bg-[#2a2d4a] transition-colors"
+          className="w-full bg-surface-2 rounded-[10px] px-4 py-4 flex items-center gap-4 text-left hover:bg-surface-3 transition-colors"
         >
-          <div className="w-10 h-10 rounded-[8px] bg-[rgba(232,93,117,0.1)] flex items-center justify-center shrink-0 relative">
-            <ShieldAlert size={20} className="text-[#e85d75]" />
+          <div className="w-10 h-10 rounded-[8px] flex items-center justify-center shrink-0 relative" style={{ backgroundColor: "color-mix(in srgb, var(--destructive) 10%, transparent)" }}>
+            <ShieldAlert size={20} className="text-destructive" />
             {alertCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-[#e85d75] text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 bg-destructive text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
                 {alertCount > 9 ? "9+" : alertCount}
               </span>
             )}
@@ -55,10 +55,10 @@ export default function AdminDashboardPage() {
         {/* 品質スコアリング */}
         <button
           onClick={() => router.push("/admin/quality-scoring")}
-          className="w-full bg-[#232640] rounded-[10px] px-4 py-4 flex items-center gap-4 text-left hover:bg-[#2a2d4a] transition-colors"
+          className="w-full bg-surface-2 rounded-[10px] px-4 py-4 flex items-center gap-4 text-left hover:bg-surface-3 transition-colors"
         >
-          <div className="w-10 h-10 rounded-[8px] bg-[rgba(234,179,8,0.1)] flex items-center justify-center shrink-0">
-            <Star size={20} className="text-yellow-500" />
+          <div className="w-10 h-10 rounded-[8px] flex items-center justify-center shrink-0" style={{ backgroundColor: "color-mix(in srgb, var(--warning) 10%, transparent)" }}>
+            <Star size={20} className="text-warning" />
           </div>
           <div className="min-w-0">
             <p className="text-[14px] font-medium">品質スコアリング</p>
@@ -71,10 +71,10 @@ export default function AdminDashboardPage() {
           <button
             key={card.href}
             onClick={() => router.push(card.href)}
-            className="w-full bg-[#232640] rounded-[10px] px-4 py-4 flex items-center gap-4 text-left hover:bg-[#2a2d4a] transition-colors"
+            className="w-full bg-surface-2 rounded-[10px] px-4 py-4 flex items-center gap-4 text-left hover:bg-surface-3 transition-colors"
           >
-            <div className="w-10 h-10 rounded-[8px] bg-[rgba(99,102,241,0.1)] flex items-center justify-center shrink-0">
-              <card.icon size={20} className="text-[#6366f1]" />
+            <div className="w-10 h-10 rounded-[8px] bg-primary/10 flex items-center justify-center shrink-0">
+              <card.icon size={20} className="text-primary" />
             </div>
             <div className="min-w-0">
               <p className="text-[14px] font-medium">{card.title}</p>

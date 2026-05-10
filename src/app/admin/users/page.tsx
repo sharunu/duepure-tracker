@@ -10,10 +10,10 @@ type ProviderFilter = "all" | "google" | "twitter" | "anonymous" | "email";
 type XConnectionFilter = "all" | "connected" | "not_connected";
 
 const stageLabels: Record<number, { label: string; color: string; bg: string }> = {
-  1: { label: "優良", color: "#f5c34b", bg: "rgba(245,195,75,0.12)" },
-  2: { label: "一般", color: "#8888aa", bg: "rgba(136,136,170,0.12)" },
-  3: { label: "要注意", color: "#ff8c42", bg: "rgba(255,140,66,0.12)" },
-  4: { label: "BAN", color: "#e85d75", bg: "rgba(232,93,117,0.12)" },
+  1: { label: "優良", color: "var(--success)", bg: "color-mix(in srgb, var(--success) 12%, transparent)" },
+  2: { label: "一般", color: "var(--muted-foreground)", bg: "color-mix(in srgb, var(--muted-foreground) 12%, transparent)" },
+  3: { label: "要注意", color: "var(--warning)", bg: "color-mix(in srgb, var(--warning) 12%, transparent)" },
+  4: { label: "BAN", color: "var(--destructive)", bg: "color-mix(in srgb, var(--destructive) 12%, transparent)" },
 };
 
 const providerLabel = (p: string): string => {
@@ -76,8 +76,8 @@ export default function AdminUsersPage() {
         <select
           value={stageFilter === "all" ? "all" : String(stageFilter)}
           onChange={(e) => setStageFilter(e.target.value === "all" ? "all" : Number(e.target.value) as StageFilter)}
-          className="bg-[#1a1d2e] rounded-[6px] px-2 py-2 text-[12px] focus:outline-none text-white"
-          style={{ border: "0.5px solid #333355" }}
+          className="bg-surface-1 rounded-[6px] px-2 py-2 text-[12px] focus:outline-none text-white"
+          style={{ border: "0.5px solid var(--border)" }}
         >
           <option value="all">全ステージ</option>
           <option value="1">優良</option>
@@ -88,8 +88,8 @@ export default function AdminUsersPage() {
         <select
           value={providerFilter}
           onChange={(e) => setProviderFilter(e.target.value as ProviderFilter)}
-          className="bg-[#1a1d2e] rounded-[6px] px-2 py-2 text-[12px] focus:outline-none text-white"
-          style={{ border: "0.5px solid #333355" }}
+          className="bg-surface-1 rounded-[6px] px-2 py-2 text-[12px] focus:outline-none text-white"
+          style={{ border: "0.5px solid var(--border)" }}
         >
           <option value="all">全ログイン方法</option>
           <option value="google">Google</option>
@@ -100,8 +100,8 @@ export default function AdminUsersPage() {
         <select
           value={xConnectionFilter}
           onChange={(e) => setXConnectionFilter(e.target.value as XConnectionFilter)}
-          className="bg-[#1a1d2e] rounded-[6px] px-2 py-2 text-[12px] focus:outline-none text-white"
-          style={{ border: "0.5px solid #333355" }}
+          className="bg-surface-1 rounded-[6px] px-2 py-2 text-[12px] focus:outline-none text-white"
+          style={{ border: "0.5px solid var(--border)" }}
         >
           <option value="all">X連携 全て</option>
           <option value="connected">X連携あり</option>
@@ -115,8 +115,8 @@ export default function AdminUsersPage() {
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full bg-[#232640] rounded-[8px] pl-9 pr-3 py-2.5 text-[13px] focus:outline-none"
-          style={{ border: "0.5px solid #333355" }}
+          className="w-full bg-surface-2 rounded-[8px] pl-9 pr-3 py-2.5 text-[13px] focus:outline-none"
+          style={{ border: "0.5px solid var(--border)" }}
           placeholder="名前・メールで検索"
         />
       </div>
@@ -139,13 +139,13 @@ export default function AdminUsersPage() {
               <button
                 key={u.id}
                 onClick={() => router.push(`/admin/users/${u.id}`)}
-                className="w-full bg-[#232640] rounded-[10px] px-4 py-3 flex items-center gap-3 text-left hover:bg-[#2a2d4a] transition-colors"
+                className="w-full bg-surface-2 rounded-[10px] px-4 py-3 flex items-center gap-3 text-left hover:bg-surface-3 transition-colors"
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <span className="text-[13px] font-medium truncate">{displayName}</span>
                     {u.is_guest && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[rgba(136,136,170,0.12)] text-[#8888aa] shrink-0">
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full text-muted-foreground shrink-0" style={{ backgroundColor: "color-mix(in srgb, var(--muted-foreground) 12%, transparent)" }}>
                         ゲスト
                       </span>
                     )}

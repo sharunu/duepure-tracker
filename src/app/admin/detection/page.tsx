@@ -95,14 +95,14 @@ function DetectionPageInner() {
       </p>
 
       {/* ゲームタブ */}
-      <div className="flex gap-1 mb-4 border-b border-[#232640]">
+      <div className="flex gap-1 mb-4 border-b border-surface-2">
         <button
           type="button"
           onClick={() => changeGame("all")}
           className={`px-4 py-2 text-sm transition-colors -mb-px border-b-2 ${
             gameFilter === "all"
-              ? "border-[#818cf8] text-white font-medium"
-              : "border-transparent text-gray-500 hover:text-gray-300"
+              ? "border-primary-soft text-foreground font-medium"
+              : "border-transparent text-muted-foreground hover:text-foreground"
           }`}
         >
           全ゲーム
@@ -116,8 +116,8 @@ function DetectionPageInner() {
               onClick={() => changeGame(g)}
               className={`px-4 py-2 text-sm transition-colors -mb-px border-b-2 ${
                 isActive
-                  ? "border-[#818cf8] text-white font-medium"
-                  : "border-transparent text-gray-500 hover:text-gray-300"
+                  ? "border-primary-soft text-foreground font-medium"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
               {GAMES[g].shortName}
@@ -131,15 +131,15 @@ function DetectionPageInner() {
         <button
           onClick={handleScan}
           disabled={scanning}
-          className="flex items-center gap-1.5 bg-[#6366f1] text-white rounded-[8px] px-3 py-2 text-[12px] font-medium hover:opacity-90 disabled:opacity-50"
+          className="flex items-center gap-1.5 bg-primary text-primary-foreground rounded-[8px] px-3 py-2 text-[12px] font-medium hover:opacity-90 disabled:opacity-50"
         >
           <Play size={14} />
           {scanning ? "実行中..." : "今すぐスキャン"}
         </button>
         <button
           onClick={() => router.push("/admin/detection/rules")}
-          className="flex items-center gap-1.5 bg-[#232640] text-gray-300 rounded-[8px] px-3 py-2 text-[12px] font-medium hover:opacity-90"
-          style={{ border: "0.5px solid rgba(100,100,150,0.2)" }}
+          className="flex items-center gap-1.5 bg-surface-2 text-foreground rounded-[8px] px-3 py-2 text-[12px] font-medium hover:opacity-90"
+          style={{ border: "0.5px solid var(--border-subtle)" }}
         >
           <Settings size={14} />
           ルール設定
@@ -147,7 +147,7 @@ function DetectionPageInner() {
         <div className="ml-auto">
           <button
             onClick={() => setShowResolved(!showResolved)}
-            className={`text-[11px] px-2.5 py-1 rounded-full ${showResolved ? "bg-[#6366f1] text-white" : "bg-[#232640] text-gray-400"}`}
+            className={`text-[11px] px-2.5 py-1 rounded-full ${showResolved ? "bg-primary text-primary-foreground" : "bg-surface-2 text-muted-foreground"}`}
           >
             {showResolved ? "全件" : "未解決のみ"}
           </button>
@@ -169,10 +169,10 @@ function DetectionPageInner() {
       ) : (
         <div className="space-y-3">
           {alerts.map((alert) => (
-            <div key={alert.id} className="bg-[#232640] rounded-[10px] px-4 py-3">
+            <div key={alert.id} className="bg-surface-2 rounded-[10px] px-4 py-3">
               <div className="flex items-start justify-between mb-2">
                 <div>
-                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-[rgba(232,93,117,0.15)] text-[#e85d75] font-medium">
+                  <span className="text-[11px] px-2 py-0.5 rounded-full text-destructive font-medium" style={{ backgroundColor: "color-mix(in srgb, var(--destructive) 15%, transparent)" }}>
                     {ruleLabels[alert.rule_key] || alert.rule_key}
                   </span>
                   <p className="text-[13px] font-medium mt-1.5">
@@ -186,7 +186,7 @@ function DetectionPageInner() {
 
               {/* 詳細展開 */}
               {alert.details && (
-                <div className="text-[11px] text-gray-500 bg-[#1a1d2e] rounded-[6px] px-3 py-2 mb-2">
+                <div className="text-[11px] text-gray-500 bg-surface-1 rounded-[6px] px-3 py-2 mb-2">
                   {Object.entries(alert.details).map(([k, v]) => (
                     <div key={k} className="flex justify-between">
                       <span>{k}</span>
@@ -199,7 +199,7 @@ function DetectionPageInner() {
               <div className="flex gap-2">
                 <button
                   onClick={() => router.push(`/admin/users/${alert.user_id}`)}
-                  className="text-[11px] text-[#818cf8] hover:underline"
+                  className="text-[11px] text-primary-soft hover:underline"
                 >
                   ユーザー詳細
                 </button>
