@@ -163,17 +163,17 @@ function BattlePageInner() {
       return (
         <div className="min-h-screen pb-20 px-4 pt-6 max-w-lg mx-auto">
           <div className="flex items-center justify-between mb-4">
-            <div className="animate-pulse rounded-[8px] bg-[#232640] h-6 w-24" />
-            <div className="animate-pulse rounded-[8px] bg-[#232640] h-8 w-20" />
+            <div className="animate-pulse rounded-[8px] bg-surface-2 h-6 w-24" />
+            <div className="animate-pulse rounded-[8px] bg-surface-2 h-8 w-20" />
           </div>
           <div className="space-y-4">
-            <div className="animate-pulse rounded-[10px] bg-[#232640] h-[56px]" />
-            <div className="animate-pulse rounded-[10px] bg-[#232640] h-[52px]" />
-            <div className="animate-pulse rounded-[10px] bg-[#232640] h-[52px]" />
-            <div className="animate-pulse rounded-[10px] bg-[#232640] h-[44px]" />
+            <div className="animate-pulse rounded-[10px] bg-surface-2 h-[56px]" />
+            <div className="animate-pulse rounded-[10px] bg-surface-2 h-[52px]" />
+            <div className="animate-pulse rounded-[10px] bg-surface-2 h-[52px]" />
+            <div className="animate-pulse rounded-[10px] bg-surface-2 h-[44px]" />
             <div className="flex gap-3">
-              <div className="animate-pulse rounded-[10px] bg-[#232640] h-[56px] flex-1" />
-              <div className="animate-pulse rounded-[10px] bg-[#232640] h-[56px] flex-1" />
+              <div className="animate-pulse rounded-[10px] bg-surface-2 h-[56px] flex-1" />
+              <div className="animate-pulse rounded-[10px] bg-surface-2 h-[56px] flex-1" />
             </div>
           </div>
         </div>
@@ -239,13 +239,13 @@ export default function BattlePage() {
         <>
           <div className="min-h-screen pb-20 px-4 pt-6 max-w-lg mx-auto">
             <div className="flex items-center justify-between mb-4">
-              <div className="animate-pulse rounded-[8px] bg-[#232640] h-6 w-24" />
-              <div className="animate-pulse rounded-[8px] bg-[#232640] h-8 w-20" />
+              <div className="animate-pulse rounded-[8px] bg-surface-2 h-6 w-24" />
+              <div className="animate-pulse rounded-[8px] bg-surface-2 h-8 w-20" />
             </div>
             <div className="space-y-4">
-              <div className="animate-pulse rounded-[10px] bg-[#232640] h-[56px]" />
-              <div className="animate-pulse rounded-[10px] bg-[#232640] h-[52px]" />
-              <div className="animate-pulse rounded-[10px] bg-[#232640] h-[52px]" />
+              <div className="animate-pulse rounded-[10px] bg-surface-2 h-[56px]" />
+              <div className="animate-pulse rounded-[10px] bg-surface-2 h-[52px]" />
+              <div className="animate-pulse rounded-[10px] bg-surface-2 h-[52px]" />
             </div>
           </div>
           <BottomNav />

@@ -184,6 +184,12 @@ OS設定追従だけを前提にしない。アプリ内トグルの設定が最
   --chart-6: #ec4899;
   --chart-7: #14b8a6;
   --chart-8: #64748b;
+
+  /* Phase 8a 追加: primary 派生 (薄い indigo、リンク文字 / soft accent) */
+  --primary-soft: #818cf8;
+
+  /* Phase 8a 追加: popover/dropdown shadow (Tailwind utility 化しない、style props 直接参照) */
+  --shadow-popover: 0 8px 24px rgba(0, 0, 0, 0.5);
 }
 
 @theme inline {
@@ -196,6 +202,7 @@ OS設定追従だけを前提にしない。アプリ内トグルの設定が最
   --color-surface-3: var(--surface-3);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-soft: var(--primary-soft);
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-destructive: var(--destructive);
@@ -213,6 +220,7 @@ OS設定追従だけを前提にしない。アプリ内トグルの設定が最
   --color-chart-6: var(--chart-6);
   --color-chart-7: var(--chart-7);
   --color-chart-8: var(--chart-8);
+  /* 注: --shadow-popover は Tailwind utility 化しないため @theme inline へは露出させない。TSX 側は style={{ boxShadow: "var(--shadow-popover)" }} で直接参照 */
 }
 ```
 
@@ -227,6 +235,8 @@ OS設定追従だけを前提にしない。アプリ内トグルの設定が最
 - surface系の通常テキストは `--foreground` を使う。現時点では `--surface-*-foreground` は増やさない
 - ゲーム別の `--game-accent` は当面追加しない
 - `--chart-*` はdark / lightで別値を持てるsemantic tokenとして扱う。チャート実装側で固定hexを直接参照しない
+- `--primary-soft` は `--primary` の薄い派生で、リンク文字や soft accent 用途。`--primary` (主要 CTA / button 背景) とは用途を分離する。dark / light で別値を持つ
+- `--shadow-popover` は popover / dropdown / モーダル系の影。色 token とは別軸で `:root` 内に定義し、`@theme inline` には露出させない (Tailwind utility 化しない、TSX で `style={{ boxShadow: "var(--shadow-popover)" }}` 直接参照)。dark / light で別値を持つ
 
 ### Status Colors
 

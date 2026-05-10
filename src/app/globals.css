@@ -49,6 +49,12 @@
   --win-rate-mid-low: #e87585;
   --win-rate-low: #e85d75;
   --win-rate-empty: #8888aa;
+
+  /* Primary 派生 (Phase 8a 追加: indigo-400 相当の薄い primary、リンク文字 / soft accent 用) */
+  --primary-soft: #818cf8;
+
+  /* Popover shadow (Phase 8a 追加: GameSelector 等の popover/dropdown で使う、Tailwind utility 化しない) */
+  --shadow-popover: 0 8px 24px rgba(0, 0, 0, 0.5);
 }
 
 @theme inline {
@@ -89,6 +95,8 @@
   --color-win-rate-mid-low: var(--win-rate-mid-low);
   --color-win-rate-low: var(--win-rate-low);
   --color-win-rate-empty: var(--win-rate-empty);
+
+  --color-primary-soft: var(--primary-soft);
 
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);

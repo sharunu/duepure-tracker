@@ -141,10 +141,10 @@ export default function AuthPage() {
             <div className="space-y-3">
               <button
                 onClick={() => signInWithOAuth("twitter")}
-                className="w-full rounded-[10px] bg-[#232640] px-4 py-3 text-[14px] font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-3 relative"
-                style={{ border: "0.5px solid rgba(100,100,150,0.2)" }}
+                className="w-full rounded-[10px] bg-surface-2 px-4 py-3 text-[14px] font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-3 relative"
+                style={{ border: "0.5px solid var(--border-subtle)" }}
               >
-                <span className="absolute -top-2 -right-2 bg-[#6366f1] text-white text-[10px] px-2 py-0.5 rounded-full font-bold">おすすめ</span>
+                <span className="absolute -top-2 -right-2 bg-primary text-white text-[10px] px-2 py-0.5 rounded-full font-bold">おすすめ</span>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
                   <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
                 </svg>
@@ -152,8 +152,8 @@ export default function AuthPage() {
               </button>
               <button
                 onClick={() => signInWithOAuth("google")}
-                className="w-full rounded-[10px] bg-[#232640] px-4 py-3 text-[14px] font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-3"
-                style={{ border: "0.5px solid rgba(100,100,150,0.2)" }}
+                className="w-full rounded-[10px] bg-surface-2 px-4 py-3 text-[14px] font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-3"
+                style={{ border: "0.5px solid var(--border-subtle)" }}
               >
                 <svg width="16" height="16" viewBox="0 0 48 48">
                   <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
@@ -166,9 +166,9 @@ export default function AuthPage() {
             </div>
 
             <div className="flex items-center gap-3">
-              <div className="flex-1 h-px" style={{ backgroundColor: "rgba(100,100,150,0.2)" }} />
+              <div className="flex-1 h-px" style={{ backgroundColor: "var(--border-subtle)" }} />
               <span className="text-[12px] text-gray-500">or</span>
-              <div className="flex-1 h-px" style={{ backgroundColor: "rgba(100,100,150,0.2)" }} />
+              <div className="flex-1 h-px" style={{ backgroundColor: "var(--border-subtle)" }} />
             </div>
           </>
         )}
@@ -179,8 +179,8 @@ export default function AuthPage() {
             placeholder="メールアドレス"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-[6px] bg-[#1a1d2e] px-4 py-3 text-[14px] placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#6366f1]"
-            style={{ border: "0.5px solid #333355" }}
+            className="w-full rounded-[6px] bg-surface-1 px-4 py-3 text-[14px] placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary"
+            style={{ border: "0.5px solid var(--border)" }}
           />
           {mode === "signup" && (
             <input
@@ -188,8 +188,8 @@ export default function AuthPage() {
               placeholder="ユーザー名（任意）"
               value={userName}
               onChange={(e) => setUserName(e.target.value)}
-              className="w-full rounded-[6px] bg-[#1a1d2e] px-4 py-3 text-[14px] placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#6366f1]"
-              style={{ border: "0.5px solid #333355" }}
+              className="w-full rounded-[6px] bg-surface-1 px-4 py-3 text-[14px] placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary"
+              style={{ border: "0.5px solid var(--border)" }}
             />
           )}
           {mode !== "reset" && (
@@ -201,8 +201,8 @@ export default function AuthPage() {
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.nativeEvent.isComposing) handleSubmit();
               }}
-              className="w-full rounded-[6px] bg-[#1a1d2e] px-4 py-3 text-[14px] placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#6366f1]"
-              style={{ border: "0.5px solid #333355" }}
+              className="w-full rounded-[6px] bg-surface-1 px-4 py-3 text-[14px] placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary"
+              style={{ border: "0.5px solid var(--border)" }}
             />
           )}
           {mode === "reset" && (
@@ -213,7 +213,7 @@ export default function AuthPage() {
           <button
             onClick={handleSubmit}
             disabled={loading || !email || (mode !== "reset" && !password)}
-            className="w-full rounded-[10px] bg-[#6366f1] text-white px-4 py-3 text-[14px] font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+            className="w-full rounded-[10px] bg-primary text-white px-4 py-3 text-[14px] font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
           >
             {mode === "login" ? "ログイン" : mode === "signup" ? "アカウント作成" : "リセットメールを送信"}
           </button>
@@ -236,7 +236,7 @@ export default function AuthPage() {
               }
               setMessage("");
             }}
-            className="w-full text-center text-[12px] text-[#818cf8] hover:underline"
+            className="w-full text-center text-[12px] text-primary-soft hover:underline"
           >
             {mode === "reset" ? "ログインに戻る" : mode === "login" ? "アカウント新規作成はこちら" : "ログインに戻る"}
           </button>
@@ -248,7 +248,7 @@ export default function AuthPage() {
         )}
 
         {message && (
-          <p className={"text-center text-[13px] " + (message.includes("送信しました") ? "text-[#818cf8]" : "text-[#ef4444]")}>
+          <p className={"text-center text-[13px] " + (message.includes("送信しました") ? "text-primary-soft" : "text-destructive")}>
             {message}
           </p>
         )}
