@@ -1,5 +1,7 @@
 "use client";
 
+import { SegmentedControl } from "@/components/ui/SegmentedControl";
+
 export type View = "stats" | "trend";
 
 type Props = {
@@ -7,28 +9,17 @@ type Props = {
   setView: (v: View) => void;
 };
 
-const labels: Record<View, string> = {
-  stats: "サマリー",
-  trend: "推移",
-};
-
 export function ViewSelector({ view, setView }: Props) {
   return (
-    <div className="flex border-b border-border">
-      {(["stats", "trend"] as const).map((v) => (
-        <button
-          key={v}
-          type="button"
-          onClick={() => setView(v)}
-          className={`flex-1 px-3 py-2 text-sm font-medium transition-colors min-h-[44px] ${
-            view === v
-              ? "text-primary border-b-2 border-primary"
-              : "text-muted-foreground"
-          }`}
-        >
-          {labels[v]}
-        </button>
-      ))}
-    </div>
+    <SegmentedControl<View>
+      items={[
+        { value: "stats", label: "サマリー" },
+        { value: "trend", label: "推移" },
+      ]}
+      value={view}
+      onChange={setView}
+      variant="underline"
+      fullWidth
+    />
   );
 }

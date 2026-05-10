@@ -2,6 +2,7 @@
 
 import { DEFAULT_GAME, GAMES, type GameSlug } from "@/lib/games";
 import { useGameOptional } from "@/lib/games/context";
+import { SegmentedControl } from "@/components/ui/SegmentedControl";
 
 type Props = {
   format: string;
@@ -15,25 +16,16 @@ export function FormatSelector({ format, setFormat, game }: Props) {
   const gameSlug: GameSlug = game ?? ctx?.slug ?? DEFAULT_GAME;
   const formats = GAMES[gameSlug].formats;
 
-  // ゲームにフォーマット概念がない場合は何も描画しない
   if (formats.length === 0) return null;
 
   return (
-    <div className="inline-flex rounded-full border border-border overflow-hidden">
-      {formats.map((f) => (
-        <button
-          key={f.code}
-          type="button"
-          onClick={() => setFormat(f.code)}
-          className={`px-3 py-1 text-xs font-medium transition-colors ${
-            format === f.code
-              ? "bg-primary text-primary-foreground"
-              : "bg-card hover:bg-muted text-muted-foreground"
-          }`}
-        >
-          {f.label}
-        </button>
-      ))}
-    </div>
+    <SegmentedControl
+      items={formats.map((f) => ({ value: f.code, label: f.label }))}
+      value={format}
+      onChange={setFormat}
+      size="sm"
+      variant="filled"
+      pill
+    />
   );
 }

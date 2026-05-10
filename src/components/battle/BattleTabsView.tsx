@@ -5,6 +5,7 @@ import type { KeyboardEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import useEmblaCarousel from "embla-carousel-react";
 import { FormatSelector } from "@/components/ui/FormatSelector";
+import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { BattleRecordForm } from "@/components/battle/BattleRecordForm";
 import { DateRangeCalendar } from "@/components/battle/DateRangeCalendar";
 import { DeckFilter } from "@/components/battle/DeckFilter";
@@ -199,36 +200,23 @@ export function BattleTabsView(props: Props) {
           </div>
         </div>
 
-        <div
+        <SegmentedControl<TabKey>
+          items={tabs.map(({ key, label }) => ({
+            value: key,
+            label,
+            ariaControls: `battle-panel-${key}`,
+          }))}
+          value={currentSlide}
+          onChange={switchTo}
+          size="md"
+          variant="filled"
+          fullWidth
           role="tablist"
-          aria-label="対戦記録ビュー"
-          className="flex rounded-xl p-1 border border-muted/20 mb-4"
-          style={{ backgroundColor: "#1a1d35" }}
+          ariaLabel="対戦記録ビュー"
+          itemIdPrefix="battle"
           onKeyDown={handleKeyDown}
-        >
-          {tabs.map(({ key, label }) => {
-            const isActive = currentSlide === key;
-            return (
-              <button
-                key={key}
-                type="button"
-                role="tab"
-                id={`battle-tab-${key}`}
-                aria-selected={isActive}
-                aria-controls={`battle-panel-${key}`}
-                tabIndex={isActive ? 0 : -1}
-                onClick={() => switchTo(key)}
-                className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-all min-h-[40px] ${
-                  isActive
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground"
-                }`}
-              >
-                {label}
-              </button>
-            );
-          })}
-        </div>
+          className="mb-4"
+        />
 
         <div className="overflow-hidden" ref={emblaRef}>
           <div className="flex">
