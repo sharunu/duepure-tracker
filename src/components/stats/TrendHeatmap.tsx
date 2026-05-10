@@ -78,44 +78,32 @@ export function TrendHeatmap({ data }: { data: TrendDataPoint[] }) {
 
   return (
     <div>
-      <div style={{ fontSize: 15, fontWeight: 500, color: "#e8e8ec", marginBottom: 8 }}>
+      <div className="text-[15px] font-medium text-foreground mb-2">
         対面デッキ使用率
       </div>
       <div
-        style={{
-          background: "#1e2138",
-          borderRadius: 10,
-          border: "0.5px solid #2a2d48",
-          padding: "12px 8px",
-        }}
+        className="bg-surface-2 rounded-[10px] border border-border-subtle px-2 py-3"
+        role="img"
+        aria-label={`対面デッキ使用率ヒートマップ: 上位${decks.length}デッキ × ${periods.length}期間の使用率の偏り`}
       >
         {tooltip && (
           <div
+            className="fixed bg-surface-2 rounded-lg shadow-lg px-2.5 py-1.5 text-[11px] text-foreground z-50 pointer-events-none whitespace-nowrap"
             style={{
-              position: "fixed",
               left: tooltip.x,
               top: tooltip.y - 60,
-              background: "#232640",
-              borderRadius: 8,
-              border: "0.5px solid #2a2d48",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
-              padding: "6px 10px",
-              fontSize: 11,
-              color: "#e8e8ec",
-              zIndex: 50,
-              pointerEvents: "none",
-              whiteSpace: "nowrap",
+              border: "0.5px solid var(--border-subtle)",
               transform: "translateX(-50%)",
             }}
           >
-            <div style={{ fontWeight: 500, marginBottom: 2 }}>{tooltip.deck}</div>
-            <div style={{ color: "#aaaacc" }}>
-              {tooltip.period.slice(5)} &nbsp;{tooltip.pct}%（{tooltip.count}件）
+            <div className="font-medium mb-0.5">{tooltip.deck}</div>
+            <div className="text-muted-foreground">
+              {tooltip.period.slice(5)} &nbsp;{tooltip.pct}%({tooltip.count}件)
             </div>
           </div>
         )}
-        <div style={{ display: "flex" }}>
-          <div style={{ flexShrink: 0, width: labelWidth }}>
+        <div className="flex">
+          <div className="shrink-0" style={{ width: labelWidth }}>
             <table style={{ borderCollapse: "separate", borderSpacing: "0 3px" }}>
               <thead>
                 <tr>
@@ -126,18 +114,11 @@ export function TrendHeatmap({ data }: { data: TrendDataPoint[] }) {
                 {decks.map((deck) => (
                   <tr key={deck}>
                     <td
+                      className="text-[11px] text-foreground font-medium whitespace-nowrap pr-2 overflow-hidden text-ellipsis align-middle"
                       style={{
                         height: cellSize,
-                        fontSize: 11,
-                        color: "#e8e8ec",
-                        fontWeight: 500,
-                        whiteSpace: "nowrap",
-                        paddingRight: 8,
                         width: labelWidth,
                         maxWidth: labelWidth,
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        verticalAlign: "middle",
                       }}
                     >
                       {deck}
@@ -147,23 +128,19 @@ export function TrendHeatmap({ data }: { data: TrendDataPoint[] }) {
               </tbody>
             </table>
           </div>
-          <div style={{ overflowX: "auto", flex: 1, WebkitOverflowScrolling: "touch" }}>
+          <div className="overflow-x-auto flex-1" style={{ WebkitOverflowScrolling: "touch" }}>
             <table style={{ borderCollapse: "separate", borderSpacing: "3px" }}>
               <thead>
                 <tr>
                   {periods.map((p) => (
                     <th
                       key={p}
+                      className="text-[10px] text-muted-foreground font-normal text-center align-bottom"
                       style={{
                         height: headerHeight,
                         width: cellSize,
                         minWidth: cellSize,
-                        fontSize: 10,
-                        color: "#94a3b8",
-                        fontWeight: 400,
                         padding: 0,
-                        textAlign: "center",
-                        verticalAlign: "bottom",
                       }}
                     >
                       {p.slice(5)}
@@ -183,11 +160,7 @@ export function TrendHeatmap({ data }: { data: TrendDataPoint[] }) {
                       return (
                         <td
                           key={period}
-                          style={{
-                            width: cellSize,
-                            height: cellSize,
-                            padding: 0,
-                          }}
+                          style={{ width: cellSize, height: cellSize, padding: 0 }}
                           onMouseEnter={(e) => {
                             const rect = (e.target as HTMLElement).getBoundingClientRect();
                             setTooltip({ deck, period, pct, count, x: rect.left + rect.width / 2, y: rect.top });
@@ -203,15 +176,9 @@ export function TrendHeatmap({ data }: { data: TrendDataPoint[] }) {
                           }}
                         >
                           <div
+                            className="w-full h-full rounded flex items-center justify-center text-[9px]"
                             style={{
-                              width: "100%",
-                              height: "100%",
-                              borderRadius: 4,
                               background: style.background,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              fontSize: 9,
                               color: style.color,
                               fontWeight: style.fontWeight,
                             }}
@@ -227,18 +194,7 @@ export function TrendHeatmap({ data }: { data: TrendDataPoint[] }) {
             </table>
           </div>
         </div>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "flex-end",
-            alignItems: "center",
-            gap: 4,
-            marginTop: 8,
-            paddingRight: 4,
-            fontSize: 10,
-            color: "#94a3b8",
-          }}
-        >
+        <div className="flex justify-end items-center gap-1 mt-2 pr-1 text-[10px] text-muted-foreground">
           <span>少ない</span>
           {[
             "rgba(255,255,255,0.04)",
@@ -250,12 +206,8 @@ export function TrendHeatmap({ data }: { data: TrendDataPoint[] }) {
           ].map((bg, i) => (
             <div
               key={i}
-              style={{
-                width: 14,
-                height: 14,
-                borderRadius: 2,
-                background: bg,
-              }}
+              className="w-[14px] h-[14px] rounded-sm"
+              style={{ background: bg }}
             />
           ))}
           <span>多い</span>

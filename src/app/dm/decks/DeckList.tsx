@@ -10,6 +10,7 @@ import {
   updateTuning,
   deleteTuning,
 } from "@/lib/actions/deck-actions";
+import { Button } from "@/components/ui/Button";
 
 type Tuning = {
   id: string;
@@ -611,23 +612,15 @@ export function DeckList({
               outline: "none",
             }}
           />
-          <button
+          <Button
+            variant="primary"
+            size="md"
             onClick={handleFreeCreate}
-            disabled={loading || !freeInput.trim()}
-            style={{
-              background: "#3d4070",
-              borderRadius: 8,
-              color: "#e8e8ec",
-              padding: "10px 18px",
-              fontSize: 13,
-              fontWeight: 500,
-              border: "none",
-              cursor: freeInput.trim() ? "pointer" : "default",
-              opacity: freeInput.trim() ? 1 : 0.5,
-            }}
+            disabled={!freeInput.trim()}
+            loading={loading}
           >
             追加
-          </button>
+          </Button>
         </div>
         <div style={{ fontSize: 10, color: "#666688", marginTop: 8 }}>
           同じデッキの構築調整は、デッキカードを開いてチューニングとして追加できます

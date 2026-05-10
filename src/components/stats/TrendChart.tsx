@@ -14,19 +14,7 @@ import {
   displayDeckName,
   type OpponentDeckNameMap,
 } from "@/lib/actions/opponent-deck-display";
-
-const COLORS = [
-  "#6366f1",
-  "#f59e0b",
-  "#22c55e",
-  "#ef4444",
-  "#3b82f6",
-  "#ec4899",
-  "#14b8a6",
-  "#f97316",
-  "#8b5cf6",
-  "#64748b",
-];
+import { colorForArchetype } from "@/lib/deck-archetype-colors";
 
 export type TrendDataPoint = {
   periodStart: string;
@@ -35,7 +23,6 @@ export type TrendDataPoint = {
   sharePct: number;
 };
 
-/* ── Custom Tooltip ── */
 function CustomTrendTooltip({
   active,
   payload,
@@ -61,43 +48,30 @@ function CustomTrendTooltip({
 
   const borderColor =
     highlightedDeck && items.length === 1
-      ? deckColorMap.get(highlightedDeck) ?? "#2a2d48"
-      : "#2a2d48";
+      ? deckColorMap.get(highlightedDeck) ?? "var(--border-subtle)"
+      : "var(--border-subtle)";
 
   return (
     <div
-      style={{
-        background: "#232640",
-        borderRadius: 8,
-        border: `0.5px solid ${borderColor}`,
-        boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
-        padding: "8px 10px",
-        fontSize: 12,
-        color: "#e8e8ec",
-        minWidth: 100,
-      }}
+      className="bg-surface-2 rounded-lg shadow-lg px-2.5 py-2 text-xs text-foreground min-w-[100px]"
+      style={{ border: `0.5px solid ${borderColor}` }}
     >
       {items.map((entry: any) => {
-        const color = deckColorMap.get(entry.dataKey) ?? "#aaa";
+        const color = deckColorMap.get(entry.dataKey) ?? "var(--muted-foreground)";
         const battleCount = entry.payload?.[`__bc_${entry.dataKey}`];
         return (
-          <div key={entry.dataKey} style={{ marginBottom: items.length > 1 ? 4 : 0 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+          <div key={entry.dataKey} className={items.length > 1 ? "mb-1" : ""}>
+            <div className="flex items-center gap-1.5">
               <div
-                style={{
-                  width: 7,
-                  height: 7,
-                  borderRadius: 2,
-                  backgroundColor: color,
-                  flexShrink: 0,
-                }}
+                className="w-[7px] h-[7px] rounded-sm shrink-0"
+                style={{ backgroundColor: color }}
               />
-              <span style={{ fontWeight: 500 }}>{displayDeckName(entry.dataKey, opponentDeckNameMap)}</span>
+              <span className="font-medium">{displayDeckName(entry.dataKey, opponentDeckNameMap)}</span>
             </div>
-            <div style={{ color: "#aaaacc", marginLeft: 12, marginTop: 1 }}>
+            <div className="text-muted-foreground ml-3 mt-0.5">
               {label} &nbsp;{entry.value}%
               {battleCount != null && (
-                <span style={{ marginLeft: 4 }}>（{battleCount}件）</span>
+                <span className="ml-1">({battleCount}件)</span>
               )}
             </div>
           </div>
@@ -107,7 +81,6 @@ function CustomTrendTooltip({
   );
 }
 
-/* ── Main Component ── */
 export function TrendChart({ data, opponentDeckNameMap }: { data: TrendDataPoint[]; opponentDeckNameMap?: OpponentDeckNameMap }) {
   const [highlightedDeck, setHighlightedDeck] = useState<string | null>(null);
 
@@ -119,7 +92,6 @@ export function TrendChart({ data, opponentDeckNameMap }: { data: TrendDataPoint
     );
   }
 
-  // Get top N decks by total battle count
   const deckTotals = new Map<string, number>();
   for (const d of data) {
     deckTotals.set(d.deckName, (deckTotals.get(d.deckName) ?? 0) + d.battleCount);
@@ -129,13 +101,11 @@ export function TrendChart({ data, opponentDeckNameMap }: { data: TrendDataPoint
     .slice(0, 8)
     .map(([name]) => name);
 
-  // Build color map
   const deckColorMap = new Map<string, string>();
-  topDecks.forEach((deck, i) => {
-    deckColorMap.set(deck, COLORS[i % COLORS.length]);
+  topDecks.forEach((deck) => {
+    deckColorMap.set(deck, colorForArchetype(deck));
   });
 
-  // Transform data: { date, deck1: pct, deck2: pct, __bc_deck1: count, ... }
   const dateMap = new Map<string, Record<string, number>>();
   for (const d of data) {
     if (!topDecks.includes(d.deckName)) continue;
@@ -150,11 +120,10 @@ export function TrendChart({ data, opponentDeckNameMap }: { data: TrendDataPoint
   const chartData = Array.from(dateMap.entries())
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([date, decks]) => ({
-      date: date.slice(5), // MM-DD
+      date: date.slice(5),
       ...decks,
     }));
 
-  // Latest period sharePct for legend display
   const latestPeriod = chartData[chartData.length - 1];
 
   const handleLegendClick = (deck: string) => {
@@ -167,32 +136,28 @@ export function TrendChart({ data, opponentDeckNameMap }: { data: TrendDataPoint
 
   return (
     <div onClick={() => setHighlightedDeck(null)}>
-      {/* Title */}
-      <div style={{ fontSize: 15, fontWeight: 500, color: "#e8e8ec", marginBottom: 8 }}>
+      <div className="text-[15px] font-medium text-foreground mb-2">
         対面デッキ使用率
       </div>
 
-      {/* Chart card */}
       <div
-        style={{
-          background: "#1e2138",
-          borderRadius: 10,
-          border: "0.5px solid #2a2d48",
-          padding: "16px 8px 12px",
-        }}
+        className="bg-surface-2 rounded-[10px] border border-border-subtle"
+        style={{ padding: "16px 8px 12px" }}
+        role="img"
+        aria-label={`対面デッキ使用率推移: 上位${topDecks.length}デッキの折れ線`}
       >
         <div style={{ height: 280 }}>
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData}>
-              <CartesianGrid stroke="#2a2d48" strokeWidth={0.5} />
+              <CartesianGrid stroke="var(--border-subtle)" strokeWidth={0.5} />
               <XAxis
                 dataKey="date"
-                tick={{ fontSize: 11, fill: "#94a3b8" }}
+                tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
                 tickLine={false}
               />
               <YAxis
                 width={40}
-                tick={{ fontSize: 11, fill: "#94a3b8" }}
+                tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
                 tickLine={false}
                 unit="%"
               />
@@ -206,8 +171,8 @@ export function TrendChart({ data, opponentDeckNameMap }: { data: TrendDataPoint
                   />
                 }
               />
-              {topDecks.map((deck, i) => {
-                const color = COLORS[i % COLORS.length];
+              {topDecks.map((deck) => {
+                const color = colorForArchetype(deck);
                 const isHighlighted = highlightedDeck === deck;
                 const hasHighlight = highlightedDeck !== null;
 
@@ -248,20 +213,9 @@ export function TrendChart({ data, opponentDeckNameMap }: { data: TrendDataPoint
         </div>
       </div>
 
-      {/* Custom Legend */}
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          justifyContent: "center",
-          gap: "4px 12px",
-          fontSize: 11,
-          lineHeight: 1.8,
-          marginTop: 10,
-        }}
-      >
-        {topDecks.map((deck, i) => {
-          const color = COLORS[i % COLORS.length];
+      <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 text-[11px] mt-2.5" style={{ lineHeight: 1.8 }}>
+        {topDecks.map((deck) => {
+          const color = colorForArchetype(deck);
           const isHighlighted = highlightedDeck === deck;
           const hasHighlight = highlightedDeck !== null;
           const latestPct = (latestPeriod as any)?.[deck];
@@ -273,32 +227,22 @@ export function TrendChart({ data, opponentDeckNameMap }: { data: TrendDataPoint
                 e.stopPropagation();
                 handleLegendClick(deck);
               }}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 4,
-                cursor: "pointer",
-                transition: "color 0.2s ease, opacity 0.2s ease",
-                color: hasHighlight
-                  ? isHighlighted ? "#e8e8ec" : "#aaaacc"
-                  : "#aaaacc",
-                fontWeight: isHighlighted ? 500 : 400,
-              }}
+              className={`flex items-center gap-1 cursor-pointer transition-colors ${
+                hasHighlight
+                  ? isHighlighted ? "text-foreground font-medium" : "text-muted-foreground"
+                  : "text-muted-foreground"
+              }`}
             >
               <div
+                className="w-[7px] h-[7px] rounded-sm shrink-0 transition-opacity"
                 style={{
-                  width: 7,
-                  height: 7,
-                  borderRadius: 2,
                   backgroundColor: color,
-                  flexShrink: 0,
-                  transition: "opacity 0.2s ease",
                   opacity: hasHighlight && !isHighlighted ? 0.4 : 1,
                 }}
               />
               <span>{displayDeckName(deck, opponentDeckNameMap)}</span>
               {latestPct != null && (
-                <span style={{ fontWeight: 500 }}>{latestPct}%</span>
+                <span className="font-medium">{latestPct}%</span>
               )}
             </div>
           );

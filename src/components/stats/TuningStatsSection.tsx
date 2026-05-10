@@ -28,29 +28,28 @@ export function TuningStatsSection({ tuningStats, viewMode, game, opponentDeckNa
         const color = getWinRateColor(t.winRate);
         const expanded = expandedTuning === key;
         return (
-          <div key={key} style={{ backgroundColor: "#232640", borderRadius: 10 }} className="overflow-hidden">
+          <div key={key} className="overflow-hidden rounded-[10px] bg-surface-2">
             <button
               onClick={() => setExpandedTuning(expanded ? null : key)}
+              aria-expanded={expanded}
               className="w-full px-4 py-3 hover:opacity-80 transition-opacity"
             >
-              {/* 1行目 */}
               <div className="flex items-center gap-2">
-                <span style={{ fontSize: 15, fontWeight: 500 }}>{t.tuningName}</span>
+                <span className="text-[15px] font-medium">{t.tuningName}</span>
                 <BattleCountBadge count={t.total} />
               </div>
-              {/* 2行目 */}
               <div className="flex items-center gap-2 mt-1.5">
-                <div className="h-1 rounded-sm overflow-hidden" style={{ maxWidth: 120, flex: 1, backgroundColor: "rgba(255,255,255,0.1)" }}>
+                <div className="h-1 rounded-sm overflow-hidden bg-foreground/10" style={{ maxWidth: 120, flex: 1 }}>
                   <div className="h-full rounded-sm" style={{ width: `${ratePct}%`, backgroundColor: color }} />
                 </div>
-                <span style={{ fontSize: 14, fontWeight: 500, color }}>{t.winRate === null ? "--" : t.winRate}%</span>
-                <span style={{ fontSize: 10, color: "#8888aa" }}>{formatWLTJa(t.wins, t.losses, t.draws, game)}</span>
+                <span className="text-sm font-medium" style={{ color }}>{t.winRate === null ? "--" : t.winRate}%</span>
+                <span className="text-[10px] text-muted-foreground">{formatWLTJa(t.wins, t.losses, t.draws, game)}</span>
                 <span className="ml-auto">{expanded ? "▴" : "▾"}</span>
               </div>
             </button>
 
             {expanded && (
-              <div style={{ backgroundColor: "#1b1e35", borderTop: "0.5px solid #2a2d48" }} className="px-4 py-2 space-y-3">
+              <div className="bg-surface-1 border-t border-border-subtle px-4 py-2 space-y-3">
                 {viewMode === "table" ? (
                   <MatchupTable
                     rows={t.opponents.map((opp) => ({ ...opp, name: opp.opponentName, namePrefix: "vs " }))}
