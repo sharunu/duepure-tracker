@@ -112,11 +112,9 @@ export async function syncXAccountFromAuth(): Promise<boolean> {
   const { data: ok, error } = await supabase.rpc("sync_my_x_connection");
 
   if (error) {
-    console.log("[syncX] rpc error:", error);
     return false;
   }
 
-  console.log("[syncX] result:", ok);
   return ok ?? false;
 }
 
