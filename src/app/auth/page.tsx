@@ -5,6 +5,22 @@ export const dynamic = "force-dynamic";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { DEFAULT_GAME, isGameSlug, type GameSlug } from "@/lib/games";
+
+function getRedirectGame(): GameSlug {
+  if (typeof window === "undefined") return DEFAULT_GAME;
+
+  try {
+    const stored = window.localStorage.getItem("selectedGame");
+    if (isGameSlug(stored)) return stored;
+  } catch {
+    // ignore (private mode / quota exceeded)
+  }
+
+  const match = document.cookie.match(/(?:^|; )selectedGame=([^;]+)/);
+  const cookieGame = match?.[1] ?? null;
+  return isGameSlug(cookieGame) ? cookieGame : DEFAULT_GAME;
+}
 
 export default function AuthPage() {
   const [email, setEmail] = useState("");
@@ -25,7 +41,7 @@ export default function AuthPage() {
             await supabase.auth.signOut();
             return;
           }
-          window.location.href = "/battle";
+          window.location.href = `/${getRedirectGame()}/battle`;
         }
       }
     );
@@ -50,7 +66,7 @@ export default function AuthPage() {
     if (error) {
       setMessage("ログインに失敗しました。メールアドレスまたはパスワードを確認してください。");
     } else {
-      window.location.href = "/battle";
+      window.location.href = `/${getRedirectGame()}/battle`;
     }
   };
 
@@ -75,7 +91,7 @@ export default function AuthPage() {
     } else if (data.user?.identities?.length === 0) {
       setMessage("このメールアドレスは既に登録されています");
     } else {
-      window.location.href = "/battle";
+      window.location.href = `/${getRedirectGame()}/battle`;
     }
   };
 

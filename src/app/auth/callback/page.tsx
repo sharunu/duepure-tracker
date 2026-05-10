@@ -3,6 +3,22 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { syncXAccountFromAuth } from "@/lib/actions/account-actions";
+import { DEFAULT_GAME, isGameSlug, type GameSlug } from "@/lib/games";
+
+function getRedirectGame(): GameSlug {
+  if (typeof window === "undefined") return DEFAULT_GAME;
+
+  try {
+    const stored = window.localStorage.getItem("selectedGame");
+    if (isGameSlug(stored)) return stored;
+  } catch {
+    // ignore (private mode / quota exceeded)
+  }
+
+  const match = document.cookie.match(/(?:^|; )selectedGame=([^;]+)/);
+  const cookieGame = match?.[1] ?? null;
+  return isGameSlug(cookieGame) ? cookieGame : DEFAULT_GAME;
+}
 
 export default function AuthCallbackPage() {
   const [error, setError] = useState("");
@@ -30,16 +46,13 @@ export default function AuthCallbackPage() {
 
         // サーバーから最新のユーザー情報を取得
         const { data: { user } } = await supabase.auth.getUser();
-        console.log("[X link] identities:", user?.identities?.map(i => i.provider));
 
         if (user) {
           const tw = user.identities?.find((i: { provider: string }) => i.provider === "twitter");
           if (tw) {
-            console.log("[X link] syncing via sync_my_x_connection");
             // RPC 側で auth.identities から読み取り、クライアント入力値を信用しない
             await supabase.rpc("sync_my_x_connection");
           } else {
-            console.log("[X link] no twitter identity found");
             localStorage.removeItem('x_link_pending');
             window.location.href = "/account?x_link_error=conflict";
             return;
@@ -72,7 +85,7 @@ export default function AuthCallbackPage() {
             return;
           }
           await syncXAccountFromAuth();
-          window.location.href = "/battle";
+          window.location.href = `/${getRedirectGame()}/battle`;
         }
         if (event === "PASSWORD_RECOVERY" && session) {
           window.location.href = "/account";
@@ -84,7 +97,7 @@ export default function AuthCallbackPage() {
     const timeout = setTimeout(async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        window.location.href = "/battle";
+        window.location.href = `/${getRedirectGame()}/battle`;
       } else {
         setError("ログインに失敗しました。もう一度お試しください。");
       }
