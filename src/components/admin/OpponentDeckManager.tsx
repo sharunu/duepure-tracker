@@ -664,7 +664,7 @@ export function OpponentDeckManager({
         {(["major", "minor", "other"] as const).map((cat) => (
           <button key={cat} type="button" onClick={() => setNewCategory(cat)}
             className={`rounded-[6px] px-3 py-2 text-[13px] transition-colors ${
-              newCategory === cat ? "bg-primary text-white" : "bg-surface-2 text-muted-foreground border border-border"
+              newCategory === cat ? "bg-primary text-primary-foreground" : "bg-surface-2 text-muted-foreground border border-border"
             }`}
           >{cat}</button>
         ))}
@@ -676,7 +676,7 @@ export function OpponentDeckManager({
           className="flex-1 bg-surface-1 rounded-[6px] px-3 py-2 text-[14px] placeholder:text-muted-foreground focus:outline-none"
         />
         <button onClick={handleAdd} disabled={loading || !newName.trim()}
-          className="bg-primary text-white rounded-[6px] px-4 py-2 text-[13px] font-medium hover:opacity-90 disabled:opacity-50"
+          className="bg-primary text-primary-foreground rounded-[6px] px-4 py-2 text-[13px] font-medium hover:opacity-90 disabled:opacity-50"
         >追加</button>
       </div>
     </div>
@@ -735,7 +735,7 @@ export function OpponentDeckManager({
       {showHelp && (
         <div className="bg-surface-1 rounded-[10px] px-4 py-4 text-[12px] text-muted-foreground space-y-3">
           <div>
-            <p className="text-gray-300 font-medium mb-1">■ 共通</p>
+            <p className="text-foreground font-medium mb-1">■ 共通</p>
             <ul className="space-y-0.5 list-disc list-inside">
               <li>すべての変更は「変更内容反映」ボタンを押すまでDBに反映されません</li>
               <li>「変更内容反映」を押さずにページを離れると、変更は破棄されます</li>
@@ -743,14 +743,14 @@ export function OpponentDeckManager({
             </ul>
           </div>
           <div>
-            <p className="text-gray-300 font-medium mb-1">■ 完全管理者依存</p>
+            <p className="text-foreground font-medium mb-1">■ 完全管理者依存</p>
             <ul className="space-y-0.5 list-disc list-inside">
               <li>カテゴリ(major/minor/other)と並び順は手動で管理します</li>
               <li>対戦記録で未登録デッキが使われた場合、無効状態で自動追加されます</li>
             </ul>
           </div>
           <div>
-            <p className="text-gray-300 font-medium mb-1">■ ユーザー入力依存</p>
+            <p className="text-foreground font-medium mb-1">■ ユーザー入力依存</p>
             <ul className="space-y-0.5 list-disc list-inside">
               <li>カテゴリと並び順は使用率に基づいて自動計算されます</li>
               <li>「試し計算」で設定値での計算結果をプレビューできます</li>
@@ -765,8 +765,8 @@ export function OpponentDeckManager({
       {mode === "limitless" ? (
         <>
           <div className="bg-surface-1 rounded-[10px] px-4 py-3 text-[12px] text-muted-foreground leading-relaxed">
-            LimitlessTCG の公式大会 <span className="text-gray-200">standard</span> データを既存キャッシュとして表示し、
-            ポケポケの <span className="text-gray-200">RANKED / RANDOM</span> 両フォーマットに流用しています。
+            LimitlessTCG の公式大会 <span className="text-foreground">standard</span> データを既存キャッシュとして表示し、
+            ポケポケの <span className="text-foreground">RANKED / RANDOM</span> 両フォーマットに流用しています。
             APIキー受領まで新規取得は停止中です。
             自分自身の戦績（battles）の使用率は反映されません。
           </div>
@@ -776,7 +776,7 @@ export function OpponentDeckManager({
             <div className="flex items-center justify-between">
               <div className="text-[12px] text-muted-foreground">
                 最終取得:{" "}
-                <span className="text-gray-200">
+                <span className="text-foreground">
                   {savedSettingsRef.current?.limitless_last_synced_at
                     ? new Date(savedSettingsRef.current.limitless_last_synced_at).toLocaleString("ja-JP")
                     : "未取得"}
@@ -790,12 +790,12 @@ export function OpponentDeckManager({
               <button
                 onClick={handleLimitlessSync}
                 disabled={LIMITLESS_SYNC_PAUSED || limitlessSyncing || applying}
-                className="bg-primary text-white rounded-[6px] px-4 py-2 text-[13px] font-medium hover:opacity-90 disabled:opacity-50 min-h-[40px]"
+                className="bg-primary text-primary-foreground rounded-[6px] px-4 py-2 text-[13px] font-medium hover:opacity-90 disabled:opacity-50 min-h-[40px]"
               >
                 {LIMITLESS_SYNC_PAUSED ? "取得停止中" : limitlessSyncing ? "取得中..." : "今すぐ取得"}
               </button>
             </div>
-            <p className="text-[11px] text-amber-300/80">{LIMITLESS_SYNC_PAUSED_MESSAGE}</p>
+            <p className="text-[11px] text-warning">{LIMITLESS_SYNC_PAUSED_MESSAGE}</p>
             {limitlessMessage && (
               <p className="text-[11px] text-muted-foreground">{limitlessMessage}</p>
             )}
@@ -842,14 +842,14 @@ export function OpponentDeckManager({
                   <label className="text-[12px] text-muted-foreground block mb-1">major 閾値 (%)</label>
                   <input type="text" inputMode="decimal" value={majorThresholdStr}
                     onChange={(e) => { setMajorThresholdStr(e.target.value); setDirty(true); }}
-                    className="w-full bg-surface-1 rounded-[6px] px-3 py-2 text-[14px] focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    className="w-full bg-surface-1 rounded-[6px] px-3 py-2 text-[14px] focus:outline-none focus:ring-1 focus:ring-primary"
                   />
                 </div>
                 <div>
                   <label className="text-[12px] text-muted-foreground block mb-1">minor 閾値 (%)</label>
                   <input type="text" inputMode="decimal" value={minorThresholdStr}
                     onChange={(e) => { setMinorThresholdStr(e.target.value); setDirty(true); }}
-                    className="w-full bg-surface-1 rounded-[6px] px-3 py-2 text-[14px] focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    className="w-full bg-surface-1 rounded-[6px] px-3 py-2 text-[14px] focus:outline-none focus:ring-1 focus:ring-primary"
                   />
                 </div>
               </div>
@@ -859,14 +859,14 @@ export function OpponentDeckManager({
                   <label className="text-[12px] text-muted-foreground block mb-1">major デッキ数</label>
                   <input type="text" inputMode="numeric" value={majorFixedCountStr}
                     onChange={(e) => { setMajorFixedCountStr(e.target.value); setDirty(true); }}
-                    className="w-full bg-surface-1 rounded-[6px] px-3 py-2 text-[14px] focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    className="w-full bg-surface-1 rounded-[6px] px-3 py-2 text-[14px] focus:outline-none focus:ring-1 focus:ring-primary"
                   />
                 </div>
                 <div>
                   <label className="text-[12px] text-muted-foreground block mb-1">minor デッキ数</label>
                   <input type="text" inputMode="numeric" value={minorFixedCountStr}
                     onChange={(e) => { setMinorFixedCountStr(e.target.value); setDirty(true); }}
-                    className="w-full bg-surface-1 rounded-[6px] px-3 py-2 text-[14px] focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    className="w-full bg-surface-1 rounded-[6px] px-3 py-2 text-[14px] focus:outline-none focus:ring-1 focus:ring-primary"
                   />
                 </div>
               </div>
@@ -903,7 +903,7 @@ export function OpponentDeckManager({
                             <div className="text-[11px] text-muted-foreground">{deck.name_en}</div>
                           )}
                           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-muted-foreground">
-                            <span>share: <span className="text-gray-200">{deck.limitless_share?.toFixed(2) ?? "-"}%</span></span>
+                            <span>share: <span className="text-foreground">{deck.limitless_share?.toFixed(2) ?? "-"}%</span></span>
                             <span>count: {deck.limitless_count ?? "-"}</span>
                             <span>
                               勝敗: {deck.limitless_wins ?? "-"}-{deck.limitless_losses ?? "-"}-{deck.limitless_ties ?? "-"}
@@ -920,7 +920,7 @@ export function OpponentDeckManager({
                                 setNameJaEditing({ ...nameJaEditing, [deck.id]: e.target.value })
                               }
                               onBlur={() => handleNameJaBlur(deck.id, deck.name_ja)}
-                              className="flex-1 bg-surface-1 rounded px-2 py-1 text-[12px] focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                              className="flex-1 bg-surface-1 rounded px-2 py-1 text-[12px] focus:outline-none focus:ring-1 focus:ring-primary"
                             />
                           </div>
                         </li>
@@ -949,35 +949,35 @@ export function OpponentDeckManager({
                 <label className="text-[12px] text-muted-foreground block mb-1">major閾値 (%)</label>
                 <input type="text" inputMode="decimal" value={majorThresholdStr}
                   onChange={(e) => { setMajorThresholdStr(e.target.value); setDirty(true); }}
-                  className="w-full bg-surface-1 rounded-[6px] px-3 py-2 text-[14px] focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full bg-surface-1 rounded-[6px] px-3 py-2 text-[14px] focus:outline-none focus:ring-1 focus:ring-primary"
                 />
               </div>
               <div>
                 <label className="text-[12px] text-muted-foreground block mb-1">minor閾値 (%)</label>
                 <input type="text" inputMode="decimal" value={minorThresholdStr}
                   onChange={(e) => { setMinorThresholdStr(e.target.value); setDirty(true); }}
-                  className="w-full bg-surface-1 rounded-[6px] px-3 py-2 text-[14px] focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full bg-surface-1 rounded-[6px] px-3 py-2 text-[14px] focus:outline-none focus:ring-1 focus:ring-primary"
                 />
               </div>
               <div>
                 <label className="text-[12px] text-muted-foreground block mb-1">算出期間 (日)</label>
                 <input type="text" inputMode="numeric" value={usagePeriodStr}
                   onChange={(e) => { setUsagePeriodStr(e.target.value); setDirty(true); }}
-                  className="w-full bg-surface-1 rounded-[6px] px-3 py-2 text-[14px] focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full bg-surface-1 rounded-[6px] px-3 py-2 text-[14px] focus:outline-none focus:ring-1 focus:ring-primary"
                 />
               </div>
               <div>
                 <label className="text-[12px] text-muted-foreground block mb-1">無効化期間 (日)</label>
                 <input type="text" inputMode="numeric" value={disablePeriodStr}
                   onChange={(e) => { setDisablePeriodStr(e.target.value); setDirty(true); }}
-                  className="w-full bg-surface-1 rounded-[6px] px-3 py-2 text-[14px] focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full bg-surface-1 rounded-[6px] px-3 py-2 text-[14px] focus:outline-none focus:ring-1 focus:ring-primary"
                 />
               </div>
             </div>
             <button
               onClick={handleTrialCalc}
               disabled={trialCalcing || applying}
-              className="w-full bg-primary text-white rounded-[6px] px-4 py-2 text-[13px] font-medium hover:opacity-90 disabled:opacity-50 min-h-[44px]"
+              className="w-full bg-primary text-primary-foreground rounded-[6px] px-4 py-2 text-[13px] font-medium hover:opacity-90 disabled:opacity-50 min-h-[44px]"
             >
               {trialCalcing ? "計算中..." : "試し計算"}
             </button>
@@ -1029,14 +1029,14 @@ export function OpponentDeckManager({
                               onChange={(e) => handleBonusChange(deck.id, e.target.value)}
                               onBlur={() => handleBonusSubmit(deck.id)}
                               onKeyDown={(e) => e.key === "Enter" && handleBonusSubmit(deck.id)}
-                              className="w-[60px] bg-surface-1 rounded px-2 py-1 text-[12px] text-center focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                              className="w-[60px] bg-surface-1 rounded px-2 py-1 text-[12px] text-center focus:outline-none focus:ring-1 focus:ring-primary"
                             />
                           </span>
                           <span>率: {deck.usage_rate.toFixed(1)}%</span>
                           <span className={`px-1.5 py-0.5 rounded text-[11px] ${
-                            deck.category === "major" ? "bg-indigo-900/50 text-indigo-300"
-                              : deck.category === "minor" ? "bg-gray-700/50 text-gray-300"
-                              : "bg-gray-800/50 text-muted-foreground"
+                            deck.category === "major" ? "bg-primary/20 text-primary-soft"
+                              : deck.category === "minor" ? "bg-surface-3 text-foreground"
+                              : "bg-surface-2 text-muted-foreground"
                           }`}>{deck.category}</span>
                         </div>
                       </>
