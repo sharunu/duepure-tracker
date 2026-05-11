@@ -337,8 +337,9 @@ export default function AccountPage() {
                     className="w-full bg-surface-2 text-foreground rounded-[6px] px-4 py-2.5 text-[13px] font-medium hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
                     style={{ border: "0.5px solid var(--border-subtle)" }}
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="white">
-                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                    <svg width="14" height="14" viewBox="0 0 24 24">
+                      <rect width="24" height="24" rx="4" fill="black"/>
+                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" fill="white"/>
                     </svg>
                     Xアカウントを連携
                   </button>
