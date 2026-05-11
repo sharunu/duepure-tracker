@@ -157,7 +157,7 @@ function BattlePageInner() {
 
   const content = useMemo(() => {
     if (error) {
-      return <p className="text-center text-red-400 py-12 text-sm">{error}</p>;
+      return <p className="text-center text-destructive py-12 text-sm">{error}</p>;
     }
     if (!ready2) {
       return (

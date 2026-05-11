@@ -5,10 +5,10 @@ import { createClient } from "@/lib/supabase/client";
 import { updateUserStage } from "@/lib/actions/admin-actions";
 
 const stageLabels: Record<number, { label: string; color: string }> = {
-  1: { label: "優良", color: "bg-yellow-600/20 text-yellow-400" },
-  2: { label: "一般", color: "bg-gray-600/20 text-gray-400" },
-  3: { label: "要注意", color: "bg-orange-600/20 text-orange-400" },
-  4: { label: "BAN", color: "bg-red-600/20 text-red-400" },
+  1: { label: "優良", color: "bg-success/20 text-success" },
+  2: { label: "一般", color: "bg-muted/40 text-muted-foreground" },
+  3: { label: "要注意", color: "bg-warning/20 text-warning" },
+  4: { label: "BAN", color: "bg-destructive/20 text-destructive" },
 };
 
 export function AdminUserStageControl({ userId }: { userId: string }) {
@@ -55,7 +55,7 @@ export function AdminUserStageControl({ userId }: { userId: string }) {
   return (
     <div className="bg-surface-2 rounded-[10px] px-4 py-3 mb-4">
       <div className="flex items-center justify-between mb-3">
-        <span className="text-[12px] text-gray-500">ステージ</span>
+        <span className="text-[12px] text-muted-foreground">ステージ</span>
         <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${info.color}`}>
           {info.label}
         </span>
@@ -87,7 +87,7 @@ export function AdminUserStageControl({ userId }: { userId: string }) {
           変更
         </button>
         {message && (
-          <p className={`text-[11px] ${message.includes("失敗") ? "text-red-400" : "text-green-400"}`}>{message}</p>
+          <p className={`text-[11px] ${message.includes("失敗") ? "text-destructive" : "text-success"}`}>{message}</p>
         )}
       </div>
     </div>

@@ -357,7 +357,7 @@ function HomePageInner() {
         <GameSelector currentGame="dm" size="large" />
 
         {discordStatus === "connected" && (
-          <div className="rounded-lg bg-green-500/10 border border-green-500/30 px-4 py-3 text-sm text-green-400">
+          <div className="rounded-lg bg-success/10 border border-success/30 px-4 py-3 text-sm text-success">
             Discordとの連携が完了しました
           </div>
         )}

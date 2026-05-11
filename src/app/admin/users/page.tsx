@@ -159,20 +159,20 @@ export default function AdminUsersPage() {
                     )}
                   </div>
                   <div className="flex items-center gap-3 mt-1">
-                    <span className="text-[11px] text-gray-500">{dateStr} 登録</span>
-                    <span className="text-[11px] text-gray-500">{u.battle_count}戦</span>
-                    <span className="text-[10px] text-gray-600">{providerLabel(u.auth_provider)}</span>
+                    <span className="text-[11px] text-muted-foreground">{dateStr} 登録</span>
+                    <span className="text-[11px] text-muted-foreground">{u.battle_count}戦</span>
+                    <span className="text-[10px] text-muted-foreground">{providerLabel(u.auth_provider)}</span>
                   </div>
                   {u.x_username && (
                     <div className="flex items-center gap-1.5 mt-1">
                       <span className="text-[11px] text-[#1d9bf0]"
                         onClick={(e) => { e.stopPropagation(); window.open(`https://x.com/${u.x_username}`, '_blank'); }}
                       >@{u.x_username}</span>
-                      {u.x_user_id && <span className="text-[10px] text-gray-600">(ID: {u.x_user_id})</span>}
+                      {u.x_user_id && <span className="text-[10px] text-muted-foreground">(ID: {u.x_user_id})</span>}
                     </div>
                   )}
                 </div>
-                <span className="text-gray-500 text-[18px] shrink-0">&rsaquo;</span>
+                <span className="text-muted-foreground text-[18px] shrink-0">&rsaquo;</span>
               </button>
             );
           })}

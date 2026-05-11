@@ -144,7 +144,7 @@ export function AdminUserQualityScore({ userId }: { userId: string }) {
           <p className="text-[14px] font-medium">品質スコア</p>
           {snapshot && (
             <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${
-              isQuality ? "bg-yellow-600/20 text-yellow-400" : "bg-gray-600/20 text-gray-400"
+              isQuality ? "bg-success/20 text-success" : "bg-muted/40 text-muted-foreground"
             }`}>
               {isQuality ? "優良" : "一般"}
             </span>
@@ -155,28 +155,28 @@ export function AdminUserQualityScore({ userId }: { userId: string }) {
           <>
             <div className="flex items-baseline gap-2 mb-3">
               <span className="text-[28px] font-bold">{snapshot.total_score}</span>
-              <span className="text-[13px] text-gray-500">/ {threshold}点</span>
+              <span className="text-[13px] text-muted-foreground">/ {threshold}点</span>
             </div>
 
             {/* 内訳 */}
             <div className="bg-surface-1 rounded-[6px] px-3 py-2 mb-3">
-              <p className="text-[11px] text-gray-500 mb-1.5">スコア内訳</p>
+              <p className="text-[11px] text-muted-foreground mb-1.5">スコア内訳</p>
               {Object.entries(snapshot.breakdown).map(([key, value]) => (
                 <div key={key} className="flex justify-between text-[12px] py-0.5">
-                  <span className="text-gray-400">{ruleDisplayNames[key] || key}</span>
-                  <span className={value >= 0 ? "text-green-400" : "text-red-400"}>
+                  <span className="text-muted-foreground">{ruleDisplayNames[key] || key}</span>
+                  <span className={value >= 0 ? "text-success" : "text-destructive"}>
                     {value >= 0 ? "+" : ""}{value}
                   </span>
                 </div>
               ))}
             </div>
 
-            <p className="text-[10px] text-gray-600">
+            <p className="text-[10px] text-muted-foreground">
               {"最終計算: " + new Date(snapshot.calculated_at).toLocaleString("ja-JP")}
             </p>
           </>
         ) : (
-          <p className="text-[12px] text-gray-500">スコア未計算</p>
+          <p className="text-[12px] text-muted-foreground">スコア未計算</p>
         )}
 
         <button
@@ -191,11 +191,11 @@ export function AdminUserQualityScore({ userId }: { userId: string }) {
       {/* 管理者ボーナス */}
       <div className="bg-surface-2 rounded-[10px] px-4 py-4">
         <p className="text-[14px] font-medium mb-1">管理者ボーナス</p>
-        <p className="text-[11px] text-gray-500 mb-3">{bonusLabel}</p>
+        <p className="text-[11px] text-muted-foreground mb-3">{bonusLabel}</p>
 
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-[12px] text-gray-400">ボーナス値</label>
+            <label className="text-[12px] text-muted-foreground">ボーナス値</label>
             <div className="flex items-center gap-1">
               <input
                 type="number"
@@ -207,7 +207,7 @@ export function AdminUserQualityScore({ userId }: { userId: string }) {
                 className="w-20 bg-surface-1 rounded-[6px] px-2 py-1.5 text-[13px] text-right focus:outline-none"
                 style={{ border: "0.5px solid var(--border)" }}
               />
-              <span className="text-[11px] text-gray-500">点</span>
+              <span className="text-[11px] text-muted-foreground">点</span>
             </div>
           </div>
           <textarea
@@ -239,7 +239,7 @@ export function AdminUserQualityScore({ userId }: { userId: string }) {
         </div>
 
         {message && (
-          <p className={`text-[11px] mt-2 ${message.includes("失敗") ? "text-red-400" : "text-green-400"}`}>{message}</p>
+          <p className={`text-[11px] mt-2 ${message.includes("失敗") ? "text-destructive" : "text-success"}`}>{message}</p>
         )}
       </div>
     </div>

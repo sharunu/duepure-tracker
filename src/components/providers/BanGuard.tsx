@@ -51,8 +51,8 @@ export function BanGuard({ children }: { children: React.ReactNode }) {
           <div className="w-16 h-16 rounded-full bg-destructive/20 flex items-center justify-center mx-auto">
             <Ban size={32} className="text-destructive" />
           </div>
-          <h1 className="text-[18px] font-medium text-white">アカウントが停止されています</h1>
-          <p className="text-[13px] text-gray-400">
+          <h1 className="text-[18px] font-medium text-foreground">アカウントが停止されています</h1>
+          <p className="text-[13px] text-muted-foreground">
             このアカウントは利用規約に違反したため停止されました。
           </p>
           <button

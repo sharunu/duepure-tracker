@@ -217,7 +217,7 @@ export function ShareModal({ type, data, onClose }: Props) {
         {/* ヘッダー */}
         <div className="flex items-center justify-between px-5 py-4">
           <h2 className="text-[16px] font-medium">戦績をシェア</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-300">
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
             <X size={20} />
           </button>
         </div>
@@ -230,7 +230,7 @@ export function ShareModal({ type, data, onClose }: Props) {
             </div>
           ) : error ? (
             <div className="text-center py-8">
-              <p className="text-[13px] text-gray-400">画像の生成に失敗しました</p>
+              <p className="text-[13px] text-muted-foreground">画像の生成に失敗しました</p>
             </div>
           ) : imageUrl ? (
             <div className="rounded-lg overflow-hidden">
@@ -250,8 +250,8 @@ export function ShareModal({ type, data, onClose }: Props) {
             style={{ backgroundColor: "color-mix(in srgb, var(--destructive) 10%, transparent)", border: "0.5px solid color-mix(in srgb, var(--destructive) 40%, transparent)" }}
           >
             <div className="flex items-start gap-2 mb-3">
-              <AlertCircle size={16} className="text-red-400 mt-0.5 shrink-0" />
-              <p className="text-[13px] text-red-300">
+              <AlertCircle size={16} className="text-destructive mt-0.5 shrink-0" />
+              <p className="text-[13px] text-destructive">
                 画像のアップロードに失敗しました。再試行するか、画像なしで投稿できます。
               </p>
             </div>
@@ -274,7 +274,7 @@ export function ShareModal({ type, data, onClose }: Props) {
               <button
                 onClick={handleCancelUploadError}
                 disabled={posting || uploadRetrying}
-                className="flex-1 bg-transparent text-gray-400 rounded-[8px] px-3 py-2 text-[12px] font-medium hover:text-gray-200 disabled:opacity-50"
+                className="flex-1 bg-transparent text-muted-foreground rounded-[8px] px-3 py-2 text-[12px] font-medium hover:text-foreground disabled:opacity-50"
               >
                 キャンセル
               </button>

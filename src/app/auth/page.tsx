@@ -128,10 +128,10 @@ export default function AuthPage() {
     <div className="min-h-screen flex items-center justify-center px-4">
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center">
-          <h1 className="text-[24px] font-bold text-white">
+          <h1 className="text-[24px] font-bold text-foreground">
             ゲーム戦績トラッカー
           </h1>
-          <p className="text-[13px] text-gray-400 mt-2">
+          <p className="text-[13px] text-muted-foreground mt-2">
             対戦記録・環境分析ツール
           </p>
         </div>
@@ -144,7 +144,7 @@ export default function AuthPage() {
                 className="w-full rounded-[10px] bg-surface-2 px-4 py-3 text-[14px] font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-3 relative"
                 style={{ border: "0.5px solid var(--border-subtle)" }}
               >
-                <span className="absolute -top-2 -right-2 bg-primary text-white text-[10px] px-2 py-0.5 rounded-full font-bold">おすすめ</span>
+                <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-[10px] px-2 py-0.5 rounded-full font-bold">おすすめ</span>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
                   <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
                 </svg>
@@ -167,7 +167,7 @@ export default function AuthPage() {
 
             <div className="flex items-center gap-3">
               <div className="flex-1 h-px" style={{ backgroundColor: "var(--border-subtle)" }} />
-              <span className="text-[12px] text-gray-500">or</span>
+              <span className="text-[12px] text-muted-foreground">or</span>
               <div className="flex-1 h-px" style={{ backgroundColor: "var(--border-subtle)" }} />
             </div>
           </>
@@ -179,7 +179,7 @@ export default function AuthPage() {
             placeholder="メールアドレス"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-[6px] bg-surface-1 px-4 py-3 text-[14px] placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary"
+            className="w-full rounded-[6px] bg-surface-1 px-4 py-3 text-[14px] placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             style={{ border: "0.5px solid var(--border)" }}
           />
           {mode === "signup" && (
@@ -188,7 +188,7 @@ export default function AuthPage() {
               placeholder="ユーザー名（任意）"
               value={userName}
               onChange={(e) => setUserName(e.target.value)}
-              className="w-full rounded-[6px] bg-surface-1 px-4 py-3 text-[14px] placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full rounded-[6px] bg-surface-1 px-4 py-3 text-[14px] placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               style={{ border: "0.5px solid var(--border)" }}
             />
           )}
@@ -201,19 +201,19 @@ export default function AuthPage() {
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.nativeEvent.isComposing) handleSubmit();
               }}
-              className="w-full rounded-[6px] bg-surface-1 px-4 py-3 text-[14px] placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full rounded-[6px] bg-surface-1 px-4 py-3 text-[14px] placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               style={{ border: "0.5px solid var(--border)" }}
             />
           )}
           {mode === "reset" && (
-            <p className="text-[12px] text-gray-500">
+            <p className="text-[12px] text-muted-foreground">
               登録済みのメールアドレスを入力してください。パスワードリセット用のメールを送信します。
             </p>
           )}
           <button
             onClick={handleSubmit}
             disabled={loading || !email || (mode !== "reset" && !password)}
-            className="w-full rounded-[10px] bg-primary text-white px-4 py-3 text-[14px] font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+            className="w-full rounded-[10px] bg-primary text-primary-foreground px-4 py-3 text-[14px] font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
           >
             {mode === "login" ? "ログイン" : mode === "signup" ? "アカウント作成" : "リセットメールを送信"}
           </button>
@@ -221,7 +221,7 @@ export default function AuthPage() {
           {mode === "login" && (
             <button
               onClick={() => { setMode("reset"); setMessage(""); }}
-              className="w-full text-center text-[12px] text-gray-500 hover:text-gray-400"
+              className="w-full text-center text-[12px] text-muted-foreground hover:text-foreground"
             >
               パスワードをお忘れですか？
             </button>
@@ -253,20 +253,20 @@ export default function AuthPage() {
           </p>
         )}
         {mode === "reset" && (
-          <p className="text-center text-[11px] text-gray-500">
+          <p className="text-center text-[11px] text-muted-foreground">
             メールが届かない場合は、迷惑メールフォルダをご確認ください。
           </p>
         )}
 
         <div className="flex justify-center gap-4 pt-2">
-          <Link href="/terms" className="text-[11px] text-gray-500 hover:text-gray-400">
+          <Link href="/terms" className="text-[11px] text-muted-foreground hover:text-foreground">
             利用規約
           </Link>
-          <Link href="/privacy" className="text-[11px] text-gray-500 hover:text-gray-400">
+          <Link href="/privacy" className="text-[11px] text-muted-foreground hover:text-foreground">
             プライバシーポリシー
           </Link>
         </div>
-        <p className="text-center text-[10px] text-gray-600 mt-2">
+        <p className="text-center text-[10px] text-muted-foreground mt-2">
           本アプリは非公式のファンツールであり、各ゲームの開発元・運営元とは関係ありません。
         </p>
       </div>

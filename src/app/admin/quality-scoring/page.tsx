@@ -89,12 +89,12 @@ export default function QualityScoringPage() {
   return (
     <div className="min-h-screen px-4 pt-6 pb-8 max-w-lg mx-auto">
       <div className="flex items-center gap-3 mb-2">
-        <button onClick={() => router.push("/admin")} className="text-gray-400 hover:text-white">
+        <button onClick={() => router.push("/admin")} className="text-muted-foreground hover:text-foreground">
           <ChevronLeft size={20} />
         </button>
         <h1 className="text-[20px] font-medium">品質スコアリング</h1>
       </div>
-      <p className="text-[11px] text-gray-500 mb-4 ml-7">
+      <p className="text-[11px] text-muted-foreground mb-4 ml-7">
         毎日 04:15 JST に全ユーザーの品質スコアが再計算され、ステージの昇降格が自動で行われます。「今すぐ再計算」は即時確認用です。
       </p>
 
@@ -119,7 +119,7 @@ export default function QualityScoringPage() {
       </div>
 
       {message && (
-        <p className={`text-[12px] mb-3 ${message.includes("失敗") ? "text-red-400" : "text-green-400"}`}>
+        <p className={`text-[12px] mb-3 ${message.includes("失敗") ? "text-destructive" : "text-success"}`}>
           {message}
         </p>
       )}
@@ -130,19 +130,19 @@ export default function QualityScoringPage() {
           <p className="text-[14px] font-medium mb-3">再計算結果</p>
           <div className="space-y-2 text-[13px]">
             <div className="flex justify-between">
-              <span className="text-gray-400">計算対象ユーザー数</span>
+              <span className="text-muted-foreground">計算対象ユーザー数</span>
               <span>{result.calculated}人</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-400">昇格（一般→優良）</span>
-              <span className="text-green-400">{result.promoted}人</span>
+              <span className="text-muted-foreground">昇格（一般→優良）</span>
+              <span className="text-success">{result.promoted}人</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-400">降格（優良→一般）</span>
-              <span className="text-orange-400">{result.demoted}人</span>
+              <span className="text-muted-foreground">降格（優良→一般）</span>
+              <span className="text-warning">{result.demoted}人</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-400">判定閾値</span>
+              <span className="text-muted-foreground">判定閾値</span>
               <span>{result.threshold}点</span>
             </div>
           </div>
@@ -152,7 +152,7 @@ export default function QualityScoringPage() {
       {/* 閾値設定 */}
       <div className="bg-surface-2 rounded-[10px] px-4 py-4">
         <p className="text-[14px] font-medium mb-1">優良判定の閾値</p>
-        <p className="text-[11px] text-gray-500 mb-3">合計スコアがこの値以上で優良ユーザーと判定されます</p>
+        <p className="text-[11px] text-muted-foreground mb-3">合計スコアがこの値以上で優良ユーザーと判定されます</p>
         <div className="flex items-center gap-3">
           <input
             type="number"
@@ -164,7 +164,7 @@ export default function QualityScoringPage() {
             className="w-24 bg-surface-1 rounded-[6px] px-2 py-1.5 text-[13px] text-right focus:outline-none"
             style={{ border: "0.5px solid var(--border)" }}
           />
-          <span className="text-[12px] text-gray-500">点</span>
+          <span className="text-[12px] text-muted-foreground">点</span>
           <button
             onClick={handleSaveThreshold}
             disabled={savingThreshold || editThreshold === threshold}
@@ -173,7 +173,7 @@ export default function QualityScoringPage() {
             {savingThreshold ? "保存中..." : "保存"}
           </button>
         </div>
-        <p className="text-[11px] text-gray-600 mt-2">現在の閾値: {threshold}点</p>
+        <p className="text-[11px] text-muted-foreground mt-2">現在の閾値: {threshold}点</p>
       </div>
 
       {/* 優良ユーザーUI表示設定 */}
@@ -181,7 +181,7 @@ export default function QualityScoringPage() {
         <div className="flex items-center justify-between">
           <div className="min-w-0 flex-1">
             <p className="text-[14px] font-medium mb-1">優良ユーザーUI表示</p>
-            <p className="text-[11px] text-gray-500">
+            <p className="text-[11px] text-muted-foreground">
               OFFにするとユーザー側の優良ユーザー関連UIが非表示になります
             </p>
           </div>

@@ -6,7 +6,7 @@ export default function NotFound() {
       <div className="max-w-sm w-full text-center space-y-6">
         <div className="space-y-2">
           <h1 className="text-[28px] font-medium">ページが見つかりません</h1>
-          <p className="text-sm text-gray-400">
+          <p className="text-sm text-muted-foreground">
             お探しのページは削除されたか、URLが間違っている可能性があります。
           </p>
         </div>

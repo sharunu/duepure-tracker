@@ -96,14 +96,14 @@ export default function QualityScoringRulesPage() {
   return (
     <div className="min-h-screen px-4 pt-6 pb-8 max-w-lg mx-auto">
       <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => router.push("/admin/quality-scoring")} className="text-gray-400 hover:text-white">
+        <button onClick={() => router.push("/admin/quality-scoring")} className="text-muted-foreground hover:text-foreground">
           <ChevronLeft size={20} />
         </button>
         <h1 className="text-[20px] font-medium">スコアリングルール設定</h1>
       </div>
 
       {message && (
-        <p className={`text-[12px] mb-3 ${message.includes("失敗") ? "text-red-400" : "text-green-400"}`}>
+        <p className={`text-[12px] mb-3 ${message.includes("失敗") ? "text-destructive" : "text-success"}`}>
           {message}
         </p>
       )}
@@ -114,7 +114,7 @@ export default function QualityScoringRulesPage() {
           if (!catRules || catRules.length === 0) return null;
           return (
             <div key={cat}>
-              <p className="text-[13px] font-medium text-gray-400 mb-2">{categoryLabels[cat] || cat}</p>
+              <p className="text-[13px] font-medium text-muted-foreground mb-2">{categoryLabels[cat] || cat}</p>
               <div className="space-y-3">
                 {catRules.map((rule) => {
                   const labels = paramLabels[rule.rule_key] || {};
@@ -124,7 +124,7 @@ export default function QualityScoringRulesPage() {
                         <div>
                           <p className="text-[14px] font-medium">{rule.display_name}</p>
                           {rule.description && (
-                            <p className="text-[11px] text-gray-500 mt-0.5">{rule.description}</p>
+                            <p className="text-[11px] text-muted-foreground mt-0.5">{rule.description}</p>
                           )}
                         </div>
                         <button
@@ -141,7 +141,7 @@ export default function QualityScoringRulesPage() {
 
                       {/* スコア */}
                       <div className="flex items-center justify-between mt-3 mb-2">
-                        <label className="text-[12px] text-gray-400">スコア</label>
+                        <label className="text-[12px] text-muted-foreground">スコア</label>
                         <div className="flex items-center gap-1">
                           <input
                             type="number"
@@ -155,7 +155,7 @@ export default function QualityScoringRulesPage() {
                             className="w-20 bg-surface-1 rounded-[6px] px-2 py-1.5 text-[13px] text-right focus:outline-none"
                             style={{ border: "0.5px solid var(--border)" }}
                           />
-                          <span className="text-[11px] text-gray-500">点</span>
+                          <span className="text-[11px] text-muted-foreground">点</span>
                         </div>
                       </div>
 
@@ -164,7 +164,7 @@ export default function QualityScoringRulesPage() {
                         <div className="space-y-2">
                           {Object.entries(editParams[rule.rule_key]).map(([key, value]) => (
                             <div key={key} className="flex items-center justify-between">
-                              <label className="text-[12px] text-gray-400">{labels[key] || key}</label>
+                              <label className="text-[12px] text-muted-foreground">{labels[key] || key}</label>
                               <input
                                 type="number"
                                 step="1"

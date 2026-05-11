@@ -22,7 +22,7 @@ export default function AdminDashboardPage() {
   return (
     <div className="min-h-screen px-4 pt-6 pb-8 max-w-lg mx-auto">
       <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => router.push("/account")} className="text-gray-400 hover:text-white">
+        <button onClick={() => router.push("/account")} className="text-muted-foreground hover:text-foreground">
           <ChevronLeft size={20} />
         </button>
         <h1 className="text-[20px] font-medium">管理者画面</h1>
@@ -44,11 +44,11 @@ export default function AdminDashboardPage() {
           </div>
           <div className="min-w-0">
             <p className="text-[14px] font-medium">検知アラート</p>
-            <p className="text-[12px] text-gray-500 mt-0.5">
+            <p className="text-[12px] text-muted-foreground mt-0.5">
               {alertCount > 0 ? `未解決 ${alertCount}件` : "不正検知・アラート管理"}
             </p>
           </div>
-          <span className="text-gray-500 text-[18px] ml-auto shrink-0">&rsaquo;</span>
+          <span className="text-muted-foreground text-[18px] ml-auto shrink-0">&rsaquo;</span>
         </button>
 
 
@@ -62,9 +62,9 @@ export default function AdminDashboardPage() {
           </div>
           <div className="min-w-0">
             <p className="text-[14px] font-medium">品質スコアリング</p>
-            <p className="text-[12px] text-gray-500 mt-0.5">優良ユーザーの自動判定・ルール管理</p>
+            <p className="text-[12px] text-muted-foreground mt-0.5">優良ユーザーの自動判定・ルール管理</p>
           </div>
-          <span className="text-gray-500 text-[18px] ml-auto shrink-0">&rsaquo;</span>
+          <span className="text-muted-foreground text-[18px] ml-auto shrink-0">&rsaquo;</span>
         </button>
 
         {cards.map((card) => (
@@ -78,9 +78,9 @@ export default function AdminDashboardPage() {
             </div>
             <div className="min-w-0">
               <p className="text-[14px] font-medium">{card.title}</p>
-              <p className="text-[12px] text-gray-500 mt-0.5">{card.description}</p>
+              <p className="text-[12px] text-muted-foreground mt-0.5">{card.description}</p>
             </div>
-            <span className="text-gray-500 text-[18px] ml-auto shrink-0">&rsaquo;</span>
+            <span className="text-muted-foreground text-[18px] ml-auto shrink-0">&rsaquo;</span>
           </button>
         ))}
       </div>

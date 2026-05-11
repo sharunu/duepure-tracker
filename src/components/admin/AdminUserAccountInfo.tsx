@@ -33,21 +33,21 @@ export function AdminUserAccountInfo({ userId }: { userId: string }) {
     <div className="space-y-3 mb-4">
       {/* ログイン・連携情報 */}
       <div className="bg-surface-2 rounded-[10px] px-4 py-3" style={{ border: "0.5px solid var(--border-subtle)" }}>
-        <p className="text-[12px] text-gray-500 mb-2">アカウント情報</p>
+        <p className="text-[12px] text-muted-foreground mb-2">アカウント情報</p>
         <div className="space-y-2 text-[13px]">
           <div className="flex justify-between">
-            <span className="text-gray-400">ログイン方法</span>
+            <span className="text-muted-foreground">ログイン方法</span>
             <span>{providerLabel}</span>
           </div>
           {detail.email && (
             <div className="flex justify-between">
-              <span className="text-gray-400">メール</span>
+              <span className="text-muted-foreground">メール</span>
               <span className="truncate ml-4 text-right">{detail.email}</span>
             </div>
           )}
           {detail.x_username && (
             <div className="flex justify-between items-center">
-              <span className="text-gray-400">Xアカウント</span>
+              <span className="text-muted-foreground">Xアカウント</span>
               <div className="flex items-center gap-2">
                 <a
                   href={`https://x.com/${detail.x_username}`}
@@ -55,16 +55,16 @@ export function AdminUserAccountInfo({ userId }: { userId: string }) {
                   rel="noopener noreferrer"
                   className="text-[#1d9bf0] hover:underline"
                 >@{detail.x_username}</a>
-                {detail.x_user_id && <span className="text-[10px] text-gray-600">ID: {detail.x_user_id}</span>}
+                {detail.x_user_id && <span className="text-[10px] text-muted-foreground">ID: {detail.x_user_id}</span>}
               </div>
             </div>
           )}
           {detail.discord_username && (
             <div className="flex justify-between">
-              <span className="text-gray-400">Discord</span>
+              <span className="text-muted-foreground">Discord</span>
               <div className="flex items-center gap-2">
                 <span>{detail.discord_username}</span>
-                {detail.discord_id && <span className="text-[10px] text-gray-600">ID: {detail.discord_id}</span>}
+                {detail.discord_id && <span className="text-[10px] text-muted-foreground">ID: {detail.discord_id}</span>}
               </div>
             </div>
           )}

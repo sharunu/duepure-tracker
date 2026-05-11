@@ -25,14 +25,14 @@ export default function AdminFeedbackPage() {
   return (
     <div className="min-h-screen px-4 pt-6 pb-8 max-w-lg mx-auto">
       <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => router.push("/admin")} className="text-gray-400 hover:text-white">
+        <button onClick={() => router.push("/admin")} className="text-muted-foreground hover:text-foreground">
           <ChevronLeft size={20} />
         </button>
         <h1 className="text-[20px] font-medium">フィードバック</h1>
       </div>
 
       {error ? (
-        <p className="text-center text-red-400 py-12 text-sm">{error}</p>
+        <p className="text-center text-destructive py-12 text-sm">{error}</p>
       ) : loading ? (
         <div className="flex justify-center py-12">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />

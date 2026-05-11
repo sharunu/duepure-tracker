@@ -55,7 +55,7 @@ export default function DecksPage() {
           </div>
         </div>
         {error ? (
-          <p className="text-center text-red-400 py-12 text-sm">{error}</p>
+          <p className="text-center text-destructive py-12 text-sm">{error}</p>
         ) : (!ready || loading) ? (
           <div className="flex justify-center py-12">
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />

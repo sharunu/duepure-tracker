@@ -113,7 +113,7 @@ export default function AuthCallbackPage() {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
         <div className="text-center space-y-4">
-          <p className="text-red-500 text-sm">{error}</p>
+          <p className="text-destructive text-sm">{error}</p>
           <a href="/auth" className="text-primary underline text-sm">
             ログイン画面に戻る
           </a>

@@ -111,7 +111,7 @@ export function FeedbackList({ feedbacks }: Props) {
             {f.label}
           </button>
         ))}
-        <span className="text-[11px] text-gray-500 ml-auto">未処理 {pendingCount}件</span>
+        <span className="text-[11px] text-muted-foreground ml-auto">未処理 {pendingCount}件</span>
       </div>
 
       {filtered.length === 0 ? (
@@ -133,8 +133,8 @@ export function FeedbackList({ feedbacks }: Props) {
                   >
                     {cat.label}
                   </span>
-                  <span className="text-[11px] text-gray-500">{dateStr}</span>
-                  <span className="text-[11px] text-gray-500 ml-auto truncate max-w-[120px]">{userName}</span>
+                  <span className="text-[11px] text-muted-foreground">{dateStr}</span>
+                  <span className="text-[11px] text-muted-foreground ml-auto truncate max-w-[120px]">{userName}</span>
                 </div>
                 <p className="text-[13px] text-foreground whitespace-pre-wrap break-words">{fb.message}</p>
                 <div className="flex items-center gap-2 mt-3">
@@ -157,7 +157,7 @@ export function FeedbackList({ feedbacks }: Props) {
                       詳細を見る &rsaquo;
                     </button>
                   ) : (
-                    <span className="text-[11px] text-gray-600 ml-auto">退会済み</span>
+                    <span className="text-[11px] text-muted-foreground ml-auto">退会済み</span>
                   )}
                 </div>
               </div>

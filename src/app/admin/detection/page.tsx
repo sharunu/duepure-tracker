@@ -85,12 +85,12 @@ function DetectionPageInner() {
   return (
     <div className="min-h-screen px-4 pt-6 pb-8 max-w-lg mx-auto">
       <div className="flex items-center gap-3 mb-2">
-        <button onClick={() => router.push("/admin")} className="text-gray-400 hover:text-white">
+        <button onClick={() => router.push("/admin")} className="text-muted-foreground hover:text-foreground">
           <ChevronLeft size={20} />
         </button>
         <h1 className="text-[20px] font-medium">検知アラート</h1>
       </div>
-      <p className="text-[11px] text-gray-500 mb-4 ml-7">
+      <p className="text-[11px] text-muted-foreground mb-4 ml-7">
         毎日 04:30 JST に自動スキャンが実行されます。「今すぐスキャン」は即時確認用です。
       </p>
 
@@ -155,7 +155,7 @@ function DetectionPageInner() {
       </div>
 
       {scanResult && (
-        <p className={`text-[12px] mb-3 ${scanResult.includes("失敗") ? "text-red-400" : "text-green-400"}`}>
+        <p className={`text-[12px] mb-3 ${scanResult.includes("失敗") ? "text-destructive" : "text-success"}`}>
           {scanResult}
         </p>
       )}
@@ -165,7 +165,7 @@ function DetectionPageInner() {
           <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
         </div>
       ) : alerts.length === 0 ? (
-        <p className="text-center text-[13px] text-gray-500 py-12">アラートはありません</p>
+        <p className="text-center text-[13px] text-muted-foreground py-12">アラートはありません</p>
       ) : (
         <div className="space-y-3">
           {alerts.map((alert) => (
@@ -179,18 +179,18 @@ function DetectionPageInner() {
                     {userMap[alert.user_id] || alert.user_id.slice(0, 8)}
                   </p>
                 </div>
-                <span className="text-[10px] text-gray-600">
+                <span className="text-[10px] text-muted-foreground">
                   {new Date(alert.created_at).toLocaleString("ja-JP", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                 </span>
               </div>
 
               {/* 詳細展開 */}
               {alert.details && (
-                <div className="text-[11px] text-gray-500 bg-surface-1 rounded-[6px] px-3 py-2 mb-2">
+                <div className="text-[11px] text-muted-foreground bg-surface-1 rounded-[6px] px-3 py-2 mb-2">
                   {Object.entries(alert.details).map(([k, v]) => (
                     <div key={k} className="flex justify-between">
                       <span>{k}</span>
-                      <span className="text-gray-400">{String(v)}</span>
+                      <span className="text-muted-foreground">{String(v)}</span>
                     </div>
                   ))}
                 </div>
@@ -206,7 +206,7 @@ function DetectionPageInner() {
                 {!alert.is_resolved && (
                   <button
                     onClick={() => handleResolve(alert.id)}
-                    className="text-[11px] text-gray-500 hover:text-gray-300 ml-auto"
+                    className="text-[11px] text-muted-foreground hover:text-foreground ml-auto"
                   >
                     対処済みにする
                   </button>
@@ -222,7 +222,7 @@ function DetectionPageInner() {
 
 export default function DetectionPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen px-4 pt-6 pb-8 max-w-lg mx-auto"><p className="text-gray-500 text-sm">読み込み中...</p></div>}>
+    <Suspense fallback={<div className="min-h-screen px-4 pt-6 pb-8 max-w-lg mx-auto"><p className="text-muted-foreground text-sm">読み込み中...</p></div>}>
       <DetectionPageInner />
     </Suspense>
   );
