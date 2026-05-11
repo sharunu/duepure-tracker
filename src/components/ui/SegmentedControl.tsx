@@ -1,6 +1,6 @@
 "use client";
 
-import type { KeyboardEvent, ReactNode } from "react";
+import { useRef, type KeyboardEvent, type ReactNode } from "react";
 
 export type SegmentedItem<V extends string> = {
   value: V;
@@ -41,17 +41,24 @@ export function SegmentedControl<V extends string>({
   const isTablist = role === "tablist";
   const isRadiogroup = role === "radiogroup";
   const containerClass = buildContainerClass({ variant, fullWidth, pill, className });
+  const buttonRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     if (onKeyDown) onKeyDown(e);
     if (!isRadiogroup) return;
     if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
-    const enabled = items.filter((i) => !i.disabled);
-    const currentIdx = enabled.findIndex((i) => i.value === value);
-    if (currentIdx === -1) return;
+    const currentItemsIdx = items.findIndex((i) => i.value === value);
+    if (currentItemsIdx === -1) return;
     const delta = e.key === "ArrowRight" ? 1 : -1;
-    const next = enabled[(currentIdx + delta + enabled.length) % enabled.length];
-    if (next) onChange(next.value);
+    let nextIdx = currentItemsIdx;
+    for (let step = 0; step < items.length; step++) {
+      nextIdx = (nextIdx + delta + items.length) % items.length;
+      if (!items[nextIdx].disabled) break;
+      if (nextIdx === currentItemsIdx) return;
+    }
+    if (items[nextIdx].value === value) return;
+    onChange(items[nextIdx].value);
+    buttonRefs.current[nextIdx]?.focus();
     e.preventDefault();
   };
 
@@ -62,7 +69,7 @@ export function SegmentedControl<V extends string>({
       className={containerClass}
       onKeyDown={handleKeyDown}
     >
-      {items.map((item) => {
+      {items.map((item, idx) => {
         const isActive = item.value === value;
         const buttonClass = buildButtonClass({
           variant,
@@ -79,6 +86,9 @@ export function SegmentedControl<V extends string>({
         return (
           <button
             key={item.value}
+            ref={(el) => {
+              buttonRefs.current[idx] = el;
+            }}
             type="button"
             role={childRole}
             id={isTablist && itemIdPrefix ? `${itemIdPrefix}-tab-${item.value}` : undefined}
