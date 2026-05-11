@@ -81,7 +81,7 @@ function AdminOpponentDecksInner() {
   if (loading) {
     return (
       <div className="min-h-screen px-4 pt-6 pb-8 max-w-lg mx-auto">
-        <p className="text-gray-500 text-sm">読み込み中...</p>
+        <p className="text-muted-foreground text-sm">読み込み中...</p>
       </div>
     );
   }
@@ -90,7 +90,7 @@ function AdminOpponentDecksInner() {
     <div className="min-h-screen px-4 pt-6 pb-8 max-w-lg mx-auto">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <button onClick={() => router.push("/admin")} className="text-gray-400 hover:text-white">
+          <button onClick={() => router.push("/admin")} className="text-muted-foreground hover:text-foreground">
             <ChevronLeft size={20} />
           </button>
           <h1 className="text-[20px] font-medium">対面デッキ管理</h1>
@@ -145,7 +145,7 @@ function AdminOpponentDecksInner() {
 
 export default function AdminOpponentDecksPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen px-4 pt-6 pb-8 max-w-lg mx-auto"><p className="text-gray-500 text-sm">読み込み中...</p></div>}>
+    <Suspense fallback={<div className="min-h-screen px-4 pt-6 pb-8 max-w-lg mx-auto"><p className="text-muted-foreground text-sm">読み込み中...</p></div>}>
       <AdminOpponentDecksInner />
     </Suspense>
   );

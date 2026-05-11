@@ -1,6 +1,6 @@
 "use client";
 
-import type { KeyboardEvent, ReactNode } from "react";
+import { useRef, type KeyboardEvent, type ReactNode } from "react";
 
 export type SegmentedItem<V extends string> = {
   value: V;
@@ -39,16 +39,37 @@ export function SegmentedControl<V extends string>({
   className,
 }: Props<V>) {
   const isTablist = role === "tablist";
+  const isRadiogroup = role === "radiogroup";
   const containerClass = buildContainerClass({ variant, fullWidth, pill, className });
+  const buttonRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (onKeyDown) onKeyDown(e);
+    if (!isRadiogroup) return;
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+    const currentItemsIdx = items.findIndex((i) => i.value === value);
+    if (currentItemsIdx === -1) return;
+    const delta = e.key === "ArrowRight" ? 1 : -1;
+    let nextIdx = currentItemsIdx;
+    for (let step = 0; step < items.length; step++) {
+      nextIdx = (nextIdx + delta + items.length) % items.length;
+      if (!items[nextIdx].disabled) break;
+      if (nextIdx === currentItemsIdx) return;
+    }
+    if (items[nextIdx].value === value) return;
+    onChange(items[nextIdx].value);
+    buttonRefs.current[nextIdx]?.focus();
+    e.preventDefault();
+  };
 
   return (
     <div
       role={role}
       aria-label={ariaLabel}
       className={containerClass}
-      onKeyDown={onKeyDown}
+      onKeyDown={handleKeyDown}
     >
-      {items.map((item) => {
+      {items.map((item, idx) => {
         const isActive = item.value === value;
         const buttonClass = buildButtonClass({
           variant,
@@ -59,16 +80,23 @@ export function SegmentedControl<V extends string>({
           disabled: !!item.disabled,
         });
 
+        const childRole = isTablist ? "tab" : isRadiogroup ? "radio" : undefined;
+        const rovingTabIndex = isTablist || isRadiogroup ? (isActive ? 0 : -1) : undefined;
+
         return (
           <button
             key={item.value}
+            ref={(el) => {
+              buttonRefs.current[idx] = el;
+            }}
             type="button"
-            role={isTablist ? "tab" : undefined}
+            role={childRole}
             id={isTablist && itemIdPrefix ? `${itemIdPrefix}-tab-${item.value}` : undefined}
             aria-selected={isTablist ? isActive : undefined}
+            aria-checked={isRadiogroup ? isActive : undefined}
             aria-controls={item.ariaControls}
             aria-disabled={item.disabled || undefined}
-            tabIndex={isTablist ? (isActive ? 0 : -1) : undefined}
+            tabIndex={rovingTabIndex}
             onClick={() => {
               if (!item.disabled) onChange(item.value);
             }}

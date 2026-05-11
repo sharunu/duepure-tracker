@@ -94,14 +94,14 @@ export default function DetectionRulesPage() {
   return (
     <div className="min-h-screen px-4 pt-6 pb-8 max-w-lg mx-auto">
       <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => router.push("/admin/detection")} className="text-gray-400 hover:text-white">
+        <button onClick={() => router.push("/admin/detection")} className="text-muted-foreground hover:text-foreground">
           <ChevronLeft size={20} />
         </button>
         <h1 className="text-[20px] font-medium">検知ルール設定</h1>
       </div>
 
       {message && (
-        <p className={`text-[12px] mb-3 ${message.includes("失敗") ? "text-red-400" : "text-green-400"}`}>
+        <p className={`text-[12px] mb-3 ${message.includes("失敗") ? "text-destructive" : "text-success"}`}>
           {message}
         </p>
       )}
@@ -116,7 +116,7 @@ export default function DetectionRulesPage() {
                 <div>
                   <p className="text-[14px] font-medium">{rule.display_name}</p>
                   {rule.description && (
-                    <p className="text-[11px] text-gray-500 mt-0.5">{rule.description}</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">{rule.description}</p>
                   )}
                 </div>
                 <button
@@ -135,9 +135,9 @@ export default function DetectionRulesPage() {
                 {Object.entries(editParams[rule.rule_key] || {}).map(([key, value]) => (
                   <div key={key} className="flex items-center justify-between gap-2">
                     <div className="flex-1 min-w-0">
-                      <label className="text-[12px] text-gray-400 block">{labels[key] || key}</label>
+                      <label className="text-[12px] text-muted-foreground block">{labels[key] || key}</label>
                       {hints[key] && (
-                        <p className="text-[10px] text-gray-500 mt-0.5 leading-tight">{hints[key]}</p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">{hints[key]}</p>
                       )}
                     </div>
                     <input

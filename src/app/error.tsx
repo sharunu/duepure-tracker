@@ -19,7 +19,7 @@ export default function Error({
       <div className="max-w-sm w-full text-center space-y-6">
         <div className="space-y-2">
           <h1 className="text-[28px] font-medium">エラーが発生しました</h1>
-          <p className="text-sm text-gray-400">
+          <p className="text-sm text-muted-foreground">
             一時的な問題が発生しました。しばらく経ってから再度お試しください。
           </p>
         </div>

@@ -23,7 +23,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
     if (this.state.hasError) {
       return (
         <div className="min-h-screen flex flex-col items-center justify-center px-4">
-          <p className="text-red-400 text-[14px] mb-4">
+          <p className="text-destructive text-[14px] mb-4">
             エラーが発生しました。ページを再読み込みしてください。
           </p>
           <button

@@ -79,11 +79,11 @@ function AdminUserDetailInner() {
   return (
     <div className="min-h-screen px-4 pt-6 pb-8 max-w-lg mx-auto">
       <div className="flex items-center gap-3 mb-4">
-        <button onClick={() => router.push("/admin/users")} className="text-gray-400 hover:text-white">
+        <button onClick={() => router.push("/admin/users")} className="text-muted-foreground hover:text-foreground">
           <ChevronLeft size={20} />
         </button>
         {userError ? (
-          <p className="text-red-400 text-[14px]">{userError}</p>
+          <p className="text-destructive text-[14px]">{userError}</p>
         ) : (
           <h1 className="text-[20px] font-medium truncate">{userName}</h1>
         )}
@@ -149,7 +149,7 @@ function AdminUserDetailInner() {
 
 export default function AdminUserDetailPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen px-4 pt-6 pb-8 max-w-lg mx-auto"><p className="text-gray-500 text-sm">読み込み中...</p></div>}>
+    <Suspense fallback={<div className="min-h-screen px-4 pt-6 pb-8 max-w-lg mx-auto"><p className="text-muted-foreground text-sm">読み込み中...</p></div>}>
       <AdminUserDetailInner />
     </Suspense>
   );

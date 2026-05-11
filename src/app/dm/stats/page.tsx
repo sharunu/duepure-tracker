@@ -245,7 +245,7 @@ function StatsPageInner() {
 
   const renderContent = () => {
     if (error) {
-      return <p className="text-center text-red-400 py-12 text-sm">{error}</p>;
+      return <p className="text-center text-destructive py-12 text-sm">{error}</p>;
     }
 
     if (scope === "team" && !activeVisibleTeamId) {
@@ -489,15 +489,15 @@ function StatsPageInner() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 min-w-0 flex-1">
                     {userStage === 1 ? (
-                      <Crown size={16} className="text-amber-400 flex-shrink-0" />
+                      <Crown size={16} className="text-warning flex-shrink-0" />
                     ) : (
-                      <Lock size={14} className="text-gray-500 flex-shrink-0" />
+                      <Lock size={14} className="text-muted-foreground flex-shrink-0" />
                     )}
                     <div className="min-w-0">
-                      <p className={`text-[12px] font-medium ${userStage === 1 ? "text-amber-400" : "text-gray-400"}`}>
+                      <p className={`text-[12px] font-medium ${userStage === 1 ? "text-warning" : "text-muted-foreground"}`}>
                         優良ユーザー限定
                       </p>
-                      <p className="text-[10px] text-gray-500 mt-0.5">
+                      <p className="text-[10px] text-muted-foreground mt-0.5">
                         {userStage === 1
                           ? "信頼性の高いユーザーの戦績のみで集計します"
                           : "優良ユーザーに認定されると利用できる限定機能です"}
@@ -508,7 +508,7 @@ function StatsPageInner() {
                     onClick={() => userStage === 1 && setPremiumFilter(!premiumFilter)}
                     disabled={userStage !== 1}
                     className={`relative w-10 h-5 rounded-full transition-colors flex-shrink-0 ml-3 ${
-                      premiumFilter ? "bg-amber-500" : userStage === 1 ? "bg-muted" : "bg-muted"
+                      premiumFilter ? "bg-warning" : "bg-muted"
                     } ${userStage !== 1 ? "opacity-40 cursor-not-allowed" : "cursor-pointer"}`}
                   >
                     <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all duration-200 ${

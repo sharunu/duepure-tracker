@@ -33,7 +33,7 @@ export function AdminUserDecks({ userId, format, game = DEFAULT_GAME }: Props) {
   }, [userId, format, game]);
 
   if (error) {
-    return <p className="text-center text-red-400 py-12 text-sm">{error}</p>;
+    return <p className="text-center text-destructive py-12 text-sm">{error}</p>;
   }
 
   if (loading) {
@@ -61,13 +61,13 @@ export function AdminUserDecks({ userId, format, game = DEFAULT_GAME }: Props) {
               className={`w-full px-4 py-3 flex items-center gap-3 text-left ${hasTunings ? "cursor-pointer" : "cursor-default"}`}
             >
               {hasTunings ? (
-                isExpanded ? <ChevronDown size={16} className="text-gray-500 shrink-0" /> : <ChevronRight size={16} className="text-gray-500 shrink-0" />
+                isExpanded ? <ChevronDown size={16} className="text-muted-foreground shrink-0" /> : <ChevronRight size={16} className="text-muted-foreground shrink-0" />
               ) : (
                 <div className="w-4" />
               )}
               <span className="text-[14px] font-medium">{deck.name}</span>
               {hasTunings && (
-                <span className="text-[11px] text-gray-500 ml-auto">{deck.deck_tunings.length}構築</span>
+                <span className="text-[11px] text-muted-foreground ml-auto">{deck.deck_tunings.length}構築</span>
               )}
             </button>
             {isExpanded && hasTunings && (

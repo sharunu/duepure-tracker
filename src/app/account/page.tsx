@@ -8,6 +8,7 @@ import { getDisplayName, updateDisplayName, getAuthProvider, getEmail, getXConne
 import { submitFeedback } from "@/lib/actions/feedback-actions";
 import { checkIsAdmin, getPremiumUiVisible } from "@/lib/actions/admin-actions";
 import { BottomNav } from "@/components/layout/BottomNav";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { LogOut } from "lucide-react";
 
 export default function AccountPage() {
@@ -211,7 +212,7 @@ export default function AccountPage() {
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-[15px] font-medium truncate">{displayName || "未設定"}</p>
-            <p className="text-[12px] text-gray-500 truncate">{isGuest ? "ゲストアカウント" : (email || "未設定")}</p>
+            <p className="text-[12px] text-muted-foreground truncate">{isGuest ? "ゲストアカウント" : (email || "未設定")}</p>
             <div className="flex items-center gap-1.5 mt-1">
               <span className={"inline-block text-[10px] px-2 py-0.5 rounded-full font-medium " + (
                 isSnsLogin
@@ -221,7 +222,7 @@ export default function AccountPage() {
                 {provider === "google" ? "Google" : provider === "twitter" ? "X" : isGuest ? "ゲスト" : "メール"}
               </span>
               {userStage === 1 && premiumUiVisible && (
-                <span className="inline-block text-[10px] px-2 py-0.5 rounded-full font-medium bg-yellow-600/20 text-yellow-400">
+                <span className="inline-block text-[10px] px-2 py-0.5 rounded-full font-medium bg-success/20 text-success">
                   優良ユーザー
                 </span>
               )}
@@ -240,12 +241,12 @@ export default function AccountPage() {
 
         {/* プロフィールセクション */}
         <div className="mt-5">
-          <p className="text-[12px] text-gray-500 mb-2">プロフィール</p>
+          <p className="text-[12px] text-muted-foreground mb-2">プロフィール</p>
           <div className={"bg-surface-2 rounded-[10px]" + (isGuest ? " opacity-50" : "")}>
             {/* メールアドレス行 */}
             <div className="px-4 py-[14px] flex items-center justify-between">
               <div className="min-w-0 flex-1">
-                <p className="text-[11px] text-gray-500">メールアドレス</p>
+                <p className="text-[11px] text-muted-foreground">メールアドレス</p>
                 <p className="text-[14px] truncate">{isGuest ? "ゲストアカウント" : (email || "未設定")}</p>
               </div>
               {isSnsLogin && (
@@ -256,7 +257,7 @@ export default function AccountPage() {
             <div className="mx-4 border-t" style={{ borderColor: "var(--border-subtle)", borderWidth: "0.5px" }} />
             {/* ユーザー名行 */}
             <div className="px-4 py-[14px]">
-              <p className="text-[11px] text-gray-500 mb-2">ユーザー名</p>
+              <p className="text-[11px] text-muted-foreground mb-2">ユーザー名</p>
               <div className="flex gap-2">
                 <input
                   type="text"
@@ -288,9 +289,9 @@ export default function AccountPage() {
             >
               <div>
                 <p className="text-[14px]">セキュリティ</p>
-                <p className="text-[11px] text-gray-500 mt-0.5">パスワード変更・アカウント削除</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">パスワード変更・アカウント削除</p>
               </div>
-              <span className="text-gray-500 text-[18px] ml-2 flex-shrink-0">&rsaquo;</span>
+              <span className="text-muted-foreground text-[18px] ml-2 flex-shrink-0">&rsaquo;</span>
             </div>
           </div>
         </div>
@@ -298,7 +299,7 @@ export default function AccountPage() {
         {/* X連携セクション（ゲスト以外に表示） */}
         {!isGuest && (
           <div className="mt-5">
-            <p className="text-[12px] text-gray-500 mb-2">X連携</p>
+            <p className="text-[12px] text-muted-foreground mb-2">X連携</p>
             <div className="bg-surface-2 rounded-[10px] px-4 py-[14px]">
               {xSource === "login" && xConnected ? (
                 <div className="flex items-center justify-between">
@@ -306,7 +307,7 @@ export default function AccountPage() {
                     <p className="text-[14px]">
                       {xUsername ? `@${xUsername}` : "X"} で連携済み
                     </p>
-                    <p className="text-[11px] text-gray-500 mt-0.5">ログイン連携</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">ログイン連携</p>
                   </div>
                   <span className="text-[10px] bg-surface-1 text-muted-foreground px-2 py-0.5 rounded-full flex-shrink-0 ml-2">自動連携</span>
                 </div>
@@ -325,7 +326,7 @@ export default function AccountPage() {
                 </div>
               ) : (
                 <div>
-                  <p className="text-[11px] text-gray-400 mb-3">
+                  <p className="text-[11px] text-muted-foreground mb-3">
                     {premiumUiVisible
                       ? "X連携すると、優良ユーザーとして認定されやすくなり、分析タブのシェア機能も利用可能になります。"
                       : "X連携すると、分析タブのシェア機能が利用可能になります。"}
@@ -333,11 +334,12 @@ export default function AccountPage() {
                   <button
                     onClick={handleLinkX}
                     disabled={xLoading}
-                    className="w-full bg-surface-2 text-white rounded-[6px] px-4 py-2.5 text-[13px] font-medium hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
+                    className="w-full bg-surface-2 text-foreground rounded-[6px] px-4 py-2.5 text-[13px] font-medium hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
                     style={{ border: "0.5px solid var(--border-subtle)" }}
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="white">
-                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                    <svg width="14" height="14" viewBox="0 0 24 24">
+                      <rect width="24" height="24" rx="4" fill="black"/>
+                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" fill="white"/>
                     </svg>
                     Xアカウントを連携
                   </button>
@@ -350,9 +352,20 @@ export default function AccountPage() {
           </div>
         )}
 
+        {/* 表示セクション */}
+        <div className="mt-5">
+          <p className="text-[12px] text-muted-foreground mb-2">表示</p>
+          <div className="bg-surface-2 rounded-[10px] px-4 py-[14px]">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[14px]">テーマ</p>
+            </div>
+            <ThemeToggle />
+          </div>
+        </div>
+
         {/* その他セクション */}
         <div className="mt-5">
-          <p className="text-[12px] text-gray-500 mb-2">その他</p>
+          <p className="text-[12px] text-muted-foreground mb-2">その他</p>
           <div className="space-y-3">
             {isAdmin && (
               <div
@@ -361,9 +374,9 @@ export default function AccountPage() {
               >
                 <div>
                   <p className="text-[14px]">管理者画面</p>
-                  <p className="text-[11px] text-gray-500 mt-0.5">ユーザー閲覧・フィードバック確認</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">ユーザー閲覧・フィードバック確認</p>
                 </div>
-                <span className="text-gray-500 text-[18px]">&rsaquo;</span>
+                <span className="text-muted-foreground text-[18px]">&rsaquo;</span>
               </div>
             )}
             {/* ご意見・バグ報告 */}
@@ -373,16 +386,16 @@ export default function AccountPage() {
             >
               <div>
                 <p className="text-[14px]">ご意見・バグ報告</p>
-                {isGuest && <p className="text-[11px] text-gray-500 mt-0.5">アカウント登録するとご利用いただけます</p>}
+                {isGuest && <p className="text-[11px] text-muted-foreground mt-0.5">アカウント登録するとご利用いただけます</p>}
               </div>
-              {!isGuest && <span className="text-gray-500 text-[18px]">&rsaquo;</span>}
+              {!isGuest && <span className="text-muted-foreground text-[18px]">&rsaquo;</span>}
             </div>
 
             {/* 利用規約 */}
             <Link href="/terms">
               <div className="bg-surface-2 rounded-[10px] px-4 py-[14px] flex items-center justify-between cursor-pointer">
                 <p className="text-[14px]">利用規約</p>
-                <span className="text-gray-500 text-[18px]">&rsaquo;</span>
+                <span className="text-muted-foreground text-[18px]">&rsaquo;</span>
               </div>
             </Link>
 
@@ -390,7 +403,7 @@ export default function AccountPage() {
             <Link href="/privacy">
               <div className="bg-surface-2 rounded-[10px] px-4 py-[14px] flex items-center justify-between cursor-pointer mt-3">
                 <p className="text-[14px]">プライバシーポリシー</p>
-                <span className="text-gray-500 text-[18px]">&rsaquo;</span>
+                <span className="text-muted-foreground text-[18px]">&rsaquo;</span>
               </div>
             </Link>
 
@@ -427,13 +440,13 @@ export default function AccountPage() {
               <h2 className="text-[16px] font-medium">ご意見・バグ報告</h2>
               <button
                 onClick={() => setFeedbackOpen(false)}
-                className="text-gray-500 text-[20px] leading-none"
+                className="text-muted-foreground text-[20px] leading-none"
               >
                 &times;
               </button>
             </div>
 
-            <p className="text-[12px] text-gray-500 mb-3">カテゴリ</p>
+            <p className="text-[12px] text-muted-foreground mb-3">カテゴリ</p>
             <div className="flex gap-2 mb-4">
               {([
                 { value: "bug" as const, label: "バグ報告" },
@@ -445,8 +458,8 @@ export default function AccountPage() {
                   onClick={() => setFeedbackCategory(item.value)}
                   className={"flex-1 rounded-[6px] py-2 text-[13px] font-medium transition-colors " + (
                     feedbackCategory === item.value
-                      ? "bg-primary text-white"
-                      : "bg-surface-2 text-gray-400"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-surface-2 text-muted-foreground"
                   )}
                 >
                   {item.label}
@@ -454,7 +467,7 @@ export default function AccountPage() {
               ))}
             </div>
 
-            <p className="text-[12px] text-gray-500 mb-2">メッセージ</p>
+            <p className="text-[12px] text-muted-foreground mb-2">メッセージ</p>
             <textarea
               value={feedbackMessage}
               onChange={(e) => setFeedbackMessage(e.target.value)}
@@ -466,7 +479,7 @@ export default function AccountPage() {
             <button
               onClick={handleSubmitFeedback}
               disabled={feedbackLoading || !feedbackMessage.trim()}
-              className="w-full mt-4 bg-primary text-white rounded-[10px] px-4 py-3 text-[14px] font-medium hover:opacity-90 disabled:opacity-50"
+              className="w-full mt-4 bg-primary text-primary-foreground rounded-[10px] px-4 py-3 text-[14px] font-medium hover:opacity-90 disabled:opacity-50"
             >
               {feedbackLoading ? "送信中..." : "送信"}
             </button>
