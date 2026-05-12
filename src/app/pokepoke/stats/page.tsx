@@ -229,8 +229,8 @@ function StatsPageInner() {
       setTrendData(t);
     }
 
-    } catch {
-      console.error("Failed to load stats data");
+    } catch (e) {
+      console.error("Failed to load stats data", e);
       setError("データの読み込みに失敗しました");
     } finally {
       setLoading(false);
