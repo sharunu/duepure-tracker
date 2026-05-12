@@ -73,14 +73,24 @@ export async function POST(request: NextRequest) {
 
   // jsonb number として直接送信される (supabase-js は number を JSON number にシリアライズ)。
   // updated_at / updated_by はテーブル側で自動更新する trigger を作っていないので明示セット。
+  //
+  // 当初 `.update({...}).eq("key", "share_retention_days")` で書いていたが、service_role +
+  // 未型付きクライアント + .eq() の組み合わせで PostgREST が "UPDATE requires a WHERE clause"
+  // (PGRST405) を返す事象が出たため、INSERT ... ON CONFLICT (key) DO UPDATE の挙動になる
+  // upsert + onConflict: "key" に切り替える。app_settings には migration 投入時から
+  // share_retention_days 行が存在する前提なので実質常に UPDATE branch を通る。万一行が
+  // 消えていても upsert により安全に復活する。
   const { error } = await auth.supabaseAdmin
     .from("app_settings")
-    .update({
-      value: days,
-      updated_by: auth.userId,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("key", "share_retention_days");
+    .upsert(
+      {
+        key: "share_retention_days",
+        value: days,
+        updated_by: auth.userId,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "key" },
+    );
 
   if (error) {
     return NextResponse.json(
