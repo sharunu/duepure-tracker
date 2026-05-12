@@ -79,11 +79,11 @@ export async function getPersonalStats(format: string = "ND") {
 
   // 個人統計 RPC で opponent_deck 軸に集計 (auth.uid() で本人 battles のみ対象)。
   // 全期間表示のため p_start_date / p_end_date は null。
-  // database.types.ts の自動生成型に未登録のため supabase.rpc を any にキャスト (既存パターン)。
-  const { data, error } = await (supabase.rpc as unknown as (
-    name: string,
-    args: Record<string, unknown>
-  ) => Promise<{ data: unknown; error: unknown }>)("get_personal_opponent_deck_stats_range", {
+  // database.types.ts の自動生成型に未登録のため supabase 全体を any にキャスト (this binding を保持)。
+  const rpcs = supabase as unknown as {
+    rpc: (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>;
+  };
+  const { data, error } = await rpcs.rpc("get_personal_opponent_deck_stats_range", {
     p_start_date: null,
     p_end_date: null,
     p_format: format,
@@ -197,17 +197,22 @@ export async function getDetailedPersonalStats(
     p_format: format,
   };
 
-  // database.types.ts の自動生成型に未登録のため supabase.rpc を any にキャスト (既存パターン)。
-  const rpc = supabase.rpc as unknown as (
-    name: string,
-    args: Record<string, unknown>
-  ) => Promise<{ data: unknown; error: unknown }>;
+  // database.types.ts の自動生成型に未登録のため supabase 全体を any にキャスト (既存パターン)。
+  // ※ const rpc = supabase.rpc as ... で参照を取り出すと this binding が失われて SDK 内部の
+  //    this.url / this.headers が undefined になり throw する。必ず supabase.rpc(...) を method
+  //    call として呼ぶこと。
+  const rpcs = supabase as unknown as {
+    rpc: (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>;
+  };
 
-  const [{ data: myDeckData }, { data: oppDeckData }, { data: turnData }] = await Promise.all([
-    rpc("get_personal_my_deck_stats_range", params),
-    rpc("get_personal_opponent_deck_stats_range", params),
-    rpc("get_personal_turn_order_stats_range", params),
+  const [{ data: myDeckData, error: myDeckErr }, { data: oppDeckData, error: oppDeckErr }, { data: turnData, error: turnErr }] = await Promise.all([
+    rpcs.rpc("get_personal_my_deck_stats_range", params),
+    rpcs.rpc("get_personal_opponent_deck_stats_range", params),
+    rpcs.rpc("get_personal_turn_order_stats_range", params),
   ]);
+  if (myDeckErr) throw new Error(`get_personal_my_deck_stats_range failed: ${myDeckErr.message}`);
+  if (oppDeckErr) throw new Error(`get_personal_opponent_deck_stats_range failed: ${oppDeckErr.message}`);
+  if (turnErr) throw new Error(`get_personal_turn_order_stats_range failed: ${turnErr.message}`);
 
   const myDeckStats = ((myDeckData as unknown as PersonalStatsRpcRow[]) ?? []).map((r) => ({
     deckName: r.deck_name,
@@ -291,16 +296,19 @@ export async function getDeckDetailStats(
     p_end_date: endDate ?? null,
   };
 
-  // database.types.ts の自動生成型に未登録のため supabase.rpc を any にキャスト (既存パターン)。
-  const rpc = supabase.rpc as unknown as (
-    name: string,
-    args: Record<string, unknown>
-  ) => Promise<{ data: unknown; error: unknown }>;
+  // database.types.ts の自動生成型に未登録のため supabase 全体を any にキャスト (既存パターン)。
+  // ※ const rpc = supabase.rpc as ... で参照を取り出すと this binding が失われて throw するため、
+  //    必ず supabase.rpc(...) を method call として呼ぶ。
+  const rpcs = supabase as unknown as {
+    rpc: (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>;
+  };
 
-  const [{ data: overallData }, { data: byTuningData }] = await Promise.all([
-    rpc("get_personal_deck_detail_stats_overall", params),
-    rpc("get_personal_deck_detail_stats_by_tuning", params),
+  const [{ data: overallData, error: overallErr }, { data: byTuningData, error: byTuningErr }] = await Promise.all([
+    rpcs.rpc("get_personal_deck_detail_stats_overall", params),
+    rpcs.rpc("get_personal_deck_detail_stats_by_tuning", params),
   ]);
+  if (overallErr) throw new Error(`get_personal_deck_detail_stats_overall failed: ${overallErr.message}`);
+  if (byTuningErr) throw new Error(`get_personal_deck_detail_stats_by_tuning failed: ${byTuningErr.message}`);
 
   const overallRows = (overallData as unknown as DeckDetailOverallRpcRow[]) ?? [];
   if (overallRows.length === 0) return empty;
@@ -373,17 +381,18 @@ export async function getOpponentDeckDetailStats(
   if (!user) return empty;
 
   // personal RPC 経由で my_deck 軸の集計を取得 (legacy JS 集計の RPC 化)。
-  // database.types.ts の自動生成型に未登録のため supabase.rpc を any にキャスト (既存パターン)。
-  const { data, error } = await (supabase.rpc as unknown as (
-    name: string,
-    args: Record<string, unknown>
-  ) => Promise<{ data: unknown; error: unknown }>)("get_personal_opponent_deck_detail_stats", {
+  // database.types.ts の自動生成型に未登録のため supabase 全体を any にキャスト (this binding を保持)。
+  const rpcs = supabase as unknown as {
+    rpc: (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>;
+  };
+  const { data, error } = await rpcs.rpc("get_personal_opponent_deck_detail_stats", {
     p_opponent_deck_name: opponentDeckName,
     p_format: format,
     p_start_date: startDate ?? null,
     p_end_date: endDate ?? null,
   });
-  if (error || !data) return empty;
+  if (error) throw new Error(`get_personal_opponent_deck_detail_stats failed: ${error.message}`);
+  if (!data) return empty;
 
   const rows = (data as unknown as OpponentDeckDetailRpcRow[]) ?? [];
   if (rows.length === 0) return empty;
