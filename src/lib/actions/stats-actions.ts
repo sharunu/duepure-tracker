@@ -1,5 +1,74 @@
 import { createClient } from "@/lib/supabase/client";
-import { winRate, bumpWLD, type BattleResult } from "@/lib/battle/result-format";
+import { winRate } from "@/lib/battle/result-format";
+
+// PR7 Phase 7b: 4 個人統計関数 (getPersonalStats / getDetailedPersonalStats /
+// getDeckDetailStats / getOpponentDeckDetailStats) は personal stats RPC 経由に切替済。
+// JS 集計時代のヘルパー (addToDetail / newOppDetail / finalizeDetail / finalizeDetailWithName) は
+// 切替により dead になったため削除。
+type PersonalStatsRpcRow = {
+  deck_name: string;
+  wins: number | string;
+  losses: number | string;
+  draws: number | string | null;
+  total: number | string;
+  win_rate: number | string | null;
+};
+
+type PersonalDetailRpcRow = {
+  wins: number | string;
+  losses: number | string;
+  draws: number | string | null;
+  total: number | string;
+  win_rate: number | string | null;
+  first_wins: number | string;
+  first_losses: number | string;
+  first_draws: number | string | null;
+  first_total: number | string;
+  second_wins: number | string;
+  second_losses: number | string;
+  second_draws: number | string | null;
+  second_total: number | string;
+  unknown_wins: number | string;
+  unknown_losses: number | string;
+  unknown_draws: number | string | null;
+  unknown_total: number | string;
+};
+
+type DeckDetailOverallRpcRow = PersonalDetailRpcRow & { opponent_deck_name: string };
+type DeckDetailByTuningRpcRow = PersonalDetailRpcRow & {
+  tuning_name: string;
+  opponent_deck_name: string;
+};
+type OpponentDeckDetailRpcRow = PersonalDetailRpcRow & { my_deck_name: string };
+
+const toN = (v: number | string | null | undefined): number =>
+  v == null ? 0 : Number(v);
+
+const toWinRate = (v: number | string | null | undefined): number | null =>
+  v == null ? null : Number(v);
+
+const mapDetailRow = (r: PersonalDetailRpcRow): OpponentDetail => ({
+  wins: toN(r.wins),
+  losses: toN(r.losses),
+  draws: toN(r.draws),
+  total: toN(r.total),
+  winRate: toWinRate(r.win_rate),
+  firstWins: toN(r.first_wins),
+  firstLosses: toN(r.first_losses),
+  firstDraws: toN(r.first_draws),
+  firstTotal: toN(r.first_total),
+  firstWinRate: winRate(toN(r.first_wins), toN(r.first_losses)),
+  secondWins: toN(r.second_wins),
+  secondLosses: toN(r.second_losses),
+  secondDraws: toN(r.second_draws),
+  secondTotal: toN(r.second_total),
+  secondWinRate: winRate(toN(r.second_wins), toN(r.second_losses)),
+  unknownWins: toN(r.unknown_wins),
+  unknownLosses: toN(r.unknown_losses),
+  unknownDraws: toN(r.unknown_draws),
+  unknownTotal: toN(r.unknown_total),
+  unknownWinRate: winRate(toN(r.unknown_wins), toN(r.unknown_losses)),
+});
 
 export async function getPersonalStats(format: string = "ND") {
   const supabase = createClient();
@@ -8,38 +77,26 @@ export async function getPersonalStats(format: string = "ND") {
   } = await supabase.auth.getUser();
   if (!user) return [];
 
-  const { data: battles } = await supabase
-    .from("battles")
-    .select("opponent_deck_name, result")
-    .eq("user_id", user.id)
-    .eq("format", format);
-
-  if (!battles || battles.length === 0) return [];
-
-  // Aggregate by opponent deck
-  const deckMap = new Map<
-    string,
-    { wins: number; losses: number; draws: number; total: number }
-  >();
-
-  for (const b of battles) {
-    const deckName = b.opponent_deck_name;
-    const entry = deckMap.get(deckName) ?? { wins: 0, losses: 0, draws: 0, total: 0 };
-    entry.total++;
-    const r = b.result as BattleResult;
-    if (r === "win") entry.wins++;
-    else if (r === "loss") entry.losses++;
-    else entry.draws++;
-    deckMap.set(deckName, entry);
-  }
-
-  return Array.from(deckMap.entries())
-    .map(([name, stats]) => ({
-      deckName: name,
-      ...stats,
-      winRate: winRate(stats.wins, stats.losses),
-    }))
-    .sort((a, b) => b.total - a.total);
+  // 個人統計 RPC で opponent_deck 軸に集計 (auth.uid() で本人 battles のみ対象)。
+  // 全期間表示のため p_start_date / p_end_date は null。
+  // database.types.ts の自動生成型に未登録のため supabase.rpc を any にキャスト (既存パターン)。
+  const { data, error } = await (supabase.rpc as unknown as (
+    name: string,
+    args: Record<string, unknown>
+  ) => Promise<{ data: unknown; error: unknown }>)("get_personal_opponent_deck_stats_range", {
+    p_start_date: null,
+    p_end_date: null,
+    p_format: format,
+  });
+  if (error || !data) return [];
+  return ((data as unknown as PersonalStatsRpcRow[]) ?? []).map((r) => ({
+    deckName: r.deck_name,
+    wins: toN(r.wins),
+    losses: toN(r.losses),
+    draws: toN(r.draws),
+    total: toN(r.total),
+    winRate: toWinRate(r.win_rate),
+  }));
 }
 
 export async function getEnvironmentShares(days = 7, format: string = "ND") {
@@ -117,13 +174,6 @@ const EMPTY_TURN_ORDER: TurnOrderSummary = {
   unknownWins: 0, unknownLosses: 0, unknownDraws: 0,
 };
 
-const newOppDetail = (): OpponentDetail => ({
-  wins: 0, losses: 0, draws: 0, total: 0, winRate: null,
-  firstWins: 0, firstLosses: 0, firstDraws: 0, firstTotal: 0, firstWinRate: null,
-  secondWins: 0, secondLosses: 0, secondDraws: 0, secondTotal: 0, secondWinRate: null,
-  unknownWins: 0, unknownLosses: 0, unknownDraws: 0, unknownTotal: 0, unknownWinRate: null,
-});
-
 export type DetailedPersonalStats = {
   myDeckStats: Array<{ deckName: string } & Omit<MyDeckStats, "opponents"> & { opponents: Array<{ opponentName: string } & OpponentDetail> }>;
   opponentDeckStats: Array<{ deckName: string } & OpponentDeckStats>;
@@ -139,138 +189,65 @@ export async function getDetailedPersonalStats(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { myDeckStats: [], opponentDeckStats: [], turnOrder: { ...EMPTY_TURN_ORDER } };
 
-  let query = supabase
-    .from("battles")
-    .select("my_deck_name, opponent_deck_name, result, turn_order, fought_at")
-    .eq("user_id", user.id)
-    .eq("format", format);
+  // 個人統計 RPC を 3 本並列で呼び、TS 側で legacy return shape に組み立てる。
+  // myDeckStats[].opponents は型定義上残るが UI で未参照のため空配列で OK。
+  const params = {
+    p_start_date: startDate ?? null,
+    p_end_date: endDate ?? null,
+    p_format: format,
+  };
 
-  if (startDate) {
-    query = query.gte("fought_at", startDate);
-  }
-  if (endDate) {
-    const endPlusOne = new Date(endDate);
-    endPlusOne.setDate(endPlusOne.getDate() + 1);
-    query = query.lt("fought_at", endPlusOne.toISOString().split("T")[0]);
-  }
+  // database.types.ts の自動生成型に未登録のため supabase.rpc を any にキャスト (既存パターン)。
+  const rpc = supabase.rpc as unknown as (
+    name: string,
+    args: Record<string, unknown>
+  ) => Promise<{ data: unknown; error: unknown }>;
 
-  const { data: battles } = await query;
-  if (!battles || battles.length === 0) return { myDeckStats: [], opponentDeckStats: [], turnOrder: { ...EMPTY_TURN_ORDER } };
+  const [{ data: myDeckData }, { data: oppDeckData }, { data: turnData }] = await Promise.all([
+    rpc("get_personal_my_deck_stats_range", params),
+    rpc("get_personal_opponent_deck_stats_range", params),
+    rpc("get_personal_turn_order_stats_range", params),
+  ]);
 
-  // Aggregate my deck stats
-  const myDeckMap = new Map<string, { wins: number; losses: number; draws: number; total: number; opponents: Map<string, OpponentDetail> }>();
-  const oppDeckMap = new Map<string, { wins: number; losses: number; draws: number; total: number }>();
-  const turnOrder: TurnOrderSummary = { ...EMPTY_TURN_ORDER };
+  const myDeckStats = ((myDeckData as unknown as PersonalStatsRpcRow[]) ?? []).map((r) => ({
+    deckName: r.deck_name,
+    wins: toN(r.wins),
+    losses: toN(r.losses),
+    draws: toN(r.draws),
+    total: toN(r.total),
+    winRate: toWinRate(r.win_rate),
+    opponents: [] as Array<{ opponentName: string } & OpponentDetail>,
+  }));
 
-  for (const b of battles) {
-    const myDeckName = b.my_deck_name ?? "不明";
-    const oppName = b.opponent_deck_name;
-    const r = b.result as BattleResult;
+  const opponentDeckStats = ((oppDeckData as unknown as PersonalStatsRpcRow[]) ?? []).map((r) => ({
+    deckName: r.deck_name,
+    wins: toN(r.wins),
+    losses: toN(r.losses),
+    draws: toN(r.draws),
+    total: toN(r.total),
+    winRate: toWinRate(r.win_rate),
+  }));
 
-    // My deck stats
-    if (!myDeckMap.has(myDeckName)) {
-      myDeckMap.set(myDeckName, { wins: 0, losses: 0, draws: 0, total: 0, opponents: new Map() });
-    }
-    const myEntry = myDeckMap.get(myDeckName)!;
-    myEntry.total++;
-    bumpWLD(myEntry, r);
-
-    // Opponent detail within my deck
-    if (!myEntry.opponents.has(oppName)) {
-      myEntry.opponents.set(oppName, newOppDetail());
-    }
-    const oppDetail = myEntry.opponents.get(oppName)!;
-    addToDetail(oppDetail, r, b.turn_order);
-
-    if (b.turn_order === "first") {
-      if (r === "win") turnOrder.firstWins++;
-      else if (r === "loss") turnOrder.firstLosses++;
-      else turnOrder.firstDraws++;
-    } else if (b.turn_order === "second") {
-      if (r === "win") turnOrder.secondWins++;
-      else if (r === "loss") turnOrder.secondLosses++;
-      else turnOrder.secondDraws++;
-    } else {
-      if (r === "win") turnOrder.unknownWins++;
-      else if (r === "loss") turnOrder.unknownLosses++;
-      else turnOrder.unknownDraws++;
-    }
-
-    // Opponent deck global stats
-    if (!oppDeckMap.has(oppName)) {
-      oppDeckMap.set(oppName, { wins: 0, losses: 0, draws: 0, total: 0 });
-    }
-    const oppGlobal = oppDeckMap.get(oppName)!;
-    oppGlobal.total++;
-    bumpWLD(oppGlobal, r);
-  }
-
-  const myDeckStats = Array.from(myDeckMap.entries())
-    .map(([deckName, s]) => ({
-      deckName,
-      wins: s.wins,
-      losses: s.losses,
-      draws: s.draws,
-      total: s.total,
-      winRate: winRate(s.wins, s.losses),
-      opponents: Array.from(s.opponents.entries())
-        .map(([opponentName, o]) => finalizeDetailWithName(o, opponentName))
-        .sort((a, b) => b.total - a.total),
-    }))
-    .sort((a, b) => b.total - a.total);
-
-  const opponentDeckStats = Array.from(oppDeckMap.entries())
-    .map(([deckName, s]) => ({
-      deckName,
-      ...s,
-      winRate: winRate(s.wins, s.losses),
-    }))
-    .sort((a, b) => b.total - a.total);
+  type TurnRow = {
+    first_wins: number | string; first_losses: number | string; first_draws: number | string | null;
+    second_wins: number | string; second_losses: number | string; second_draws: number | string | null;
+    unknown_wins: number | string; unknown_losses: number | string; unknown_draws: number | string | null;
+  };
+  const turnRow = ((turnData as unknown as TurnRow[]) ?? [])[0];
+  const turnOrder: TurnOrderSummary = turnRow ? {
+    firstWins: toN(turnRow.first_wins),
+    firstLosses: toN(turnRow.first_losses),
+    firstDraws: toN(turnRow.first_draws),
+    secondWins: toN(turnRow.second_wins),
+    secondLosses: toN(turnRow.second_losses),
+    secondDraws: toN(turnRow.second_draws),
+    unknownWins: toN(turnRow.unknown_wins),
+    unknownLosses: toN(turnRow.unknown_losses),
+    unknownDraws: toN(turnRow.unknown_draws),
+  } : { ...EMPTY_TURN_ORDER };
 
   return { myDeckStats, opponentDeckStats, turnOrder };
 }
-
-// 結果を 3 分岐で集計するヘルパー（turn_order も考慮）
-function addToDetail(
-  detail: OpponentDetail,
-  result: BattleResult,
-  turnOrder: string | null,
-) {
-  detail.total++;
-  if (result === "win") detail.wins++;
-  else if (result === "loss") detail.losses++;
-  else detail.draws++;
-
-  if (turnOrder === "first") {
-    detail.firstTotal++;
-    if (result === "win") detail.firstWins++;
-    else if (result === "loss") detail.firstLosses++;
-    else detail.firstDraws++;
-  } else if (turnOrder === "second") {
-    detail.secondTotal++;
-    if (result === "win") detail.secondWins++;
-    else if (result === "loss") detail.secondLosses++;
-    else detail.secondDraws++;
-  } else {
-    detail.unknownTotal++;
-    if (result === "win") detail.unknownWins++;
-    else if (result === "loss") detail.unknownLosses++;
-    else detail.unknownDraws++;
-  }
-}
-
-const finalizeDetail = (d: OpponentDetail): OpponentDetail => ({
-  ...d,
-  winRate: winRate(d.wins, d.losses),
-  firstWinRate: winRate(d.firstWins, d.firstLosses),
-  secondWinRate: winRate(d.secondWins, d.secondLosses),
-  unknownWinRate: winRate(d.unknownWins, d.unknownLosses),
-});
-
-const finalizeDetailWithName = (d: OpponentDetail, opponentName: string) => ({
-  opponentName,
-  ...finalizeDetail(d),
-});
 
 export type TuningOpponentDetail = OpponentDetail;
 
@@ -305,81 +282,74 @@ export async function getDeckDetailStats(
   const empty: DeckDetailStats = { overall: [], overallWins: 0, overallLosses: 0, overallDraws: 0, overallTotal: 0, overallWinRate: null, tuningStats: [] };
   if (!user) return empty;
 
-  let query = supabase
-    .from("battles")
-    .select("opponent_deck_name, result, turn_order, my_deck_name, tuning_name")
-    .eq("user_id", user.id)
-    .eq("format", format);
+  // 2 personal RPC (overall + by_tuning) を並列実行し TS 側で legacy return shape に組み立てる。
+  // by_tuning は (tuning_name, opponent_deck_name) per row、TS で tuning_name ごとに軽くグルーピングする。
+  const params = {
+    p_deck_name: deckName,
+    p_format: format,
+    p_start_date: startDate ?? null,
+    p_end_date: endDate ?? null,
+  };
 
-  if (startDate) {
-    query = query.gte("fought_at", startDate);
-  }
-  if (endDate) {
-    const endPlusOne = new Date(endDate);
-    endPlusOne.setDate(endPlusOne.getDate() + 1);
-    query = query.lt("fought_at", endPlusOne.toISOString().split("T")[0]);
-  }
+  // database.types.ts の自動生成型に未登録のため supabase.rpc を any にキャスト (既存パターン)。
+  const rpc = supabase.rpc as unknown as (
+    name: string,
+    args: Record<string, unknown>
+  ) => Promise<{ data: unknown; error: unknown }>;
 
-  const { data: battles } = await query;
-  if (!battles || battles.length === 0) return empty;
+  const [{ data: overallData }, { data: byTuningData }] = await Promise.all([
+    rpc("get_personal_deck_detail_stats_overall", params),
+    rpc("get_personal_deck_detail_stats_by_tuning", params),
+  ]);
 
-  const filtered = battles.filter(b => b.my_deck_name === deckName);
-  if (filtered.length === 0) return empty;
+  const overallRows = (overallData as unknown as DeckDetailOverallRpcRow[]) ?? [];
+  if (overallRows.length === 0) return empty;
 
-  const overallMap = new Map<string, OpponentDetail>();
-  const tuningMap = new Map<string, { tuningName: string; opponents: Map<string, OpponentDetail>; wins: number; losses: number; draws: number; total: number }>();
-
-  let overallWins = 0;
-  let overallLosses = 0;
-  let overallDraws = 0;
-
-  for (const b of filtered) {
-    const oppName = b.opponent_deck_name;
-    const r = b.result as BattleResult;
-
-    // Overall
-    if (!overallMap.has(oppName)) overallMap.set(oppName, newOppDetail());
-    addToDetail(overallMap.get(oppName)!, r, b.turn_order);
-    if (r === "win") overallWins++;
-    else if (r === "loss") overallLosses++;
-    else overallDraws++;
-
-    // Tuning
-    const tuningName = b.tuning_name ?? "指定なし";
-    const tuningKey = tuningName;
-    if (!tuningMap.has(tuningKey)) {
-      tuningMap.set(tuningKey, { tuningName, opponents: new Map(), wins: 0, losses: 0, draws: 0, total: 0 });
-    }
-    const tEntry = tuningMap.get(tuningKey)!;
-    tEntry.total++;
-    if (r === "win") tEntry.wins++;
-    else if (r === "loss") tEntry.losses++;
-    else tEntry.draws++;
-    if (!tEntry.opponents.has(oppName)) tEntry.opponents.set(oppName, newOppDetail());
-    addToDetail(tEntry.opponents.get(oppName)!, r, b.turn_order);
-  }
-
-  const overall = Array.from(overallMap.entries())
-    .map(([opponentName, d]) => finalizeDetailWithName(d, opponentName))
+  const overall = overallRows
+    .map((r) => ({ opponentName: r.opponent_deck_name, ...mapDetailRow(r) }))
     .sort((a, b) => b.total - a.total);
 
+  const overallWins = overall.reduce((s, o) => s + o.wins, 0);
+  const overallLosses = overall.reduce((s, o) => s + o.losses, 0);
+  const overallDraws = overall.reduce((s, o) => s + o.draws, 0);
   const overallTotal = overallWins + overallLosses + overallDraws;
 
+  // by_tuning グルーピング (tuning_name 単位で opponents 配列を集約 + total/win/loss/draw を sum)
+  const byTuningRows = (byTuningData as unknown as DeckDetailByTuningRpcRow[]) ?? [];
+  const tuningMap = new Map<string, { wins: number; losses: number; draws: number; total: number; opponents: Array<{ opponentName: string } & OpponentDetail> }>();
+
+  for (const r of byTuningRows) {
+    const entry = tuningMap.get(r.tuning_name) ?? { wins: 0, losses: 0, draws: 0, total: 0, opponents: [] };
+    const detail = mapDetailRow(r);
+    entry.wins += detail.wins;
+    entry.losses += detail.losses;
+    entry.draws += detail.draws;
+    entry.total += detail.total;
+    entry.opponents.push({ opponentName: r.opponent_deck_name, ...detail });
+    tuningMap.set(r.tuning_name, entry);
+  }
+
   const tuningStats: TuningStats[] = Array.from(tuningMap.entries())
-    .map(([, t]) => ({
-      tuningName: t.tuningName,
+    .map(([tuningName, t]) => ({
+      tuningName,
       wins: t.wins,
       losses: t.losses,
       draws: t.draws,
       total: t.total,
       winRate: winRate(t.wins, t.losses),
-      opponents: Array.from(t.opponents.entries())
-        .map(([opponentName, d]) => finalizeDetailWithName(d, opponentName))
-        .sort((a, b) => b.total - a.total),
+      opponents: t.opponents.sort((a, b) => b.total - a.total),
     }))
     .sort((a, b) => b.total - a.total);
 
-  return { overall, overallWins, overallLosses, overallDraws, overallTotal, overallWinRate: winRate(overallWins, overallLosses), tuningStats };
+  return {
+    overall,
+    overallWins,
+    overallLosses,
+    overallDraws,
+    overallTotal,
+    overallWinRate: winRate(overallWins, overallLosses),
+    tuningStats,
+  };
 }
 
 export type OpponentDeckDetailStats = {
@@ -402,51 +372,39 @@ export async function getOpponentDeckDetailStats(
   const empty: OpponentDeckDetailStats = { overall: [], overallWins: 0, overallLosses: 0, overallDraws: 0, overallTotal: 0, overallWinRate: null };
   if (!user) return empty;
 
-  let query = supabase
-    .from("battles")
-    .select("opponent_deck_name, result, turn_order, my_deck_name")
-    .eq("user_id", user.id)
-    .eq("format", format);
+  // personal RPC 経由で my_deck 軸の集計を取得 (legacy JS 集計の RPC 化)。
+  // database.types.ts の自動生成型に未登録のため supabase.rpc を any にキャスト (既存パターン)。
+  const { data, error } = await (supabase.rpc as unknown as (
+    name: string,
+    args: Record<string, unknown>
+  ) => Promise<{ data: unknown; error: unknown }>)("get_personal_opponent_deck_detail_stats", {
+    p_opponent_deck_name: opponentDeckName,
+    p_format: format,
+    p_start_date: startDate ?? null,
+    p_end_date: endDate ?? null,
+  });
+  if (error || !data) return empty;
 
-  if (startDate) {
-    query = query.gte("fought_at", startDate);
-  }
-  if (endDate) {
-    const endPlusOne = new Date(endDate);
-    endPlusOne.setDate(endPlusOne.getDate() + 1);
-    query = query.lt("fought_at", endPlusOne.toISOString().split("T")[0]);
-  }
+  const rows = (data as unknown as OpponentDeckDetailRpcRow[]) ?? [];
+  if (rows.length === 0) return empty;
 
-  const { data: battles } = await query;
-  if (!battles || battles.length === 0) return empty;
-
-  const filtered = battles.filter(b => (b.opponent_deck_name) === opponentDeckName);
-  if (filtered.length === 0) return empty;
-
-  // Group by my deck name
-  const myDeckMap = new Map<string, OpponentDetail>();
-  let overallWins = 0;
-  let overallLosses = 0;
-  let overallDraws = 0;
-
-  for (const b of filtered) {
-    const myDeckName = b.my_deck_name ?? "不明";
-    const r = b.result as BattleResult;
-
-    if (!myDeckMap.has(myDeckName)) myDeckMap.set(myDeckName, newOppDetail());
-    addToDetail(myDeckMap.get(myDeckName)!, r, b.turn_order);
-    if (r === "win") overallWins++;
-    else if (r === "loss") overallLosses++;
-    else overallDraws++;
-  }
-
-  const overall = Array.from(myDeckMap.entries())
-    .map(([myDeckName, d]) => ({ myDeckName, ...finalizeDetail(d) }))
+  const overall = rows
+    .map((r) => ({ myDeckName: r.my_deck_name, ...mapDetailRow(r) }))
     .sort((a, b) => b.total - a.total);
 
+  const overallWins = overall.reduce((s, o) => s + o.wins, 0);
+  const overallLosses = overall.reduce((s, o) => s + o.losses, 0);
+  const overallDraws = overall.reduce((s, o) => s + o.draws, 0);
   const overallTotal = overallWins + overallLosses + overallDraws;
 
-  return { overall, overallWins, overallLosses, overallDraws, overallTotal, overallWinRate: winRate(overallWins, overallLosses) };
+  return {
+    overall,
+    overallWins,
+    overallLosses,
+    overallDraws,
+    overallTotal,
+    overallWinRate: winRate(overallWins, overallLosses),
+  };
 }
 
 export async function getPersonalEnvironmentSharesByRange(
