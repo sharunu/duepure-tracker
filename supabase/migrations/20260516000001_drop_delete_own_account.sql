@@ -1,0 +1,23 @@
+-- PR10 Phase B: 旧 delete_own_account() SECDEF RPC を DROP
+--
+-- 経緯:
+--   - 2026-03-09 (20260309000002_delete_own_account_rpc.sql): 初期定義
+--   - 2026-04-26 (20260426050849_secdef_search_path_phase2.sql): SECDEF + search_path=''
+--     再定義 + authenticated への GRANT
+--   - 2026-05-12 (20260512000001_revoke_anon_residual_grants.sql): authenticated への明示 GRANT 維持
+--
+-- 2026-05-13 (PR10 Phase A) で本人アカウント削除を /api/account/delete (Bearer JWT + service_role)
+-- 経由のフローに切り替え、本番反映完了 (main c971ca4)。
+-- 旧 RPC の呼び出し元 (src/lib/actions/account-actions.ts の rpc("delete_own_account")) は
+-- Phase A で fetch("/api/account/delete") に置き換わり、grep -rn でも実行コード上の参照は
+-- 0 件であることを確認済。
+--
+-- DROP の理由:
+--   - 同一機能を持つ経路が 2 つ並存すると、将来「どちらを使えばいいか」「両方メンテ漏れ」
+--     などの混乱を生むため新フロー固定後は旧経路を削除する方針
+--   - SECDEF 関数自体は攻撃面 (search_path 経由の権限昇格) のリスクが付きまとうので
+--     使われていないなら DROP したい
+--
+-- DROP 時に関連する全ての GRANT / REVOKE は同時に消える (関数オブジェクトに紐付くため)。
+
+DROP FUNCTION IF EXISTS public.delete_own_account();

@@ -854,7 +854,6 @@ export type Database = {
           }
       calculate_quality_score: { Args: { p_user_id: string }; Returns: Json }
       clear_my_x_connection: { Args: never; Returns: undefined }
-      delete_own_account: { Args: never; Returns: undefined }
       detect_extreme_winrate: {
         Args: { p_params: Json }
         Returns: {
