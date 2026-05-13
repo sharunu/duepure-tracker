@@ -1,5 +1,14 @@
 # 2026-05-11 公開前 DB 改善 (Phase 2)
 
+> **ステータス: 完了 (2026-05-13)**
+> PR4〜PR10 (PR9 は Phase 9a / 9b / 9b-2 / 9b-3 の 4 分割、PR10 は Phase A / B の 2 分割、計 11 phase)
+> を staging + production の両方に反映完了。詳細は git log と `supabase/migrations/2026051200000{1-3}` /
+> `2026051300000{1-3}` / `2026051400000{1}` / `2026051500000{1-2}` / `2026051600000{1}` を参照。
+> 次の plan で扱う持ち越し:
+> - `database.types.ts` の最新化 (PR9 で投入した `app_settings` / `shares.expires_at` /
+>   `shares.image_path` / `list_expired_shares` RPC が型に未反映)
+> - 公開前残タスク 9 項目 (記憶 `project_remaining_tasks_after_2026_05_09.md`)
+
 ## 目的
 PR1〜PR3 の Advisor 警告解消 hardening に続く、利用者増加時に後から困る DB / 性能 / 運用改善を公開前に詰める。コードとスキーマ両面で、現状動いている既存挙動を壊さず、性能と整合性を底上げする。
 

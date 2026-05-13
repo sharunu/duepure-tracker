@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { requireBearer } from "@/lib/auth/require-bearer";
+import type { Database } from "@/lib/supabase/database.types";
 
 // PR9 Phase 9b: 期限切れ share の手動削除 API (admin-only)
 //   GET  : list_expired_shares() の件数を返す (preview)
@@ -12,12 +13,7 @@ import { requireBearer } from "@/lib/auth/require-bearer";
 
 const STORAGE_PATH_MARKER = "/storage/v1/object/public/share-images/";
 
-type ExpiredShareRow = {
-  id: string;
-  user_id: string | null;
-  image_path: string | null;
-  image_url: string | null;
-};
+type ExpiredShareRow = Database["public"]["Functions"]["list_expired_shares"]["Returns"][number];
 
 function deriveStoragePath(row: ExpiredShareRow): string | null {
   if (row.image_path && row.image_path.trim() !== "" && row.image_path !== "/") {
@@ -32,11 +28,11 @@ function deriveStoragePath(row: ExpiredShareRow): string | null {
 }
 
 async function fetchExpired(
-  supabaseAdmin: SupabaseClient,
+  supabaseAdmin: SupabaseClient<Database>,
 ): Promise<{ rows: ExpiredShareRow[]; error: string | null }> {
   const { data, error } = await supabaseAdmin.rpc("list_expired_shares");
   if (error) return { rows: [], error: error.message };
-  return { rows: (data as ExpiredShareRow[] | null) ?? [], error: null };
+  return { rows: data ?? [], error: null };
 }
 
 export async function GET(request: NextRequest) {

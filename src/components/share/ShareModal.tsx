@@ -7,6 +7,7 @@ import type { StatsShareData, DeckShareData } from "./ShareButton";
 import { StatsShareCard } from "./StatsShareCard";
 import { DeckShareCard } from "./DeckShareCard";
 import { createClient } from "@/lib/supabase/client";
+import type { Database } from "@/lib/supabase/database.types";
 import { generateShareId } from "@/lib/share-utils";
 import { formatWLTJa } from "@/lib/battle/result-format";
 
@@ -148,10 +149,15 @@ export function ShareModal({ type, data, onClose }: Props) {
         }
       }
 
-      const insertPayload: Record<string, unknown> = {
+      // expires_at は DB の set_shares_expires_at BEFORE INSERT trigger
+      // (app_settings.share_retention_days から自動補完) に任せるため、
+      // Insert 型から omit して narrow cast で渡す。trigger 動作は
+      // supabase/migrations/20260515000001_app_settings_and_shares_expiry.sql 参照。
+      type SharesInsert = Database["public"]["Tables"]["shares"]["Insert"];
+      const insertPayload: Omit<SharesInsert, "expires_at"> = {
         id,
         share_type: type,
-        share_data: data as unknown as import("@/lib/supabase/database.types").Json,
+        share_data: data as unknown as SharesInsert["share_data"],
         user_id: user.id,
         game_title: game,
       };
@@ -160,7 +166,7 @@ export function ShareModal({ type, data, onClose }: Props) {
 
       const { error: insertError } = await supabase
         .from("shares")
-        .insert(insertPayload as never);
+        .insert(insertPayload as SharesInsert);
 
       if (insertError) throw insertError;
 

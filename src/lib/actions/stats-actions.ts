@@ -1,45 +1,44 @@
 import { createClient } from "@/lib/supabase/client";
 import { winRate } from "@/lib/battle/result-format";
+import type { Database } from "@/lib/supabase/database.types";
 
 // PR7 Phase 7b: 4 個人統計関数 (getPersonalStats / getDetailedPersonalStats /
 // getDeckDetailStats / getOpponentDeckDetailStats) は personal stats RPC 経由に切替済。
-// JS 集計時代のヘルパー (addToDetail / newOppDetail / finalizeDetail / finalizeDetailWithName) は
-// 切替により dead になったため削除。
-type PersonalStatsRpcRow = {
-  deck_name: string;
-  wins: number | string;
-  losses: number | string;
-  draws: number | string | null;
-  total: number | string;
-  win_rate: number | string | null;
+//
+// 2026-05-13 types regen 後: supabase gen types で 6 personal stats RPC が型に乗ったため、
+// 自前の PersonalStatsRpcRow / DeckDetailOverallRpcRow 等は廃止し auto-gen 型を直接利用。
+// auto-gen は bigint → number / numeric → number として宣言するが、runtime では numeric が
+// string 化される可能性があるため toN / toWinRate で受けて Number() 変換 (安全側 wrap)。
+//
+// nullable args: function 側は p_start_date / p_end_date を IS NULL チェック付きで受けるが、
+// auto-gen は required string と判定する (DEFAULT NULL 明記なしのため)。call site で
+// `as DateRangeArgs` で narrow cast する (runtime 実態に合わせるための型表現の調整)。
+type DateRangeArgs = {
+  p_start_date: string | null;
+  p_end_date: string | null;
+  p_format: string;
 };
 
-type PersonalDetailRpcRow = {
-  wins: number | string;
-  losses: number | string;
-  draws: number | string | null;
-  total: number | string;
-  win_rate: number | string | null;
-  first_wins: number | string;
-  first_losses: number | string;
-  first_draws: number | string | null;
-  first_total: number | string;
-  second_wins: number | string;
-  second_losses: number | string;
-  second_draws: number | string | null;
-  second_total: number | string;
-  unknown_wins: number | string;
-  unknown_losses: number | string;
-  unknown_draws: number | string | null;
-  unknown_total: number | string;
+// 詳細 RPC 系の共通 shape (mapDetailRow が受け取る形)
+type DetailRowBase = {
+  wins: number;
+  losses: number;
+  draws: number;
+  total: number;
+  win_rate: number;
+  first_wins: number;
+  first_losses: number;
+  first_draws: number;
+  first_total: number;
+  second_wins: number;
+  second_losses: number;
+  second_draws: number;
+  second_total: number;
+  unknown_wins: number;
+  unknown_losses: number;
+  unknown_draws: number;
+  unknown_total: number;
 };
-
-type DeckDetailOverallRpcRow = PersonalDetailRpcRow & { opponent_deck_name: string };
-type DeckDetailByTuningRpcRow = PersonalDetailRpcRow & {
-  tuning_name: string;
-  opponent_deck_name: string;
-};
-type OpponentDeckDetailRpcRow = PersonalDetailRpcRow & { my_deck_name: string };
 
 const toN = (v: number | string | null | undefined): number =>
   v == null ? 0 : Number(v);
@@ -47,7 +46,7 @@ const toN = (v: number | string | null | undefined): number =>
 const toWinRate = (v: number | string | null | undefined): number | null =>
   v == null ? null : Number(v);
 
-const mapDetailRow = (r: PersonalDetailRpcRow): OpponentDetail => ({
+const mapDetailRow = (r: DetailRowBase): OpponentDetail => ({
   wins: toN(r.wins),
   losses: toN(r.losses),
   draws: toN(r.draws),
@@ -78,18 +77,19 @@ export async function getPersonalStats(format: string = "ND") {
   if (!user) return [];
 
   // 個人統計 RPC で opponent_deck 軸に集計 (auth.uid() で本人 battles のみ対象)。
-  // 全期間表示のため p_start_date / p_end_date は null。
-  // database.types.ts の自動生成型に未登録のため supabase 全体を any にキャスト (this binding を保持)。
-  const rpcs = supabase as unknown as {
-    rpc: (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>;
-  };
-  const { data, error } = await rpcs.rpc("get_personal_opponent_deck_stats_range", {
+  // 全期間表示のため p_start_date / p_end_date は null (function 側で IS NULL チェック)。
+  // auto-gen Args は required string なので DateRangeArgs で widen して通す。
+  const args: DateRangeArgs = {
     p_start_date: null,
     p_end_date: null,
     p_format: format,
-  });
+  };
+  const { data, error } = await supabase.rpc(
+    "get_personal_opponent_deck_stats_range",
+    args as Database["public"]["Functions"]["get_personal_opponent_deck_stats_range"]["Args"],
+  );
   if (error || !data) return [];
-  return ((data as unknown as PersonalStatsRpcRow[]) ?? []).map((r) => ({
+  return data.map((r) => ({
     deckName: r.deck_name,
     wins: toN(r.wins),
     losses: toN(r.losses),
@@ -191,30 +191,33 @@ export async function getDetailedPersonalStats(
 
   // 個人統計 RPC を 3 本並列で呼び、TS 側で legacy return shape に組み立てる。
   // myDeckStats[].opponents は型定義上残るが UI で未参照のため空配列で OK。
-  const params = {
+  const args: DateRangeArgs = {
     p_start_date: startDate ?? null,
     p_end_date: endDate ?? null,
     p_format: format,
   };
 
-  // database.types.ts の自動生成型に未登録のため supabase 全体を any にキャスト (既存パターン)。
-  // ※ const rpc = supabase.rpc as ... で参照を取り出すと this binding が失われて SDK 内部の
-  //    this.url / this.headers が undefined になり throw する。必ず supabase.rpc(...) を method
-  //    call として呼ぶこと。
-  const rpcs = supabase as unknown as {
-    rpc: (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>;
-  };
-
+  // p_start_date / p_end_date は null 可だが auto-gen は string 必須として宣言するため
+  // 各 .rpc() 呼び出し時に narrow cast する (runtime 実態に合わせる)。
   const [{ data: myDeckData, error: myDeckErr }, { data: oppDeckData, error: oppDeckErr }, { data: turnData, error: turnErr }] = await Promise.all([
-    rpcs.rpc("get_personal_my_deck_stats_range", params),
-    rpcs.rpc("get_personal_opponent_deck_stats_range", params),
-    rpcs.rpc("get_personal_turn_order_stats_range", params),
+    supabase.rpc(
+      "get_personal_my_deck_stats_range",
+      args as Database["public"]["Functions"]["get_personal_my_deck_stats_range"]["Args"],
+    ),
+    supabase.rpc(
+      "get_personal_opponent_deck_stats_range",
+      args as Database["public"]["Functions"]["get_personal_opponent_deck_stats_range"]["Args"],
+    ),
+    supabase.rpc(
+      "get_personal_turn_order_stats_range",
+      args as Database["public"]["Functions"]["get_personal_turn_order_stats_range"]["Args"],
+    ),
   ]);
   if (myDeckErr) throw new Error(`get_personal_my_deck_stats_range failed: ${myDeckErr.message}`);
   if (oppDeckErr) throw new Error(`get_personal_opponent_deck_stats_range failed: ${oppDeckErr.message}`);
   if (turnErr) throw new Error(`get_personal_turn_order_stats_range failed: ${turnErr.message}`);
 
-  const myDeckStats = ((myDeckData as unknown as PersonalStatsRpcRow[]) ?? []).map((r) => ({
+  const myDeckStats = (myDeckData ?? []).map((r) => ({
     deckName: r.deck_name,
     wins: toN(r.wins),
     losses: toN(r.losses),
@@ -224,7 +227,7 @@ export async function getDetailedPersonalStats(
     opponents: [] as Array<{ opponentName: string } & OpponentDetail>,
   }));
 
-  const opponentDeckStats = ((oppDeckData as unknown as PersonalStatsRpcRow[]) ?? []).map((r) => ({
+  const opponentDeckStats = (oppDeckData ?? []).map((r) => ({
     deckName: r.deck_name,
     wins: toN(r.wins),
     losses: toN(r.losses),
@@ -233,12 +236,7 @@ export async function getDetailedPersonalStats(
     winRate: toWinRate(r.win_rate),
   }));
 
-  type TurnRow = {
-    first_wins: number | string; first_losses: number | string; first_draws: number | string | null;
-    second_wins: number | string; second_losses: number | string; second_draws: number | string | null;
-    unknown_wins: number | string; unknown_losses: number | string; unknown_draws: number | string | null;
-  };
-  const turnRow = ((turnData as unknown as TurnRow[]) ?? [])[0];
+  const turnRow = (turnData ?? [])[0];
   const turnOrder: TurnOrderSummary = turnRow ? {
     firstWins: toN(turnRow.first_wins),
     firstLosses: toN(turnRow.first_losses),
@@ -289,28 +287,33 @@ export async function getDeckDetailStats(
 
   // 2 personal RPC (overall + by_tuning) を並列実行し TS 側で legacy return shape に組み立てる。
   // by_tuning は (tuning_name, opponent_deck_name) per row、TS で tuning_name ごとに軽くグルーピングする。
-  const params = {
+  type DeckDetailArgs = {
+    p_deck_name: string;
+    p_format: string;
+    p_start_date: string | null;
+    p_end_date: string | null;
+  };
+  const args: DeckDetailArgs = {
     p_deck_name: deckName,
     p_format: format,
     p_start_date: startDate ?? null,
     p_end_date: endDate ?? null,
   };
 
-  // database.types.ts の自動生成型に未登録のため supabase 全体を any にキャスト (既存パターン)。
-  // ※ const rpc = supabase.rpc as ... で参照を取り出すと this binding が失われて throw するため、
-  //    必ず supabase.rpc(...) を method call として呼ぶ。
-  const rpcs = supabase as unknown as {
-    rpc: (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>;
-  };
-
   const [{ data: overallData, error: overallErr }, { data: byTuningData, error: byTuningErr }] = await Promise.all([
-    rpcs.rpc("get_personal_deck_detail_stats_overall", params),
-    rpcs.rpc("get_personal_deck_detail_stats_by_tuning", params),
+    supabase.rpc(
+      "get_personal_deck_detail_stats_overall",
+      args as Database["public"]["Functions"]["get_personal_deck_detail_stats_overall"]["Args"],
+    ),
+    supabase.rpc(
+      "get_personal_deck_detail_stats_by_tuning",
+      args as Database["public"]["Functions"]["get_personal_deck_detail_stats_by_tuning"]["Args"],
+    ),
   ]);
   if (overallErr) throw new Error(`get_personal_deck_detail_stats_overall failed: ${overallErr.message}`);
   if (byTuningErr) throw new Error(`get_personal_deck_detail_stats_by_tuning failed: ${byTuningErr.message}`);
 
-  const overallRows = (overallData as unknown as DeckDetailOverallRpcRow[]) ?? [];
+  const overallRows = overallData ?? [];
   if (overallRows.length === 0) return empty;
 
   const overall = overallRows
@@ -323,7 +326,7 @@ export async function getDeckDetailStats(
   const overallTotal = overallWins + overallLosses + overallDraws;
 
   // by_tuning グルーピング (tuning_name 単位で opponents 配列を集約 + total/win/loss/draw を sum)
-  const byTuningRows = (byTuningData as unknown as DeckDetailByTuningRpcRow[]) ?? [];
+  const byTuningRows = byTuningData ?? [];
   const tuningMap = new Map<string, { wins: number; losses: number; draws: number; total: number; opponents: Array<{ opponentName: string } & OpponentDetail> }>();
 
   for (const r of byTuningRows) {
@@ -381,20 +384,27 @@ export async function getOpponentDeckDetailStats(
   if (!user) return empty;
 
   // personal RPC 経由で my_deck 軸の集計を取得 (legacy JS 集計の RPC 化)。
-  // database.types.ts の自動生成型に未登録のため supabase 全体を any にキャスト (this binding を保持)。
-  const rpcs = supabase as unknown as {
-    rpc: (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>;
+  // p_start_date / p_end_date は null 可 (function 側 IS NULL チェック) のため narrow cast。
+  type OpponentDetailArgs = {
+    p_opponent_deck_name: string;
+    p_format: string;
+    p_start_date: string | null;
+    p_end_date: string | null;
   };
-  const { data, error } = await rpcs.rpc("get_personal_opponent_deck_detail_stats", {
+  const args: OpponentDetailArgs = {
     p_opponent_deck_name: opponentDeckName,
     p_format: format,
     p_start_date: startDate ?? null,
     p_end_date: endDate ?? null,
-  });
+  };
+  const { data, error } = await supabase.rpc(
+    "get_personal_opponent_deck_detail_stats",
+    args as Database["public"]["Functions"]["get_personal_opponent_deck_detail_stats"]["Args"],
+  );
   if (error) throw new Error(`get_personal_opponent_deck_detail_stats failed: ${error.message}`);
   if (!data) return empty;
 
-  const rows = (data as unknown as OpponentDeckDetailRpcRow[]) ?? [];
+  const rows = data;
   if (rows.length === 0) return empty;
 
   const overall = rows
