@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.4"
-  }
   graphql_public: {
     Tables: {
       [_ in never]: never
@@ -39,6 +34,38 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_settings: {
+        Row: {
+          description: string | null
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          description?: string | null
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value: Json
+        }
+        Update: {
+          description?: string | null
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       battles: {
         Row: {
           format: string
@@ -669,8 +696,10 @@ export type Database = {
       shares: {
         Row: {
           created_at: string
+          expires_at: string
           game_title: string
           id: string
+          image_path: string | null
           image_url: string | null
           share_data: Json
           share_type: string
@@ -678,8 +707,10 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          expires_at: string
           game_title?: string
           id: string
+          image_path?: string | null
           image_url?: string | null
           share_data: Json
           share_type: string
@@ -687,8 +718,10 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          expires_at?: string
           game_title?: string
           id?: string
+          image_path?: string | null
           image_url?: string | null
           share_data?: Json
           share_type?: string
@@ -826,6 +859,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _calculate_quality_score_internal: {
+        Args: { p_user_id: string }
+        Returns: Json
+      }
+      _recalculate_opponent_decks_internal: {
+        Args: { p_format: string; p_game_title: string }
+        Returns: undefined
+      }
+      _run_detection_scan_internal: { Args: never; Returns: number }
+      _run_quality_scoring_internal: {
+        Args: { p_auto_update?: boolean }
+        Returns: Json
+      }
       admin_update_user_stage: {
         Args: { p_new_stage: number; p_reason: string; p_user_id: string }
         Returns: undefined
@@ -839,21 +885,14 @@ export type Database = {
         }
         Returns: Json
       }
-      auto_add_opponent_deck:
-        | {
-            Args: { p_deck_name: string; p_format: string }
-            Returns: undefined
-          }
-        | {
-            Args: {
-              p_deck_name: string
-              p_format: string
-              p_game_title?: string
-            }
-            Returns: undefined
-          }
+      auto_add_opponent_deck: {
+        Args: { p_deck_name: string; p_format: string; p_game_title?: string }
+        Returns: undefined
+      }
       calculate_quality_score: { Args: { p_user_id: string }; Returns: Json }
       clear_my_x_connection: { Args: never; Returns: undefined }
+      cron_run_detection_scan: { Args: never; Returns: number }
+      cron_run_quality_scoring: { Args: never; Returns: Json }
       detect_extreme_winrate: {
         Args: { p_params: Json }
         Returns: {
@@ -893,23 +932,14 @@ export type Database = {
           share_pct: number
         }[]
       }
-      get_environment_deck_shares:
-        | {
-            Args: { p_days?: number }
-            Returns: {
-              battle_count: number
-              deck_name: string
-              share_pct: number
-            }[]
-          }
-        | {
-            Args: { p_days?: number; p_format?: string }
-            Returns: {
-              battle_count: number
-              deck_name: string
-              share_pct: number
-            }[]
-          }
+      get_environment_deck_shares: {
+        Args: { p_days?: number; p_format?: string }
+        Returns: {
+          battle_count: number
+          deck_name: string
+          share_pct: number
+        }[]
+      }
       get_environment_deck_shares_range: {
         Args: { p_end_date: string; p_format?: string; p_start_date: string }
         Returns: {
@@ -1025,26 +1055,140 @@ export type Database = {
           unknown_wins: number
         }[]
       }
-      get_opponent_deck_suggestions:
-        | {
-            Args: never
-            Returns: {
-              deck_name: string
-            }[]
-          }
-        | {
-            Args: { p_format?: string }
-            Returns: {
-              deck_category: string
-              deck_name: string
-            }[]
-          }
+      get_opponent_deck_suggestions: {
+        Args: { p_format?: string }
+        Returns: {
+          deck_category: string
+          deck_name: string
+        }[]
+      }
+      get_personal_deck_detail_stats_by_tuning: {
+        Args: {
+          p_deck_name: string
+          p_end_date: string
+          p_format: string
+          p_start_date: string
+        }
+        Returns: {
+          draws: number
+          first_draws: number
+          first_losses: number
+          first_total: number
+          first_wins: number
+          losses: number
+          opponent_deck_name: string
+          second_draws: number
+          second_losses: number
+          second_total: number
+          second_wins: number
+          total: number
+          tuning_name: string
+          unknown_draws: number
+          unknown_losses: number
+          unknown_total: number
+          unknown_wins: number
+          win_rate: number
+          wins: number
+        }[]
+      }
+      get_personal_deck_detail_stats_overall: {
+        Args: {
+          p_deck_name: string
+          p_end_date: string
+          p_format: string
+          p_start_date: string
+        }
+        Returns: {
+          draws: number
+          first_draws: number
+          first_losses: number
+          first_total: number
+          first_wins: number
+          losses: number
+          opponent_deck_name: string
+          second_draws: number
+          second_losses: number
+          second_total: number
+          second_wins: number
+          total: number
+          unknown_draws: number
+          unknown_losses: number
+          unknown_total: number
+          unknown_wins: number
+          win_rate: number
+          wins: number
+        }[]
+      }
       get_personal_environment_shares_range: {
         Args: { p_end_date: string; p_format?: string; p_start_date: string }
         Returns: {
           battle_count: number
           deck_name: string
           share_pct: number
+        }[]
+      }
+      get_personal_my_deck_stats_range: {
+        Args: { p_end_date: string; p_format: string; p_start_date: string }
+        Returns: {
+          deck_name: string
+          draws: number
+          losses: number
+          total: number
+          win_rate: number
+          wins: number
+        }[]
+      }
+      get_personal_opponent_deck_detail_stats: {
+        Args: {
+          p_end_date: string
+          p_format: string
+          p_opponent_deck_name: string
+          p_start_date: string
+        }
+        Returns: {
+          draws: number
+          first_draws: number
+          first_losses: number
+          first_total: number
+          first_wins: number
+          losses: number
+          my_deck_name: string
+          second_draws: number
+          second_losses: number
+          second_total: number
+          second_wins: number
+          total: number
+          unknown_draws: number
+          unknown_losses: number
+          unknown_total: number
+          unknown_wins: number
+          win_rate: number
+          wins: number
+        }[]
+      }
+      get_personal_opponent_deck_stats_range: {
+        Args: { p_end_date: string; p_format: string; p_start_date: string }
+        Returns: {
+          deck_name: string
+          draws: number
+          losses: number
+          total: number
+          win_rate: number
+          wins: number
+        }[]
+      }
+      get_personal_turn_order_stats_range: {
+        Args: { p_end_date: string; p_format: string; p_start_date: string }
+        Returns: {
+          first_draws: number
+          first_losses: number
+          first_wins: number
+          second_draws: number
+          second_losses: number
+          second_wins: number
+          unknown_draws: number
+          unknown_losses: number
+          unknown_wins: number
         }[]
       }
       get_team_deck_detail_stats: {
@@ -1210,9 +1354,19 @@ export type Database = {
         }[]
       }
       is_admin_user: { Args: never; Returns: boolean }
+      is_my_team_member: { Args: { p_team_id: string }; Returns: boolean }
       is_team_member: {
         Args: { p_team_id: string; p_user_id: string }
         Returns: boolean
+      }
+      list_expired_shares: {
+        Args: never
+        Returns: {
+          id: string
+          image_path: string
+          image_url: string
+          user_id: string
+        }[]
       }
       mark_limitless_sync_error: {
         Args: {
@@ -1223,34 +1377,23 @@ export type Database = {
         }
         Returns: undefined
       }
-      recalculate_opponent_decks:
-        | { Args: { p_format: string }; Returns: undefined }
-        | {
-            Args: { p_format: string; p_game_title?: string }
-            Returns: undefined
-          }
+      recalculate_opponent_decks: {
+        Args: { p_format: string; p_game_title?: string }
+        Returns: undefined
+      }
       run_daily_opponent_deck_batch: { Args: never; Returns: undefined }
       run_detection_scan: { Args: never; Returns: number }
       run_quality_scoring: { Args: { p_auto_update?: boolean }; Returns: Json }
       sync_my_x_connection: { Args: never; Returns: boolean }
-      sync_team_membership:
-        | {
-            Args: {
-              p_discord_username: string
-              p_guilds: Json
-              p_user_id: string
-            }
-            Returns: undefined
-          }
-        | {
-            Args: {
-              p_discord_username: string
-              p_game_title?: string
-              p_guilds: Json
-              p_user_id: string
-            }
-            Returns: undefined
-          }
+      sync_team_membership: {
+        Args: {
+          p_discord_username: string
+          p_game_title?: string
+          p_guilds: Json
+          p_user_id: string
+        }
+        Returns: undefined
+      }
       update_feedback_status: {
         Args: { p_feedback_id: string; p_status: string }
         Returns: undefined
@@ -1394,3 +1537,4 @@ export const Constants = {
     Enums: {},
   },
 } as const
+

@@ -3,12 +3,13 @@ import { NextResponse } from "next/server";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 import { getServerEnv } from "@/lib/cf-env";
+import type { Database } from "@/lib/supabase/database.types";
 
 // admin API route (PR9 Phase 9b 以降) で session cookie 経由ではなく
 // Authorization: Bearer <access_token> ヘッダを受け取り、service_role で getUser 検証する
 // 共通ヘルパ。既存 /api/admin/limitless-sync の auth 処理を抽象化したもの。
 export type BearerAuthResult =
-  | { ok: true; userId: string; supabaseAdmin: SupabaseClient }
+  | { ok: true; userId: string; supabaseAdmin: SupabaseClient<Database> }
   | { ok: false; response: NextResponse };
 
 export async function requireBearer(
@@ -39,7 +40,7 @@ export async function requireBearer(
     };
   }
 
-  const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
+  const supabaseAdmin = createClient<Database>(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false },
   });
 

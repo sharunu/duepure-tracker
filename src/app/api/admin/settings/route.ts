@@ -8,12 +8,6 @@ import { requireBearer } from "@/lib/auth/require-bearer";
 // service_role で app_settings を直接読み書きするため、必ず requireBearer({ requireAdmin: true }) で
 // admin チェックを通す。
 
-type AppSettingsRow = {
-  key: string;
-  value: number | string | null;
-  updated_at: string | null;
-};
-
 export async function GET(request: NextRequest) {
   const auth = await requireBearer(request, { requireAdmin: true });
   if (!auth.ok) return auth.response;
@@ -22,7 +16,7 @@ export async function GET(request: NextRequest) {
     .from("app_settings")
     .select("key, value, updated_at")
     .eq("key", "share_retention_days")
-    .maybeSingle<AppSettingsRow>();
+    .maybeSingle();
 
   if (error) {
     return NextResponse.json(
@@ -31,11 +25,13 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  // value は jsonb 型 (Json) なので number / string / その他に narrow する
+  const rawValue = data?.value;
   const days =
-    typeof data?.value === "number"
-      ? data.value
-      : typeof data?.value === "string"
-        ? Number(data.value) || null
+    typeof rawValue === "number"
+      ? rawValue
+      : typeof rawValue === "string"
+        ? Number(rawValue) || null
         : null;
 
   return NextResponse.json({
