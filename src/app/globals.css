@@ -41,7 +41,12 @@
   --chart-5: #3b82f6;
   --chart-6: #ec4899;
   --chart-7: #14b8a6;
-  --chart-8: #64748b;
+  --chart-8: #f97316;
+  --chart-9: #a855f7;
+  --chart-10: #84cc16;
+  --chart-11: #06b6d4;
+  --chart-12: #f43f5e;
+  --chart-other: #64748b;
 
   /* Win Rate gradient (DESIGN.md §8 Win Rate Display) */
   --win-rate-high: #50c878;
@@ -100,7 +105,12 @@
   --chart-5: #2563eb;
   --chart-6: #db2777;
   --chart-7: #0d9488;
-  --chart-8: #475569;
+  --chart-8: #ea580c;
+  --chart-9: #9333ea;
+  --chart-10: #65a30d;
+  --chart-11: #0891b2;
+  --chart-12: #e11d48;
+  --chart-other: #475569;
 
   /* Win Rate gradient (light 背景でコントラスト確保のため濃いめ) */
   --win-rate-high: #15803d;
@@ -145,6 +155,11 @@
   --color-chart-6: var(--chart-6);
   --color-chart-7: var(--chart-7);
   --color-chart-8: var(--chart-8);
+  --color-chart-9: var(--chart-9);
+  --color-chart-10: var(--chart-10);
+  --color-chart-11: var(--chart-11);
+  --color-chart-12: var(--chart-12);
+  --color-chart-other: var(--chart-other);
 
   --color-win-rate-high: var(--win-rate-high);
   --color-win-rate-mid-high: var(--win-rate-mid-high);

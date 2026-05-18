@@ -407,7 +407,7 @@ function StatsPageInner() {
           )}
           {trendMode === "line"
             ? <TrendChart data={filteredTrendData} opponentDeckNameMap={opponentDeckNameMap} />
-            : <TrendHeatmap data={filteredTrendData} />
+            : <TrendHeatmap data={filteredTrendData} opponentDeckNameMap={opponentDeckNameMap} />
           }
         </>
       );

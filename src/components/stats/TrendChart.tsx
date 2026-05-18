@@ -14,7 +14,7 @@ import {
   displayDeckName,
   type OpponentDeckNameMap,
 } from "@/lib/actions/opponent-deck-display";
-import { colorForArchetype } from "@/lib/deck-archetype-colors";
+import { assignChartColors } from "@/lib/chart-colors";
 
 export type TrendDataPoint = {
   periodStart: string;
@@ -101,10 +101,7 @@ export function TrendChart({ data, opponentDeckNameMap }: { data: TrendDataPoint
     .slice(0, 8)
     .map(([name]) => name);
 
-  const deckColorMap = new Map<string, string>();
-  topDecks.forEach((deck) => {
-    deckColorMap.set(deck, colorForArchetype(deck));
-  });
+  const deckColorMap = assignChartColors(topDecks);
 
   const dateMap = new Map<string, Record<string, number>>();
   for (const d of data) {
@@ -172,7 +169,7 @@ export function TrendChart({ data, opponentDeckNameMap }: { data: TrendDataPoint
                 }
               />
               {topDecks.map((deck) => {
-                const color = colorForArchetype(deck);
+                const color = deckColorMap.get(deck) ?? "var(--muted-foreground)";
                 const isHighlighted = highlightedDeck === deck;
                 const hasHighlight = highlightedDeck !== null;
 
@@ -215,7 +212,7 @@ export function TrendChart({ data, opponentDeckNameMap }: { data: TrendDataPoint
 
       <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 text-[11px] mt-2.5" style={{ lineHeight: 1.8 }}>
         {topDecks.map((deck) => {
-          const color = colorForArchetype(deck);
+          const color = deckColorMap.get(deck) ?? "var(--muted-foreground)";
           const isHighlighted = highlightedDeck === deck;
           const hasHighlight = highlightedDeck !== null;
           const latestPct = (latestPeriod as any)?.[deck];
