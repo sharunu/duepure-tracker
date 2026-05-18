@@ -1,6 +1,10 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import {
+  displayDeckName,
+  type OpponentDeckNameMap,
+} from "@/lib/actions/opponent-deck-display";
 
 export type TrendDataPoint = {
   periodStart: string;
@@ -30,7 +34,13 @@ function getCellStyle(pct: number, maxPct: number): {
   return { background, color: "var(--primary-foreground)", fontWeight: 700 };
 }
 
-export function TrendHeatmap({ data }: { data: TrendDataPoint[] }) {
+export function TrendHeatmap({
+  data,
+  opponentDeckNameMap,
+}: {
+  data: TrendDataPoint[];
+  opponentDeckNameMap?: OpponentDeckNameMap;
+}) {
   const [tooltip, setTooltip] = useState<{ deck: string; period: string; pct: number; count: number; x: number; y: number } | null>(null);
 
   const { decks, periods, grid, maxPct } = useMemo(() => {
@@ -96,7 +106,7 @@ export function TrendHeatmap({ data }: { data: TrendDataPoint[] }) {
               transform: "translateX(-50%)",
             }}
           >
-            <div className="font-medium mb-0.5">{tooltip.deck}</div>
+            <div className="font-medium mb-0.5">{displayDeckName(tooltip.deck, opponentDeckNameMap)}</div>
             <div className="text-muted-foreground">
               {tooltip.period.slice(5)} &nbsp;{tooltip.pct}%({tooltip.count}件)
             </div>
@@ -121,7 +131,7 @@ export function TrendHeatmap({ data }: { data: TrendDataPoint[] }) {
                         maxWidth: labelWidth,
                       }}
                     >
-                      {deck}
+                      {displayDeckName(deck, opponentDeckNameMap)}
                     </td>
                   </tr>
                 ))}

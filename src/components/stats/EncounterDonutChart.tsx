@@ -1,9 +1,9 @@
 "use client";
 
-import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Sector, type PieSectorShapeProps } from "recharts";
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { getWinRateColor } from "@/lib/stats-utils";
-import { colorForArchetype } from "@/lib/deck-archetype-colors";
+import { assignChartColors, CHART_OTHER_COLOR } from "@/lib/chart-colors";
 import {
   displayDeckName,
   type OpponentDeckNameMap,
@@ -32,6 +32,7 @@ const RADIAN = Math.PI / 180;
 
 const renderLabel = (props: any) => {
   const { cx, cy, midAngle, innerRadius, outerRadius, pct } = props;
+  if (pct < 4) return null;
   const radius = (innerRadius + outerRadius) / 2;
   const x = cx + radius * Math.cos(-midAngle * RADIAN);
   const y = cy + radius * Math.sin(-midAngle * RADIAN);
@@ -81,6 +82,11 @@ export function EncounterDonutChart({ items, otherBreakdown, overallWinRate, ove
       }),
   [items, overallTotal]);
 
+  const colorMap = useMemo(
+    () => assignChartColors(data.map(d => d.name)),
+    [data]
+  );
+
   const sortedBreakdown = useMemo(() => {
     if (!otherBreakdown || otherBreakdown.length === 0) return [];
     return [...otherBreakdown]
@@ -114,7 +120,7 @@ export function EncounterDonutChart({ items, otherBreakdown, overallWinRate, ove
     const dy = (clientY - rect.top) - chartCenter.cy;
     const r = Math.sqrt(dx * dx + dy * dy);
 
-    if (r < innerRadius || r > outerRadius + 10) return -1;
+    if (r < innerRadius - 12 || r > outerRadius + 16) return -1;
 
     let angle = Math.atan2(-dy, dx) / RADIAN;
     angle = ((90 - angle) % 360 + 360) % 360;
@@ -156,18 +162,35 @@ export function EncounterDonutChart({ items, otherBreakdown, overallWinRate, ove
     setActiveIndex(-1);
   }, []);
 
+  const handlePointerMove = useCallback((e: PointerEvent) => {
+    if (e.pointerType === "touch") return;
+    const idx = getArcIndexFromPoint(e.clientX, e.clientY);
+    if (idx !== activeIndexRef.current) {
+      setActiveIndex(idx);
+    }
+  }, [getArcIndexFromPoint]);
+
+  const handlePointerLeave = useCallback((e: PointerEvent) => {
+    if (e.pointerType === "touch") return;
+    setActiveIndex(-1);
+  }, []);
+
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
     el.addEventListener("touchstart", handleTouchStart, { passive: false });
     el.addEventListener("touchmove", handleTouchMove, { passive: false });
     el.addEventListener("touchend", handleTouchEnd);
+    el.addEventListener("pointermove", handlePointerMove);
+    el.addEventListener("pointerleave", handlePointerLeave);
     return () => {
       el.removeEventListener("touchstart", handleTouchStart);
       el.removeEventListener("touchmove", handleTouchMove);
       el.removeEventListener("touchend", handleTouchEnd);
+      el.removeEventListener("pointermove", handlePointerMove);
+      el.removeEventListener("pointerleave", handlePointerLeave);
     };
-  }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
+  }, [handleTouchStart, handleTouchMove, handleTouchEnd, handlePointerMove, handlePointerLeave]);
 
   const getOverlayPosition = useCallback(() => {
     if (activeIndex < 0 || !chartCenter) return null;
@@ -189,9 +212,27 @@ export function EncounterDonutChart({ items, otherBreakdown, overallWinRate, ove
     return { x, y, midAngle };
   }, [activeIndex, chartCenter, data, outerRadius]);
 
+  const renderSectorShape = useCallback((props: PieSectorShapeProps) => {
+    const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, index } = props;
+    const isActive = index === activeIndex;
+    return (
+      <Sector
+        cx={cx}
+        cy={cy}
+        innerRadius={innerRadius}
+        outerRadius={isActive ? outerRadius + 6 : outerRadius}
+        startAngle={startAngle}
+        endAngle={endAngle}
+        fill={fill}
+        stroke={isActive ? "var(--background)" : "none"}
+        strokeWidth={isActive ? 2 : 0}
+      />
+    );
+  }, [activeIndex]);
+
   const overlayPos = getOverlayPosition();
 
-  const getColor = (name: string) => colorForArchetype(name);
+  const getColor = (name: string) => colorMap.get(name) ?? CHART_OTHER_COLOR;
 
   return (
     <div className="space-y-3">
@@ -219,8 +260,7 @@ export function EncounterDonutChart({ items, otherBreakdown, overallWinRate, ove
               stroke="none"
               startAngle={90}
               endAngle={-270}
-              onMouseEnter={(_, index) => setActiveIndex(index)}
-              onMouseLeave={() => setActiveIndex(-1)}
+              shape={renderSectorShape}
               onAnimationEnd={() => setAnimationDone(true)}
               isAnimationActive={!animationDone}
               label={renderLabel}
@@ -230,8 +270,6 @@ export function EncounterDonutChart({ items, otherBreakdown, overallWinRate, ove
                 <Cell
                   key={i}
                   fill={getColor(entry.name)}
-                  opacity={activeIndex >= 0 && activeIndex !== i ? 0.35 : 1}
-                  style={{ transition: "opacity 150ms" }}
                 />
               ))}
             </Pie>
