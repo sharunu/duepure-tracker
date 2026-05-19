@@ -894,6 +894,15 @@ curl -s https://dev-duepure-tracker.jianrenzhongtian7.workers.dev/dm/decks | gre
 - 設計意図 (日本語化したい) か bug (キーは英語であるべき) かは別途確認が必要
 - 本 PR では既存挙動を維持 (sanitizer だけ通す)
 
+### (c) 対戦記録画面の自由入力対面デッキ名の空白削除 (dev preview 実機確認で発覚)
+- 「使用デッキ管理」の自由入力 (dm/pokepoke `DeckList.tsx`) は本 PR で `stripAllWhitespace` を適用済
+- しかし「対戦記録」画面の対面デッキ名自由入力は空白が入る状態のまま
+- **設計上の注意点 (本論点を別 PR で扱う理由)**: 自由入力した対面デッキ名だけ空白削除する必要がある。既存 suggestion / Limitless 由来の候補 (英語内部キー `opponent_deck_master.name` / `name_en`) をタップした場合は空白を残し、**内部キーをそのまま保存する**必要がある (Limitless 取り込みは `name_ja` のみ空白削除、`name` / `name_en` は触らない設計と揃える)
+- 修正範囲案 (別 PR で詳細検討):
+  - 対戦記録画面の対面デッキ入力ハンドラ (`BattleRecordForm.tsx` or `OpponentDeckSelector.tsx` 経由) で「自由入力フロー」と「suggestion タップフロー」を分岐し、自由入力フローのみ sanitize
+  - `auto_add_opponent_deck` trigger / `addOpponentDeck` admin action との整合 (`name_en` 不変で `name_ja` のみ空白削除する Limitless パターンと揃える)
+  - `battles.opponent_deck_name` の CHECK 制約 (`opponent_deck_name !~ '[[:space:]　​-‍﻿]'`) を追加するなら、既存全データを cleanup する別 migration が必要 (Limitless suggestion 由来データの英語キーには空白が含まれないので影響は限定的)
+
 ---
 
 ## 付録: 検討した代替案
