@@ -12,7 +12,6 @@ import { DateRangeCalendar } from "@/components/battle/DateRangeCalendar";
 import { DeckFilter } from "@/components/battle/DeckFilter";
 import { BattleHistoryList } from "@/components/battle/BattleHistoryList";
 import type { Format } from "@/hooks/use-format";
-import type { OpponentDeckNameMap } from "@/lib/actions/opponent-deck-display";
 
 type Tuning = { id: string; name: string; sort_order: number };
 type Deck = { id: string; name: string; deck_tunings?: Tuning[] };
@@ -64,8 +63,6 @@ type Props = {
   hasAny: boolean | null;
   historyLoading: boolean;
   onHistoryRefresh: () => void;
-
-  opponentDeckNameMap?: OpponentDeckNameMap;
 
   // PR8: cursor-based pagination
   hasMore?: boolean;
@@ -238,7 +235,6 @@ export function BattleTabsView(props: Props) {
                 miniStats={props.miniStats}
                 format={format}
                 setFormat={setFormat}
-                opponentDeckNameMap={props.opponentDeckNameMap}
                 onBattleRecorded={handleBattleRecorded}
               />
             </div>
@@ -294,7 +290,6 @@ export function BattleTabsView(props: Props) {
                     decks={props.decks}
                     suggestions={props.suggestions}
                     onRefresh={props.onHistoryRefresh}
-                    opponentDeckNameMap={props.opponentDeckNameMap}
                     hasMore={props.hasMore}
                     loadMoreLoading={props.loadMoreLoading}
                     onLoadMore={props.onLoadMore}

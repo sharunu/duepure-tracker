@@ -11,10 +11,6 @@ import {
   type BattleListCursor,
 } from "@/lib/actions/battle-actions";
 import { checkIsAdmin } from "@/lib/actions/admin-actions";
-import {
-  getOpponentDeckNameMap,
-  type OpponentDeckNameMap,
-} from "@/lib/actions/opponent-deck-display";
 import { useFormat } from "@/hooks/use-format";
 import { useDateRange } from "@/hooks/use-date-range";
 import { BottomNav } from "@/components/layout/BottomNav";
@@ -54,7 +50,6 @@ function BattlePageInner() {
   });
   const [miniStats, setMiniStats] = useState<MiniStatsData | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [nameMap, setNameMap] = useState<OpponentDeckNameMap>({});
   const [inputLoading, setInputLoading] = useState(true);
 
   const [battles, setBattles] = useState<Battle[]>([]);
@@ -84,14 +79,12 @@ function BattlePageInner() {
         "pokepoke"
       ),
       checkIsAdmin(),
-      getOpponentDeckNameMap(format, "pokepoke"),
     ])
-      .then(([d, s, m, admin, map]) => {
+      .then(([d, s, m, admin]) => {
         setDecks(d as Deck[]);
         setSuggestions(s);
         setMiniStats(m);
         setIsAdmin(admin);
-        setNameMap(map);
         setInputLoading(false);
       })
       .catch(() => {
@@ -106,14 +99,12 @@ function BattlePageInner() {
     Promise.all([
       getBattlesByDateRangePaginated(format, startDate, endDate, null, 50, "pokepoke"),
       hasAnyBattles(format, "pokepoke"),
-      getOpponentDeckNameMap(format, "pokepoke"),
     ])
-      .then(([result, any, map]) => {
+      .then(([result, any]) => {
         setBattles(result.rows as unknown as Battle[]);
         setCursor(result.nextCursor);
         setHasMore(result.hasMore);
         setHasAny(any);
-        setNameMap(map);
         setHistoryLoading(false);
       })
       .catch((e) => {
@@ -221,7 +212,7 @@ function BattlePageInner() {
         hasAny={hasAny}
         historyLoading={historyLoading}
         onHistoryRefresh={handleHistoryRefresh}
-        opponentDeckNameMap={nameMap}
+
         hasMore={hasMore}
         loadMoreLoading={loadMoreLoading}
         onLoadMore={loadMore}
@@ -246,7 +237,6 @@ function BattlePageInner() {
     hasAny,
     historyLoading,
     handleHistoryRefresh,
-    nameMap,
     hasMore,
     loadMoreLoading,
     loadMore,

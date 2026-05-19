@@ -10,9 +10,9 @@ import { MiniStats } from "../stats/MiniStats";
 import { Surface } from "@/components/ui/Surface";
 import { Button } from "@/components/ui/Button";
 import { supportsDraw, type BattleResult } from "@/lib/battle/result-format";
+import { stripAllWhitespace } from "@/lib/util/whitespace";
 
 import type { Format } from "@/hooks/use-format";
-import type { OpponentDeckNameMap } from "@/lib/actions/opponent-deck-display";
 
 type Tuning = { id: string; name: string; sort_order: number };
 type Deck = {
@@ -43,7 +43,6 @@ type Props = {
   miniStats: MiniStatsData | null;
   format: Format;
   setFormat: (f: Format) => void;
-  opponentDeckNameMap?: OpponentDeckNameMap;
   onBattleRecorded?: () => void;
 };
 
@@ -75,7 +74,6 @@ export function BattleRecordForm({
   suggestions,
   miniStats: initialMiniStats,
   format,
-  opponentDeckNameMap,
   onBattleRecorded,
 }: Props) {
   const { slug: game } = useGame();
@@ -139,8 +137,9 @@ export function BattleRecordForm({
   }, [selectedValue, format]);
 
   useEffect(() => {
-    if (opponentDeck.trim()) {
-      getOpponentMemoSuggestions(opponentDeck.trim(), game).then(setMemoSuggestions);
+    const cleaned = stripAllWhitespace(opponentDeck);
+    if (cleaned) {
+      getOpponentMemoSuggestions(cleaned, game).then(setMemoSuggestions);
     } else {
       setMemoSuggestions([]);
       setShowMemo(false);
@@ -150,14 +149,15 @@ export function BattleRecordForm({
 
   const handleSubmit = async (result: BattleResult) => {
     const { deckId, tuningId } = parseDeckSelection(selectedValue);
-    if (!deckId || !opponentDeck.trim()) return;
+    const cleanedOpponent = stripAllWhitespace(opponentDeck);
+    if (!deckId || !cleanedOpponent) return;
     setSubmitting(true);
     try {
       await recordBattle({
         game,
         myDeckId: deckId,
         myDeckName: deckNameMap.get(deckId) ?? "",
-        opponentDeckName: opponentDeck.trim(),
+        opponentDeckName: cleanedOpponent,
         result,
         turnOrder,
         format,
@@ -223,7 +223,7 @@ export function BattleRecordForm({
   }
 
   const hasMemo = opponentMemo.trim().length > 0;
-  const deckSelected = opponentDeck.trim().length > 0;
+  const deckSelected = stripAllWhitespace(opponentDeck).length > 0;
 
   const memoHeaderExtra = (
     <button
@@ -293,10 +293,9 @@ export function BattleRecordForm({
           value={opponentDeck}
           onChange={setOpponentDeck}
           headerExtra={memoHeaderExtra}
-          nameMap={opponentDeckNameMap}
         />
 
-        {showMemo && opponentDeck.trim() && (
+        {showMemo && deckSelected && (
           <div className="mt-2.5 rounded-md border border-border-subtle bg-surface-2 px-3 py-2.5">
             <input
               type="text"
@@ -317,7 +316,7 @@ export function BattleRecordForm({
                       isSelected={opponentMemo === s}
                       onSelect={setOpponentMemo}
                       onDelete={async (memo) => {
-                        await deleteOpponentMemoSuggestion(opponentDeck.trim(), memo, game);
+                        await deleteOpponentMemoSuggestion(stripAllWhitespace(opponentDeck), memo, game);
                         setMemoSuggestions(prev => prev.filter(m => m !== memo));
                         if (opponentMemo === memo) setOpponentMemo("");
                       }}
@@ -359,7 +358,7 @@ export function BattleRecordForm({
             tone="win"
             size="lg"
             onClick={() => handleSubmit("win")}
-            disabled={submitting || !opponentDeck.trim() || !selectedValue}
+            disabled={submitting || !deckSelected || !selectedValue}
             className={`flex-1 text-[15px] font-bold min-h-[48px] ${lastResult === "win" ? "scale-95 opacity-90" : ""}`}
           >
             WIN
@@ -370,7 +369,7 @@ export function BattleRecordForm({
               tone="draw"
               size="lg"
               onClick={() => handleSubmit("draw")}
-              disabled={submitting || !opponentDeck.trim() || !selectedValue}
+              disabled={submitting || !deckSelected || !selectedValue}
               className={`flex-1 text-[15px] font-bold min-h-[48px] ${lastResult === "draw" ? "scale-95 opacity-90" : ""}`}
             >
               DRAW
@@ -381,7 +380,7 @@ export function BattleRecordForm({
             tone="loss"
             size="lg"
             onClick={() => handleSubmit("loss")}
-            disabled={submitting || !opponentDeck.trim() || !selectedValue}
+            disabled={submitting || !deckSelected || !selectedValue}
             className={`flex-1 text-[15px] font-bold min-h-[48px] ${lastResult === "loss" ? "scale-95 opacity-90" : ""}`}
           >
             LOSE
@@ -395,7 +394,6 @@ export function BattleRecordForm({
         battles={modalBattles}
         onSelect={handleSelectInterval}
         currentTimestamp={measureSince}
-        opponentDeckNameMap={opponentDeckNameMap}
       />
     </div>
   );

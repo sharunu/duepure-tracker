@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { DEFAULT_GAME, type GameSlug } from "@/lib/games";
 import type { BattleResult } from "@/lib/battle/result-format";
+import { stripAllWhitespace } from "@/lib/util/whitespace";
 
 export async function recordBattle(formData: {
   myDeckId: string;
@@ -26,7 +27,7 @@ export async function recordBattle(formData: {
     user_id: user.id,
     my_deck_id: formData.myDeckId,
     my_deck_name: formData.myDeckName,
-    opponent_deck_name: formData.opponentDeckName,
+    opponent_deck_name: stripAllWhitespace(formData.opponentDeckName),
     result: formData.result,
     turn_order: formData.turnOrder,
     format: formData.format,
@@ -65,7 +66,7 @@ export async function updateBattle(
   if (fields.result !== undefined) updateData.result = fields.result;
   if (fields.turnOrder !== undefined) updateData.turn_order = fields.turnOrder;
   if (fields.opponentDeckName !== undefined) {
-    updateData.opponent_deck_name = fields.opponentDeckName;
+    updateData.opponent_deck_name = stripAllWhitespace(fields.opponentDeckName);
   }
 
   if (fields.myDeckId !== undefined) updateData.my_deck_id = fields.myDeckId;

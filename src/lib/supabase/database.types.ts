@@ -872,6 +872,10 @@ export type Database = {
         Args: { p_auto_update?: boolean }
         Returns: Json
       }
+      admin_update_opponent_deck_name_ja: {
+        Args: { p_id: string; p_name_ja: string; p_is_manual?: boolean }
+        Returns: Json
+      }
       admin_update_user_stage: {
         Args: { p_new_stage: number; p_reason: string; p_user_id: string }
         Returns: undefined

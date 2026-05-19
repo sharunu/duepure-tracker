@@ -7,9 +7,8 @@ import { MatchupCard } from "@/components/stats/MatchupCard";
 import { MatchupTable } from "@/components/stats/MatchupTable";
 import { BattleCountBadge } from "@/components/ui/BattleCountBadge";
 import { formatWLTJa } from "@/lib/battle/result-format";
-import type { OpponentDeckNameMap } from "@/lib/actions/opponent-deck-display";
 
-export function TuningStatsSection({ tuningStats, viewMode, game, opponentDeckNameMap }: { tuningStats: TuningStats[]; viewMode?: "visual" | "table"; game: string; opponentDeckNameMap?: OpponentDeckNameMap }) {
+export function TuningStatsSection({ tuningStats, viewMode, game }: { tuningStats: TuningStats[]; viewMode?: "visual" | "table"; game: string }) {
   const [expandedTuning, setExpandedTuning] = useState<string | null>(null);
 
   if (tuningStats.length === 0) {
@@ -55,7 +54,6 @@ export function TuningStatsSection({ tuningStats, viewMode, game, opponentDeckNa
                     rows={t.opponents.map((opp) => ({ ...opp, name: opp.opponentName, namePrefix: "vs " }))}
                     showTotal
                     game={game}
-                    opponentDeckNameMap={opponentDeckNameMap}
                   />
                 ) : (
                   t.opponents.map((opp) => (
@@ -65,7 +63,6 @@ export function TuningStatsSection({ tuningStats, viewMode, game, opponentDeckNa
                       namePrefix="vs "
                       detail={opp}
                       game={game}
-                      opponentDeckNameMap={opponentDeckNameMap}
                     />
                   ))
                 )}
