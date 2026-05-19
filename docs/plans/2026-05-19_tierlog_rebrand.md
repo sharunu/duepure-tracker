@@ -231,6 +231,7 @@
 - `STAGING_NEXT_PUBLIC_APP_URL`: **変更不要** (dev workers.dev 継続)
 - **保存は「Save」のみ。「Deploy」ボタンは絶対に押さない** (押すと dev preview ビルドが本番展開され、main と本番不一致事故が起きる)
 - **タイミングは main push の前** (NEXT_PUBLIC_* はビルド時 inline、main push 後だと本番ビルドに旧 URL が残る)
+- **値の入力は前後空白・改行なし** (正しい値: `https://tierlog.app`)。Cloudflare ダッシュボードのテキストフィールドはコピペ時に末尾改行が紛れ込むことがあり、`new URL(...)` 等を通って sitemap.xml の `<loc>` / og:image 絶対 URL に改行が含まれリンク切れの原因になる。**実際 dev (STAGING_NEXT_PUBLIC_APP_URL) で末尾改行混入が curl 検証で観測済** (本番でも同じミスをしないよう注意)。Save 後、Cloudflare ダッシュボード上で値を再表示して末尾に余分な改行や空白がないか目視確認すること
 
 #### 5.B.7 Cloudflare Runtime Variables (本番側、念のため)
 
@@ -238,6 +239,7 @@
 
 - Runtime 側に `NEXT_PUBLIC_APP_URL` が登録されている場合は同じく `https://tierlog.app` に揃える
 - CLAUDE.md (`Build + Runtime 両方に登録するのが確実`) と整合
+- **値の入力は前後空白・改行なし** (5.B.6 と同じ理由、Build と Runtime で値がズレないよう注意)
 
 #### 5.B.8 GitHub Actions Repository Secrets (本番側)
 
@@ -246,7 +248,8 @@
 - **追加**: `PRODUCTION_API_URL` = `https://tierlog.app`
   - 用途: `.github/workflows/limitless-sync.yml` が `${{ secrets.PRODUCTION_API_URL }}/api/internal/limitless-sync` 形式で参照する本番 API base URL
   - URL 自体は非機密 (一般公開ドメイン) なので Repository variables でも機能的には可。今回は Resolved Decisions に従い **secret として登録** (将来のドメイン変更時に値を秘匿性のある場所に集約しておくため、および INTERNAL_API_KEY と同じ管理面に揃えるため)
-  - **main push 前に登録完了必須**。未登録だと cron job が空 URL で fetch 失敗する
+  - **main push 前に登録完了必須**。未登録だと cron job が空 URL で fetch 失敗する (空チェックガードで early fail する)
+  - **値の入力は前後空白・改行なし** (5.B.6 と同じ理由、`${{ secrets.PRODUCTION_API_URL }}/api/internal/limitless-sync` を組み立てる時に改行が混入すると HTTP リクエスト URL がエラーになる)
 
 ### 5.C 実行順序
 
@@ -280,7 +283,7 @@
 - `npx opennextjs-cloudflare build` (ローカル build 成否確認)
 - dev push 後、`curl https://dev-duepure-tracker.jianrenzhongtian7.workers.dev` で `<title>` / `og:title` / `og:site_name` を確認
 - `curl https://dev-duepure-tracker.jianrenzhongtian7.workers.dev/manifest.json` で `name` / `short_name` 確認
-- grep 漏れチェック: `grep -rEi "デュエプレトラッカー|ゲーム戦績トラッカー|GameTracker|duepure-theme|dp-tracker-v2|duepure-stats|duepure-tracker\.jianrenzhongtian7\.workers\.dev" src/ public/ docs/` で 5.A.11 の除外箇所以外が残っていないことを確認 (本番 workers.dev URL は migration 対象なので含める。dev URL `dev-duepure-tracker...` はマッチしてしまうので grep 結果から手動除外)
+- grep 漏れチェック: ルート直下 (README.md / DESIGN.md / AGENTS.md / CLAUDE.md 等) も含めて確認するため `--include` 付きで実行する。`grep -rEn "デュエプレトラッカー|ゲーム戦績トラッカー|GameTracker|duepure-theme|dp-tracker-v2|duepure-stats|duepure-tracker\.jianrenzhongtian7\.workers\.dev" --include="*.md" --include="*.tsx" --include="*.ts" --include="*.json" --include="*.html" --include="*.yml" --include="*.mjs" --include="*.js" --include="*.toml" --include="*.jsonc" .` (リポジトリルートから)。除外箇所は (a) dev URL `dev-duepure-tracker...`、(b) `.claude/worktrees/` (過去 worktree スナップショット)、(c) `.claude/reports/` (過去レビュー報告書)、(d) `docs/reports/` (過去レポート履歴)、(e) `docs/plans/` 配下の他 plan/report (履歴)、(f) `src/lib/games/context.tsx` の `selectedGame` cookie (汎用名のため維持) — これらは grep 結果から手動除外。**本作業初回の grep を `src/ public/ docs/` だけに絞ったため DESIGN.md:789 を見逃した教訓**: 必ずルート含めて実行する
 
 **ユーザー実機ブラウザ (必須):**
 - 全画面の「Tierlog」「Tierlog - デュエプレ」「Tierlog - ポケポケ」表記反映確認
@@ -378,6 +381,8 @@ dev で確認した項目を **production 環境** (本番 Supabase / Discord pr
 - [6.B] README.md / DESIGN.md でのサービス名併記 → **案 A (Tierlog のみ表記)** で確定 (過去名「デュエプレトラッカー」は記載しない、§5.A.10 はこの方針で実装)
 - [git add 方針] §5.C の dev push 時の `git add` は **対象ファイル明示** (`git add .` 禁止)。`.codex/` 等 untracked を意図せず含めないため。`docs/app-structure-overview.html` は今回 Tierlog リネームの一環として明示的にコミット対象に含める (§5.C-1)
 - [R1 検証対象] og:url 検証は現コードが `openGraph.url` を出していないため対象外。代わりに og:image (絶対 URL) / og:site_name / `<title>` / sitemap.xml を検証対象とする (§8 R1)
+- [APP_URL 末尾改行] dev (STAGING_NEXT_PUBLIC_APP_URL) で末尾改行が混入しており sitemap.xml の `<loc>` が改行で分断される事象がユーザー実機で観測済。**本番側 5.B.6 / 5.B.7 / 5.B.8 のいずれでも値を前後空白・改行なしで登録**、Save 後にダッシュボード上で目視再確認する手順を §5.B.6-8 に追記済。コード側の防御 (`process.env.NEXT_PUBLIC_APP_URL?.trim()`) は本 Plan のスコープ外として **別件作業に分離** (NEXT_PUBLIC_* は build 時 inline で runtime 側 trim は使えず、`scripts/prepare-cloudflare-env.sh` で build 前に sanitize するのが筋。dev の修正はこの別件で扱う)
+- [grep スコープ] §5.A.11 の grep 漏れチェックは初回 `src/ public/ docs/` だけだったため DESIGN.md:789 を見逃した。Plan に grep コマンドをルート直下含む `--include` 形に修正済 (§5.D.A)
 
 ---
 
