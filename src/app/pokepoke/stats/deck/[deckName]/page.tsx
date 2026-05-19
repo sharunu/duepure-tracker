@@ -5,7 +5,6 @@ import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { getDeckDetailStats, getGlobalDeckDetailStats, getTeamDeckDetailStats, getGlobalDeckDetailStatsMulti } from "@/lib/actions/stats-actions";
 import type { DeckDetailStats } from "@/lib/actions/stats-actions";
 import { getDailyBattleCounts, getOpponentDeckSuggestions } from "@/lib/actions/battle-actions";
-import { getOpponentDeckNameMap, displayDeckName, type OpponentDeckNameMap } from "@/lib/actions/opponent-deck-display";
 import { useFormat } from "@/hooks/use-format";
 import { useDateRange } from "@/hooks/use-date-range";
 import { FormatSelector } from "@/components/ui/FormatSelector";
@@ -48,9 +47,7 @@ export default function DeckDetailPage() {
   const [sortBy, setSortBy] = useState<"count" | "winRate">("count");
   const [viewMode, setViewMode] = useState<"visual" | "table">("visual");
   const [deckCategories, setDeckCategories] = useState<{ major: string[]; minor: string[]; other: string[] }>({ major: [], minor: [], other: [] });
-  const [opponentDeckNameMap, setOpponentDeckNameMap] = useState<OpponentDeckNameMap>({});
-  const [nameMapFormat, setNameMapFormat] = useState<string | null>(null);
-  const nameMapReady = nameMapFormat === format;
+  const nameMapReady = true; // canonical name 統一後は name map 不要 (share UI の表示制御用に true 固定)
 
   // useDateRange: URL `?start=` > localStorage (ゲーム別) > default (1ヶ月前)。
   const { startDate, endDate, setStartDate, setEndDate } = useDateRange();
@@ -61,11 +58,6 @@ export default function DeckDetailPage() {
     let cancelled = false;
     getOpponentDeckSuggestions(format, "pokepoke").then((cats) => {
       if (!cancelled) setDeckCategories(cats);
-    });
-    getOpponentDeckNameMap(format, "pokepoke").then((map) => {
-      if (cancelled) return;
-      setOpponentDeckNameMap(map);
-      setNameMapFormat(format);
     });
     return () => { cancelled = true; };
   }, [format, ready]);
@@ -205,7 +197,7 @@ export default function DeckDetailPage() {
                 winRate: stats.overallWinRate,
                 firstWins: fW, firstLosses: fL, firstDraws: fD,
                 secondWins: sW, secondLosses: sL, secondDraws: sD,
-                topMatchups: stats.overall.slice(0, 5).map(o => ({ name: displayDeckName(o.opponentName, opponentDeckNameMap), wins: o.wins, losses: o.losses, draws: o.draws, winRate: o.winRate })),
+                topMatchups: stats.overall.slice(0, 5).map(o => ({ name: o.opponentName, wins: o.wins, losses: o.losses, draws: o.draws, winRate: o.winRate })),
                 period: `${startDate} ~ ${endDate}`,
                 format,
                 game: "pokepoke",
@@ -248,7 +240,6 @@ export default function DeckDetailPage() {
                     overallLosses={stats.overallLosses}
                     overallDraws={stats.overallDraws}
                     overallTotal={stats.overallTotal}
-                    opponentDeckNameMap={opponentDeckNameMap}
                     game="pokepoke"
                   />
 
@@ -314,14 +305,13 @@ export default function DeckDetailPage() {
                   {viewMode === "visual" ? (
                     <div className="space-y-2">
                       {sortedOverall.map((opp) => (
-                        <MatchupCard key={opp.opponentName} name={opp.opponentName} namePrefix="vs " detail={opp} opponentDeckNameMap={opponentDeckNameMap} game="pokepoke" />
+                        <MatchupCard key={opp.opponentName} name={opp.opponentName} namePrefix="vs " detail={opp} game="pokepoke" />
                       ))}
                     </div>
                   ) : (
                     <MatchupTable
                       rows={sortedOverall.map((opp) => ({ ...opp, name: opp.opponentName, namePrefix: "vs " }))}
                       showTotal
-                      opponentDeckNameMap={opponentDeckNameMap}
                       game="pokepoke"
                     />
                   )}
@@ -333,7 +323,7 @@ export default function DeckDetailPage() {
             {!isGlobal && stats.tuningStats.length > 0 && (
               <div>
                 <h2 className="text-base font-bold mb-2">チューニング別</h2>
-                <TuningStatsSection tuningStats={stats.tuningStats} viewMode={viewMode} game="pokepoke" opponentDeckNameMap={opponentDeckNameMap} />
+                <TuningStatsSection tuningStats={stats.tuningStats} viewMode={viewMode} game="pokepoke" />
               </div>
             )}
           </>

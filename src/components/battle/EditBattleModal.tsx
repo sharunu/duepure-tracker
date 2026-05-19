@@ -7,7 +7,7 @@ import { getOpponentMemoSuggestions, deleteOpponentMemoSuggestion } from "@/lib/
 import { MemoSuggestionButton } from "./MemoSuggestionButton";
 import { useGame } from "@/lib/games/context";
 import { supportsDraw, type BattleResult } from "@/lib/battle/result-format";
-import type { OpponentDeckNameMap } from "@/lib/actions/opponent-deck-display";
+import { stripAllWhitespace } from "@/lib/util/whitespace";
 
 type Tuning = { id: string; name: string; sort_order: number };
 type Deck = { id: string; name: string; deck_tunings?: Tuning[] };
@@ -39,7 +39,6 @@ type Props = {
     opponentMemo?: string | null;
   }) => Promise<void>;
   onClose: () => void;
-  opponentDeckNameMap?: OpponentDeckNameMap;
 };
 
 function parseDeckSelection(value: string): { deckId: string; tuningId: string | null } {
@@ -65,7 +64,7 @@ const MemoIcon = ({ active, hasMemo }: { active: boolean; hasMemo: boolean }) =>
   );
 };
 
-export function EditBattleModal({ battle, decks, suggestions, onSave, onClose, opponentDeckNameMap }: Props) {
+export function EditBattleModal({ battle, decks, suggestions, onSave, onClose }: Props) {
   const { slug: game } = useGame();
   const recordedDeckExists = decks.some(d => d.name === battle.my_deck_name);
   const initialValue = !recordedDeckExists
@@ -83,12 +82,13 @@ export function EditBattleModal({ battle, decks, suggestions, onSave, onClose, o
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (opponentDeckName.trim()) {
-      getOpponentMemoSuggestions(opponentDeckName.trim()).then(setMemoSuggestions);
+    const cleaned = stripAllWhitespace(opponentDeckName);
+    if (cleaned) {
+      getOpponentMemoSuggestions(cleaned, game).then(setMemoSuggestions);
     } else {
       setMemoSuggestions([]);
     }
-  }, [opponentDeckName]);
+  }, [opponentDeckName, game]);
 
   const deckNameMap = new Map<string, string>();
   const tuningNameMap = new Map<string, string>();
@@ -142,7 +142,7 @@ export function EditBattleModal({ battle, decks, suggestions, onSave, onClose, o
       }
 
       await onSave({
-        opponentDeckName: opponentDeckName.trim(),
+        opponentDeckName: stripAllWhitespace(opponentDeckName),
         result,
         turnOrder,
         myDeckId: deckId,
@@ -210,7 +210,6 @@ export function EditBattleModal({ battle, decks, suggestions, onSave, onClose, o
             value={opponentDeckName}
             onChange={setOpponentDeckName}
             headerExtra={memoHeaderExtra}
-            nameMap={opponentDeckNameMap}
           />
 
           {showMemo && (
@@ -234,7 +233,7 @@ export function EditBattleModal({ battle, decks, suggestions, onSave, onClose, o
                         isSelected={opponentMemo === s}
                         onSelect={setOpponentMemo}
                         onDelete={async (memo) => {
-                          await deleteOpponentMemoSuggestion(opponentDeckName.trim(), memo);
+                          await deleteOpponentMemoSuggestion(stripAllWhitespace(opponentDeckName), memo, game);
                           setMemoSuggestions(prev => prev.filter(m => m !== memo));
                           if (opponentMemo === memo) setOpponentMemo("");
                         }}
@@ -303,7 +302,7 @@ export function EditBattleModal({ battle, decks, suggestions, onSave, onClose, o
           </button>
           <button
             onClick={handleSave}
-            disabled={saving || !opponentDeckName.trim()}
+            disabled={saving || !stripAllWhitespace(opponentDeckName)}
             className="flex-1 rounded-lg bg-primary text-primary-foreground py-3 text-sm font-medium hover:bg-primary/90 disabled:opacity-40 transition-colors min-h-[44px]"
           >
             {saving ? "保存中..." : "保存"}

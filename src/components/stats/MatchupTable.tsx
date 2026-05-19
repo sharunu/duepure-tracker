@@ -2,10 +2,6 @@
 
 import type { OpponentDetail } from "@/lib/actions/stats-actions";
 import { getWinRateColor } from "@/lib/stats-utils";
-import {
-  displayDeckName,
-  type OpponentDeckNameMap,
-} from "@/lib/actions/opponent-deck-display";
 import { supportsDraw, winRate as computeWinRate } from "@/lib/battle/result-format";
 
 type MatchupTableRow = { name: string; namePrefix?: string } & OpponentDetail;
@@ -13,7 +9,6 @@ type MatchupTableRow = { name: string; namePrefix?: string } & OpponentDetail;
 type MatchupTableProps = {
   rows: MatchupTableRow[];
   showTotal?: boolean;
-  opponentDeckNameMap?: OpponentDeckNameMap;
   game: string;
 };
 
@@ -57,7 +52,7 @@ function calcOverall(rows: MatchupTableRow[]): OpponentDetail {
   return o;
 }
 
-export function MatchupTable({ rows, showTotal = true, opponentDeckNameMap, game }: MatchupTableProps) {
+export function MatchupTable({ rows, showTotal = true, game }: MatchupTableProps) {
   const overall = showTotal ? calcOverall(rows) : null;
   const overallSubs = overall ? buildSubRows(overall) : [];
   const showDraws = supportsDraw(game);
@@ -90,7 +85,7 @@ export function MatchupTable({ rows, showTotal = true, opponentDeckNameMap, game
                     rowSpan={subs.length}
                     className={`px-1.5 py-1 text-xs font-medium align-top sticky left-0 z-[1] whitespace-nowrap ${bgClass || "bg-background"}`}
                   >
-                    {row.namePrefix}{displayDeckName(row.name, opponentDeckNameMap)}
+                    {row.namePrefix}{row.name}
                   </td>
                 )}
                 <td className={`px-1.5 py-1 text-[10px] whitespace-nowrap ${sub.labelClass}`}>{sub.label}</td>

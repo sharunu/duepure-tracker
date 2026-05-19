@@ -2,10 +2,6 @@
 
 import { createPortal } from "react-dom";
 import {
-  displayDeckName,
-  type OpponentDeckNameMap,
-} from "@/lib/actions/opponent-deck-display";
-import {
   resultColorClass,
   resultLabel,
   type BattleResult,
@@ -25,10 +21,9 @@ type Props = {
   battles: Battle[];
   onSelect: (timestamp: string | null) => void;
   currentTimestamp: string | null;
-  opponentDeckNameMap?: OpponentDeckNameMap;
 };
 
-export function BattleIntervalModal({ open, onClose, battles, onSelect, currentTimestamp, opponentDeckNameMap }: Props) {
+export function BattleIntervalModal({ open, onClose, battles, onSelect, currentTimestamp }: Props) {
   if (!open) return null;
   if (typeof document === "undefined") return null;
 
@@ -82,7 +77,7 @@ export function BattleIntervalModal({ open, onClose, battles, onSelect, currentT
                       {resultLabel(b.result as BattleResult)}
                     </span>
                     <span className="truncate">
-                      {b.my_deck_name ?? "?"} vs {displayDeckName(b.opponent_deck_name, opponentDeckNameMap)}
+                      {b.my_deck_name ?? "?"} vs {b.opponent_deck_name}
                     </span>
                   </div>
                   <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">

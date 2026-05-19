@@ -10,10 +10,6 @@ import {
   updateTuning,
   deleteTuning,
 } from "@/lib/actions/deck-actions";
-import {
-  displayDeckName,
-  type OpponentDeckNameMap,
-} from "@/lib/actions/opponent-deck-display";
 import { matchesQuery } from "@/lib/search/normalize";
 import { stripAllWhitespace } from "@/lib/util/whitespace";
 import { Pencil, X, Search } from "lucide-react";
@@ -35,12 +31,10 @@ export function DeckList({
   initialDecks,
   format,
   suggestions = { major: [], minor: [], other: [] },
-  opponentDeckNameMap,
 }: {
   initialDecks: Deck[];
   format: string;
   suggestions?: { major: string[]; minor: string[]; other: string[] };
-  opponentDeckNameMap?: OpponentDeckNameMap;
 }) {
   const [decks, setDecks] = useState(initialDecks);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -82,13 +76,11 @@ export function DeckList({
     });
   };
 
-  const display = (name: string) => displayDeckName(name, opponentDeckNameMap);
-
-  // Filter chips by search query (日本語表示名 / 英語原名どちらでもヒット)
+  // Filter chips by search query (canonical name で検索)
   // NFKC + lowercase + ひらがな→カタカナ正規化で表記揺れ吸収 (共通 helper)
   const filterByQuery = (items: string[]) => {
     if (!searchQuery) return items;
-    return items.filter((s) => matchesQuery(searchQuery, [s, display(s)]));
+    return items.filter((s) => matchesQuery(searchQuery, [s]));
   };
 
   const filteredMajor = filterByQuery(suggestions.major);
@@ -452,7 +444,7 @@ export function DeckList({
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                 {filteredMajor.map((name) => {
-                  const label = display(name);
+                  const label = name;
                   // sanitize 後の保存名 (内部空白なし) と chip label (内部空白あり) のミスマッチを拾う
                   const isRegistered =
                     registeredNames.has(name) ||
@@ -501,7 +493,7 @@ export function DeckList({
                 }}
               >
                 {filteredMinor.map((name) => {
-                  const label = display(name);
+                  const label = name;
                   // sanitize 後の保存名 (内部空白なし) と chip label (内部空白あり) のミスマッチを拾う
                   const isRegistered =
                     registeredNames.has(name) ||
@@ -564,7 +556,7 @@ export function DeckList({
                 }}
               >
                 {(searchQuery ? filteredOther : suggestions.other).map((name) => {
-                  const label = display(name);
+                  const label = name;
                   // sanitize 後の保存名 (内部空白なし) と chip label (内部空白あり) のミスマッチを拾う
                   const isRegistered =
                     registeredNames.has(name) ||

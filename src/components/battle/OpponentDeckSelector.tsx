@@ -3,10 +3,6 @@
 import { useState, useEffect } from "react";
 import { Search, X } from "lucide-react";
 
-import {
-  displayDeckName,
-  type OpponentDeckNameMap,
-} from "@/lib/actions/opponent-deck-display";
 import { matchesQuery } from "@/lib/search/normalize";
 
 type Props = {
@@ -16,7 +12,6 @@ type Props = {
   value: string;
   onChange: (name: string) => void;
   headerExtra?: React.ReactNode;
-  nameMap?: OpponentDeckNameMap;
 };
 
 export function OpponentDeckSelector({
@@ -26,7 +21,6 @@ export function OpponentDeckSelector({
   value,
   onChange,
   headerExtra,
-  nameMap,
 }: Props) {
   const [showOther, setShowOther] = useState(false);
   const [showMore, setShowMore] = useState(false);
@@ -40,11 +34,9 @@ export function OpponentDeckSelector({
     }
   }, [value]);
 
-  const display = (name: string) => displayDeckName(name, nameMap);
-
   const filterByQuery = (items: string[]) => {
     if (!searchText) return items;
-    return items.filter((s) => matchesQuery(searchText, [s, display(s)]));
+    return items.filter((s) => matchesQuery(searchText, [s]));
   };
 
   const filteredMajor = filterByQuery(majorSuggestions);
@@ -58,7 +50,7 @@ export function OpponentDeckSelector({
     onChange(name);
     const searchUiVisible = showOther || searchText.trim().length > 0;
     if (searchUiVisible) {
-      setSearchText(display(name));
+      setSearchText(name);
     }
   };
 
@@ -88,7 +80,7 @@ export function OpponentDeckSelector({
             onClick={() => handleSelect(name)}
             className={chipClass(name)}
           >
-            {display(name)}
+            {name}
           </button>
         ))}
 
@@ -154,7 +146,7 @@ export function OpponentDeckSelector({
                       onClick={() => handleSelect(name)}
                       className={chipClass(name)}
                     >
-                      {display(name)}
+                      {name}
                     </button>
                   ))}
                 </div>
@@ -179,7 +171,7 @@ export function OpponentDeckSelector({
                       onClick={() => handleSelect(name)}
                       className={chipClass(name)}
                     >
-                      {display(name)}
+                      {name}
                     </button>
                   ))}
                 </div>

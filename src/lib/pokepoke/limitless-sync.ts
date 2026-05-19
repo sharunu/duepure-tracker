@@ -17,7 +17,6 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
 import { getServerEnv } from "@/lib/cf-env";
-import { stripAllWhitespace } from "@/lib/util/whitespace";
 import { parseDeckTable, LimitlessRow } from "./limitless-parser";
 import { translateDeckName } from "./deck-translator";
 
@@ -87,12 +86,12 @@ export async function runLimitlessSync(
   }
 
   const translated = rows.map((r) => {
+    // name_ja は raw 翻訳結果のまま渡す。canonical name の正規化 (全空白削除) は
+    // apply_limitless_snapshot 内で computed_name として一元算出される。
     const nameJa = translateDeckName(r.name_en);
-    // name_ja は表示名のため全空白削除する。name_en は Limitless 内部キーなので触らない。
-    const cleanedNameJa = nameJa ? stripAllWhitespace(nameJa) : null;
     return {
       name_en: r.name_en,
-      name_ja: cleanedNameJa,
+      name_ja: nameJa,
       share: r.share,
       count: r.count,
       wins: r.wins,

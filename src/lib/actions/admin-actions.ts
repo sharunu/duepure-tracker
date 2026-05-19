@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/client";
 import { DEFAULT_GAME, type GameSlug } from "@/lib/games";
 import type { DetailedPersonalStats, TurnOrderSummary, OpponentDetail, TrendRow } from "@/lib/actions/stats-actions";
 import { winRate, bumpWLD, type BattleResult } from "@/lib/battle/result-format";
+import { stripAllWhitespace } from "@/lib/util/whitespace";
 
 async function requireAdmin() {
   const supabase = createClient();
@@ -70,7 +71,7 @@ export async function addOpponentDeck(name: string, format: string = "ND", categ
   const nextOrder = (maxOrder?.sort_order ?? 0) + 10;
 
   const { error } = await supabase.from("opponent_deck_master").insert({
-    name: name.trim(),
+    name: stripAllWhitespace(name),
     sort_order: nextOrder,
     format,
     category,
@@ -85,9 +86,13 @@ export async function updateOpponentDeck(
   updates: { name?: string; is_active?: boolean; category?: string; admin_bonus_count?: number }
 ) {
   const supabase = await requireAdmin();
+  const normalizedUpdates =
+    updates.name !== undefined
+      ? { ...updates, name: stripAllWhitespace(updates.name) }
+      : updates;
   const { error } = await supabase
     .from("opponent_deck_master")
-    .update(updates)
+    .update(normalizedUpdates)
     .eq("id", id);
 
   if (error) throw new Error(error.message);
@@ -141,17 +146,23 @@ export async function updateOpponentDeckSettings(
 
 export async function updateOpponentDeckNameJa(id: string, nameJa: string) {
   const supabase = await requireAdmin();
-  const trimmed = nameJa.trim();
-  const { error } = await (supabase
-    .from("opponent_deck_master") as unknown as {
-      update: (v: Record<string, unknown>) => { eq: (k: string, v: string) => Promise<{ error: { message: string } | null }> };
-    })
-    .update({
-      name_ja: trimmed.length > 0 ? trimmed : null,
-      name_ja_is_manual: trimmed.length > 0,
-    })
-    .eq("id", id);
-  if (error) throw new Error(error.message);
+  // 新 SECURITY DEFINER RPC 経由で実行する:
+  //   - admin 判定 (profiles.is_admin)
+  //   - canonical name 即時更新 (stripAllWhitespace(name_ja))
+  //   - 同 (format, game_title) 内の衝突 pre-check
+  //   - battles.opponent_deck_name 同期 UPDATE (RLS bypass、他ユーザー行含む)
+  // すべて 1 transaction で完結する。詳細は migration 20260519000002 / plan §6.6 参照。
+  const { error } = await supabase.rpc("admin_update_opponent_deck_name_ja", {
+    p_id: id,
+    p_name_ja: nameJa,
+  });
+  if (error) {
+    // RPC が 'name collision: ...' で reject した場合は UI 向けメッセージに変換
+    if (error.message.includes("name collision")) {
+      throw new Error(`対面デッキ名が既に存在します (${error.message})`);
+    }
+    throw new Error(error.message);
+  }
 }
 
 export async function triggerLimitlessSync(): Promise<{

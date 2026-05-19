@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getDecks } from "@/lib/actions/deck-actions";
 import { getOpponentDeckSuggestions } from "@/lib/actions/battle-actions";
-import { getOpponentDeckNameMap, type OpponentDeckNameMap } from "@/lib/actions/opponent-deck-display";
 import { useFormat } from "@/hooks/use-format";
 import { FormatSelector } from "@/components/ui/FormatSelector";
 import { DeckList } from "./DeckList";
@@ -14,7 +13,6 @@ export default function DecksPage() {
   const { format, setFormat, ready } = useFormat();
   const [decks, setDecks] = useState<Awaited<ReturnType<typeof getDecks>>>([]);
   const [suggestions, setSuggestions] = useState<{ major: string[]; minor: string[]; other: string[] }>({ major: [], minor: [], other: [] });
-  const [nameMap, setNameMap] = useState<OpponentDeckNameMap>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,11 +22,9 @@ export default function DecksPage() {
     Promise.all([
       getDecks(format, "pokepoke"),
       getOpponentDeckSuggestions(format, "pokepoke"),
-      getOpponentDeckNameMap(format, "pokepoke"),
-    ]).then(([d, s, m]) => {
+    ]).then(([d, s]) => {
       setDecks(d);
       setSuggestions(s);
-      setNameMap(m);
       setLoading(false);
     }).catch(() => {
       setError("データの読み込みに失敗しました");
@@ -61,7 +57,7 @@ export default function DecksPage() {
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
           </div>
         ) : (
-          <DeckList initialDecks={decks} format={format} suggestions={suggestions} opponentDeckNameMap={nameMap} />
+          <DeckList initialDecks={decks} format={format} suggestions={suggestions} />
         )}
       </div>
     </>
